@@ -20,6 +20,7 @@ char* readLine(){
   return line;
 }
 
+char* args[] = {"ls","-l"};
 int main() {
   char *line;
   char **splitted_line;
@@ -40,7 +41,9 @@ int main() {
 
     pid_t pid = fork();
     if (pid == 0){
-      int error = execlp(splitted_line[0],splitted_line[1],NULL);
+
+      int error = execvp(splitted_line[0],splitted_line);
+      /* int error = execvp(args[0],args); */
       printf("%d\n",error);
     } else {
       waitpid(pid,NULL,0);
