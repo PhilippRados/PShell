@@ -23,19 +23,19 @@ char** splitString(char* string_to_split,char delimeter){
 
 char* getLastTwoDirs(char* cwd){
   char* last_dir;
-  int start = 0;
+  int start = 1;
   int i = 1;
+  int last_slash_pos = 0;
+  int second_to_last_slash = 0;
 
   for(; cwd[i] != '\n' && cwd[i] != '\0';i++){
     if (cwd[i] == '/'){
-      last_dir = (char*)malloc(sizeof(char) * (i - start) + 1);
-      strncpy(last_dir,&cwd[start],(i - start));
-      start = i;
+      second_to_last_slash = last_slash_pos;
+      last_slash_pos = i + 1;
     }
   }
-  char* current_dir = (char*)malloc(sizeof(char) * (i - start) + 1);
-  strncpy(current_dir,&cwd[start],(i - start));
-  char* last_two_dirs = strcat(last_dir,current_dir);
+  char* last_two_dirs = (char*)calloc(i - second_to_last_slash,sizeof(char));
+  strncpy(last_two_dirs,&cwd[second_to_last_slash],i - second_to_last_slash);
 
   return last_two_dirs;
 }

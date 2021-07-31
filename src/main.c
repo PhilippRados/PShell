@@ -10,7 +10,7 @@ const char *BASE_PATH = "/usr/bin/";
 
 char* readLine(){
   char c;
-  char *line = malloc(sizeof(char) * BUFFER);
+  char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
 
   while((c = getchar()) != '\n'){
@@ -18,21 +18,6 @@ char* readLine(){
     i++;
   }
   return line;
-}
-
-char* builtins[] = {
-  "cd",
-  "touch",
-};
-
-int isBuiltIn(char* command){
-  int result = 0;
-  for(int i = 0;i < sizeof(builtins)/sizeof(builtins[0]);i++){
-    if (strcmp(command,builtins[i]) == 0){
-      result = 1;
-    }
-  }
-  return result;
 }
 
 int main() {
@@ -55,11 +40,8 @@ int main() {
 
     pid_t pid = fork();
     if (pid == 0){
-      if(isBuiltIn(splitted_line[0])){
-        execvP(splitted_line[0],BASE_PATH,NULL);
-      } else {
-        execlp(splitted_line[0],splitted_line[1],NULL);
-      }
+      int error = execlp(splitted_line[0],splitted_line[1],NULL);
+      printf("%d\n",error);
     } else {
       waitpid(pid,NULL,0);
     }

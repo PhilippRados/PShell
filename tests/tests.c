@@ -10,8 +10,8 @@ Test(Utility_Functions, split_string_at_delimeter){
     cr_expect(strcmp(result[2],"split") == 0);
 }
 
-Test(Parsind_directory,get_last_two_dirs){
-  char* last_two_dirs = getLastTwoDirs("/Users/philipprados/Documents/coding/c/pshell\n");
+Test(Parsing_directory,get_last_two_dirs){
+  char* last_two_dirs = getLastTwoDirs("/Users/philipprados/Documents/coding/c/pshell");
 
-  cr_expect(strcmp(last_two_dirs,"/c/pshell") == 0);
+  cr_expect(strcmp(last_two_dirs,"c/pshell") == 0);
 }
