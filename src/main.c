@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <wchar.h>
+#include <locale.h>
 
 int BUFFER = 512;
 const char *CLEAR_SCREEN = " \e[1;1H\e[2J";
@@ -20,7 +22,33 @@ char* readLine(){
   return line;
 }
 
-char* args[] = {"ls","-l"};
+void printPrompt(char* dir,int attr, int fg,int bg){
+  char command[13];
+
+	/* Command is the control command to the terminal */
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, attr, fg, bg);
+	printf("\n%s", command);
+  printf("%s ",dir);
+
+  //reset color
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
+	printf("%s", command);
+
+  //pick unicode char
+  setlocale(LC_CTYPE, "");
+  wchar_t arrow = 0x2771;
+
+  //set unicode color and print
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, 1, 32, 10);
+	printf("%s", command);
+  wprintf(L"%lc ", arrow);
+
+  //resetting colors
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
+	printf("%s", command);
+}
+
+
 int main() {
   char *line;
   char **splitted_line;
@@ -31,7 +59,7 @@ int main() {
   write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN));
   while (1){
     char* current_dir = getcwd(cd,sizeof(cd));
-    printf("%s > ",getLastTwoDirs(current_dir));
+    printPrompt(getLastTwoDirs(current_dir),1,36,10);
 
     line = readLine();
     splitted_line = splitString(line,' ');
@@ -43,7 +71,6 @@ int main() {
     if (pid == 0){
 
       int error = execvp(splitted_line[0],splitted_line);
-      /* int error = execvp(args[0],args); */
       printf("%d\n",error);
     } else {
       waitpid(pid,NULL,0);
