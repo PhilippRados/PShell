@@ -6,7 +6,7 @@
 #include <wchar.h>
 #include <locale.h>
 
-int BUFFER = 512;
+int BUFFER = 256;
 const char *CLEAR_SCREEN = " \e[1;1H\e[2J";
 const char *BASE_PATH = "/usr/bin/";
 
@@ -62,21 +62,26 @@ int main() {
     printPrompt(getLastTwoDirs(current_dir),1,36,10);
 
     line = readLine();
-    splitted_line = splitString(line,' ');
-    if(strcmp(splitted_line[0],"q") == 0){
+    if(line[0] == 'q' && strlen(line) == 1){
       break;
     }
+    splitted_line = splitString(line,' ');
 
-    pid_t pid = fork();
-    if (pid == 0){
+    if (strcmp(splitted_line[0],"cd") == 0){
+      chdir(splitted_line[1]);
 
-      int error = execvp(splitted_line[0],splitted_line);
-      printf("%d\n",error);
     } else {
-      waitpid(pid,NULL,0);
+      pid_t pid = fork();
+      if (pid == 0){
+
+        int error = execvp(splitted_line[0],splitted_line);
+        printf("%d\n",error);
+      } else {
+        waitpid(pid,NULL,0);
+      }
     }
-  free(splitted_line);
-  free(line);
+    free(splitted_line);
+    free(line);
   }
 }
 
