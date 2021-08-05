@@ -32,7 +32,7 @@ char* getLastTwoDirs(char* cwd){
       last_slash_pos = i + 1;
     }
   }
-  char* last_two_dirs = (char*)calloc(i - second_to_last_slash,sizeof(char));
+  char* last_two_dirs = (char*)calloc(i - second_to_last_slash + 1,sizeof(char));
   strncpy(last_two_dirs,&cwd[second_to_last_slash],i - second_to_last_slash);
 
   return last_two_dirs;

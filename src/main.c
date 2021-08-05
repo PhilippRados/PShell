@@ -46,6 +46,7 @@ void printPrompt(char* dir,int attr, int fg,int bg){
   //resetting colors
 	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
 	printf("%s", command);
+  free(dir);
 }
 
 
@@ -75,7 +76,9 @@ int main() {
       if (pid == 0){
 
         int error = execvp(splitted_line[0],splitted_line);
-        printf("%d\n",error);
+        if (error){
+          printf("couldn't find command %s\n",splitted_line[0]);
+        }
       } else {
         waitpid(pid,NULL,0);
       }
