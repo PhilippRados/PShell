@@ -62,18 +62,26 @@ void cycleCommandHistory(history_array *command_history,char* directories){
   }
 }
 
-int getCursorPos(int prompt_len){
-  char buf[8];
-  char data[5];
+typedef struct coordinates {
+  int x;
+  int y;
+} coordinates;
+
+coordinates getCursorPos(){
+  char buf[20];
+  char data[10];
   int x_pos;
 	char cmd[]="\033[6n";
   int fd = open(ttyname(STDIN_FILENO), O_RDWR | O_NOCTTY);
+  coordinates cursor_pos = {.x = 0,.y = 0};
   struct termios oldattr, newattr;
+
   tcgetattr( fd, &oldattr );
   newattr = oldattr;
   newattr.c_lflag &= ~( ICANON | ECHO );
   newattr.c_cflag &= ~( CREAD );
   tcsetattr( fd, TCSANOW, &newattr );
+
 	if (isatty(fileno(stdin))){
 		write(fd,cmd,sizeof(cmd));
 		read(fd,buf ,sizeof(buf));
@@ -83,37 +91,50 @@ int getCursorPos(int prompt_len){
       data[j] = buf[i];
         j++;
     }
-    char* split = splitString(data,';')[1];
-    x_pos = atoi(split);
+    char** splitted = splitString(data,';');
+    int x_pos = atoi(splitted[1]);
+    int y_pos = atoi(splitted[0]);
+    cursor_pos.x = x_pos;
+    cursor_pos.y = y_pos;
 	}
   tcsetattr( fd, TCSANOW, &oldattr );
-  return x_pos - prompt_len;
+  return cursor_pos;
+}
+
+char* removeCharAtPos(char* line,int x_pos){
+  if (strlen(line) == 0) return false;
+  for (int i = x_pos - 1; i < strlen(line); i++){
+    line[i] = line[i + 1];
+  }
+  return line;
 }
 
 char* readLine(char* directories){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
+  int del = false;
 
   while((c = getch()) != '\n'){
     if (c == 127){
       //backspace-logic
       int prompt_len = strlen(directories) + 4;
-      int cursor = getCursorPos(prompt_len);
-      printf("%d\n",cursor);
-      /* removeCharAtPos(line,cursor); */
-      /* printf("%d",cursor); */
+      coordinates cursor = getCursorPos();
+      /* moveCursor(cursor); */
+      removeCharAtPos(line,cursor.x - prompt_len);
+      i--;
 
     } else if (iscntrl(c)){
       //cycleCommandHistory
       printf("arrow");
     } else {
       line[i] = c;
-      printf("\r");
-      printPrompt(directories,1,36,10);
-      printf("%s",line);
       i++;
     }
+    printf("%c[2K", 27);
+    printf("\r");
+    printPrompt(directories,1,36,10);
+    printf("%s",line);
   }
   printf("\n");
   return line;
