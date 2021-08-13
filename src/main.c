@@ -12,16 +12,9 @@
 #include <fcntl.h>
 
 const int BUFFER = 256;
-enum { HISTORY_SIZE = 10} ;
 const char *CLEAR_SCREEN = " \e[1;1H\e[2J";
 
-typedef struct array {
-  int size;
-  char** values[HISTORY_SIZE];
-} history_array;
-
-int getch()
-{
+int getch(){
     struct termios oldattr, newattr;
     int ch;
     tcgetattr( STDIN_FILENO, &oldattr );
@@ -31,35 +24,6 @@ int getch()
     ch = getchar();
     tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
     return ch;
-}
-
-void cycleCommandHistory(history_array *command_history,char* directories){
-  int direction;
-  char cd[120];
-  int j = 0;
-
-  printf("\r");
-  printPrompt(directories,1,36,10);
-  printf("%s ",command_history->values[j][0]);
-  while(1){
-    printf("\r");
-    printPrompt(directories,1,36,10);
-    if((direction = arrowHit())){
-      switch (direction) {
-        case 1: if (j < command_history->size){j++;};
-          break;
-        case 2: if(j >= 0){j--;};
-          break;
-      }
-      if (j == -1){
-        return;
-      } else {
-        printf("%s ",command_history->values[j][0]);
-      }
-    } else {
-      return;
-    }
-  }
 }
 
 typedef struct coordinates {
@@ -109,11 +73,11 @@ char* removeCharAtPos(char* line,int x_pos){
   return line;
 }
 
-char* readLine(char* directories){
+char* readLine(char* directories,history_array *command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
-  int del = false;
+  int history_index = 0;
 
   while((c = getch()) != '\n'){
     if (c == 127){
@@ -124,9 +88,26 @@ char* readLine(char* directories){
       removeCharAtPos(line,cursor.x - prompt_len);
       i--;
 
-    } else if (iscntrl(c)){
-      //cycleCommandHistory
-      printf("arrow");
+    } else if (c == '\033'){
+      getch();
+      int value = getch();
+      switch(value) {
+        case 'A':
+         if (history_index < command_history->size){
+            history_index += 1;
+            strcpy(line,command_history->values[history_index - 1][0]);
+          };
+          break;
+        case 'B':
+         if(history_index > 1){
+            history_index -= 1;
+            strcpy(line,command_history->values[history_index - 1][0]);
+          } else if (history_index > 0){
+            history_index -= 1;
+            memset(line,0,strlen(line));
+          };
+          break;
+      }
     } else {
       line[i] = c;
       i++;
@@ -165,23 +146,6 @@ void printPrompt(char* dir,int attr, int fg,int bg){
 	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
 	printf("%s", command);
   /* free(dir); */
-}
-
-int arrowHit() {
-  int pressed_key = 0;
-  if (getch() == '\033') { // if the first value is esc
-    getch(); // skip the [
-    int value = getch();
-    switch(value) { // the real value
-      case 'A':
-        pressed_key = 1;
-          break;
-      case 'B':
-        pressed_key = 2;
-          break;
-    }
-  } 
-  return pressed_key;
 }
 
 int runChildProcess(char** splitted_line) {
@@ -236,7 +200,7 @@ int main() {
     printf("\n");
     printPrompt(last_two_dirs,1,36,10);
 
-    line = readLine(last_two_dirs);
+    line = readLine(last_two_dirs,&command_history);
     if(line[0] == 'q' && strlen(line) == 1){
       break;
     }
