@@ -75,7 +75,6 @@ void insertCharAtPos(char* line,int index,char c) {
 }
 
 char* removeCharAtPos(char* line,int x_pos){
-  if (strlen(line) == 0) return false;
   for (int i = x_pos - 1; i < strlen(line); i++){
     line[i] = line[i + 1];
   }
@@ -97,11 +96,11 @@ char* readLine(char* directories,history_array *command_history){
 
   while((c = getch()) != '\n'){
     if (c == 127){
-      //backspace-logic
       coordinates cursor = getCursorPos();
-      /* moveCursor(cursor); */
-      removeCharAtPos(line,cursor.x - prompt_len);
-      i--;
+      if (strlen(line) > 0 && i > 0){
+        removeCharAtPos(line,cursor.x - prompt_len);
+        i--;
+      }
 
     } else if (c == '\033'){
       getch();
