@@ -33,7 +33,7 @@ typedef struct coordinates {
 
 coordinates getCursorPos(){
   char buf[20];
-  char data[10];
+  char data[20];
   int x_pos;
 	char cmd[]="\033[6n";
   int fd = open(ttyname(STDIN_FILENO), O_RDWR | O_NOCTTY);
@@ -65,6 +65,15 @@ coordinates getCursorPos(){
   return cursor_pos;
 }
 
+void insertCharAtPos(char* line,int index,char c) {
+  if (index >= 0 && index <= strlen(line)) {
+    for (int i = strlen(line) - 1; i >= index;i--){
+      line[i + 1] = line[i];
+    }
+    line[index] = c;
+  }
+}
+
 char* removeCharAtPos(char* line,int x_pos){
   if (strlen(line) == 0) return false;
   for (int i = x_pos - 1; i < strlen(line); i++){
@@ -73,16 +82,22 @@ char* removeCharAtPos(char* line,int x_pos){
   return line;
 }
 
+void moveCursor(coordinates new_pos){
+  printf("\033[%d;%dH",new_pos.y,new_pos.x);
+}
+
 char* readLine(char* directories,history_array *command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
   int history_index = 0;
+  bool hit_hori_arrow = false;
+  coordinates new_pos;
+      int prompt_len = strlen(directories) + 4;
 
   while((c = getch()) != '\n'){
     if (c == 127){
       //backspace-logic
-      int prompt_len = strlen(directories) + 4;
       coordinates cursor = getCursorPos();
       /* moveCursor(cursor); */
       removeCharAtPos(line,cursor.x - prompt_len);
@@ -107,15 +122,41 @@ char* readLine(char* directories,history_array *command_history){
             memset(line,0,strlen(line));
           };
           break;
+        case 'C':{
+          hit_hori_arrow = true;
+          coordinates current_pos = getCursorPos();
+          new_pos.y =  current_pos.y;
+          new_pos.x =  (current_pos.x < (prompt_len + strlen(line))) ? current_pos.x + 1 : current_pos.x;
+          i = new_pos.x - prompt_len;
+          break;
+        }
+        case 'D':{
+          hit_hori_arrow = true;
+          coordinates current_pos = getCursorPos();
+          new_pos.y =  current_pos.y;
+          new_pos.x =  (current_pos.x > prompt_len) ? current_pos.x - 1 : current_pos.x;
+          i = new_pos.x - prompt_len;
+          break;
+        }
       }
     } else {
-      line[i] = c;
+      if (i == strlen(line)){
+        line[i] = c;
+      } else {
+        hit_hori_arrow = true;
+        insertCharAtPos(line,i,c);
+        new_pos.x = i + 1 + prompt_len;
+      }
       i++;
     }
     printf("%c[2K", 27);
     printf("\r");
     printPrompt(directories,1,36,10);
     printf("%s",line);
+    if (hit_hori_arrow){
+      moveCursor(new_pos);
+      hit_hori_arrow = false;
+    }
   }
   printf("\n");
   return line;
@@ -201,7 +242,7 @@ int main() {
     printPrompt(last_two_dirs,1,36,10);
 
     line = readLine(last_two_dirs,&command_history);
-    if(line[0] == 'q' && strlen(line) == 1){
+    if(strcmp(line,"q") == 0){
       break;
     }
     splitted_line = splitString(line,' ');
