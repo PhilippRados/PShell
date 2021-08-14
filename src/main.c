@@ -203,13 +203,6 @@ int runChildProcess(char** splitted_line) {
   return true;
 }
 
-
-void runIfBuiltin(char** splitted_line) {
-  if (strcmp(splitted_line[0],"cd") == 0){
-    chdir(splitted_line[1]);
-  }
-}
-
 void push(char** splitted_line,history_array *command_history){
   if (command_history->size > 0){
     for (int i = command_history->size; i >= 0;i--){
@@ -244,13 +237,16 @@ int main() {
     if(strcmp(line,"q") == 0){
       break;
     }
-    splitted_line = splitString(line,' ');
-    if (strcmp(splitted_line[0],"cd") == 0){
-      chdir(splitted_line[1]);
-      push(splitted_line,&command_history);
-    } else {
-        runChildProcess(splitted_line);
+    if (strlen(line) > 0){
+      splitted_line = splitString(line,' ');
+      if (strcmp(splitted_line[0],"cd") == 0){
+        chdir(splitted_line[1]);
         push(splitted_line,&command_history);
+      } else {
+          runChildProcess(splitted_line);
+          push(splitted_line,&command_history);
+      }
+
     }
   }
   free(splitted_line);
