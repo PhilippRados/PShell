@@ -109,6 +109,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
             history_index += 1;
             strcpy(line,*command_history->values[history_index - 1].values);
           };
+          i = strlen(line);
           break;
         case 'B':
          if(history_index > 1){
@@ -118,6 +119,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
             history_index -= 1;
             memset(line,0,strlen(line));
           };
+          i = strlen(line);
           break;
         case 'C':{
           hit_hori_arrow = true;
