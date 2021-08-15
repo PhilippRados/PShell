@@ -26,11 +26,6 @@ int getch(){
     return ch;
 }
 
-typedef struct coordinates {
-  int x;
-  int y;
-} coordinates;
-
 coordinates getCursorPos(){
   char buf[20];
   char data[20];
@@ -55,9 +50,9 @@ coordinates getCursorPos(){
       data[j] = buf[i];
         j++;
     }
-    char** splitted = splitString(data,';');
-    int x_pos = atoi(splitted[1]);
-    int y_pos = atoi(splitted[0]);
+    string_array splitted = splitString(data,';');
+    int x_pos = atoi(splitted.values[1]);
+    int y_pos = atoi(splitted.values[0]);
     cursor_pos.x = x_pos;
     cursor_pos.y = y_pos;
 	}
@@ -85,14 +80,18 @@ void moveCursor(coordinates new_pos){
   printf("\033[%d;%dH",new_pos.y,new_pos.x);
 }
 
-char* readLine(char* directories,history_array *command_history){
+bool isInPath(char** line, char** PATH_ARR){
+  return false;
+}
+
+char* readLine(char** PATH,char* directories,history_array *command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
   int history_index = 0;
   bool hit_hori_arrow = false;
   coordinates new_pos;
-      int prompt_len = strlen(directories) + 4;
+  int prompt_len = strlen(directories) + 4;
 
   while((c = getch()) != '\n'){
     if (c == 127){
@@ -101,21 +100,20 @@ char* readLine(char* directories,history_array *command_history){
         removeCharAtPos(line,cursor.x - prompt_len);
         i--;
       }
-
     } else if (c == '\033'){
       getch();
       int value = getch();
       switch(value) {
         case 'A':
-         if (history_index < command_history->size){
+         if (history_index < command_history->len){
             history_index += 1;
-            strcpy(line,command_history->values[history_index - 1][0]);
+            strcpy(line,*command_history->values[history_index - 1].values);
           };
           break;
         case 'B':
          if(history_index > 1){
             history_index -= 1;
-            strcpy(line,command_history->values[history_index - 1][0]);
+            strcpy(line,*command_history->values[history_index - 1].values);
           } else if (history_index > 0){
             history_index -= 1;
             memset(line,0,strlen(line));
@@ -150,7 +148,8 @@ char* readLine(char* directories,history_array *command_history){
     }
     printf("%c[2K", 27);
     printf("\r");
-    printPrompt(directories,1,36,10);
+    printPrompt(directories,CYAN);
+    // if (lineInPath){color = green} else {color = red}
     printf("%s",line);
     if (hit_hori_arrow){
       moveCursor(new_pos);
@@ -161,17 +160,21 @@ char* readLine(char* directories,history_array *command_history){
   return line;
 }
 
-void printPrompt(char* dir,int attr, int fg,int bg){
+void printColor(char* string,color color){
   char command[13];
 
-	/* Command is the control command to the terminal */
-	sprintf(command, "%c[%d;%d;%dm", 0x1B, attr, fg, bg);
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, color.attr, color.fg, color.bg);
 	printf("%s", command);
-  printf("%s ",dir);
+  printf("%s ",string);
 
-  //reset color
 	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
 	printf("%s", command);
+}
+
+void printPrompt(char* dir,color color){
+  char command[13];
+
+  printColor(dir,color);
 
   //pick unicode char
   setlocale(LC_CTYPE, "");
@@ -185,7 +188,6 @@ void printPrompt(char* dir,int attr, int fg,int bg){
   //resetting colors
 	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
 	printf("%s", command);
-  /* free(dir); */
 }
 
 int runChildProcess(char** splitted_line) {
@@ -203,52 +205,68 @@ int runChildProcess(char** splitted_line) {
   return true;
 }
 
-void push(char** splitted_line,history_array *command_history){
-  if (command_history->size > 0){
-    for (int i = command_history->size; i >= 0;i--){
+void push(string_array splitted_line,history_array *command_history){
+  if (command_history->len > 0){
+    for (int i = command_history->len; i > 0;i--){
       if(i <= HISTORY_SIZE){
         command_history->values[i] = command_history->values[i-1];
       }
     }
   }
-  (command_history->size <= HISTORY_SIZE) ? command_history->size++ : command_history->size;
+  (command_history->len <= HISTORY_SIZE) ? command_history->len++ : command_history->len;
   command_history->values[0] = splitted_line;
+}
+
+bool arrCmp(string_array arr1, string_array arr2){
+  if (arr1.len != arr2.len){
+    return false;
+  }
+  for (int i = 0; i < arr1.len;i++){
+    if (strcmp(arr1.values[i],arr2.values[i]) != 0){
+      return false;
+    }
+  }
+  return true;
 }
 
 int main() {
   char *line;
-  char **splitted_line;
+  string_array splitted_line;
   int child_id;
   int status;
   char cd[512];
   history_array command_history = {
-    .size = 0,
-    .values = NULL
-  };
+    .len = 0,
+    .values = {}
+  }; 
+  string_array PATH_ARR = splitString(getenv("PATH"),';');
 
   write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN));
   while (1){
     char* current_dir = getcwd(cd,sizeof(cd));
     char* last_two_dirs = getLastTwoDirs(current_dir);
     printf("\n");
-    printPrompt(last_two_dirs,1,36,10);
+    printPrompt(last_two_dirs,CYAN);
 
-    line = readLine(last_two_dirs,&command_history);
+    line = readLine(PATH_ARR.values,last_two_dirs,&command_history);
     if(strcmp(line,"q") == 0){
       break;
     }
     if (strlen(line) > 0){
       splitted_line = splitString(line,' ');
-      if (strcmp(splitted_line[0],"cd") == 0){
-        chdir(splitted_line[1]);
-        push(splitted_line,&command_history);
-      } else {
-          runChildProcess(splitted_line);
+      if (strcmp(splitted_line.values[0],"cd") == 0){
+        chdir(splitted_line.values[1]);
+        if (!arrCmp(command_history.values[0],splitted_line)){
           push(splitted_line,&command_history);
+        }
+      } else {
+          runChildProcess(splitted_line.values);
+          if (!arrCmp(command_history.values[0],splitted_line)){
+            push(splitted_line,&command_history);
+          }
       }
-
     }
   }
-  free(splitted_line);
+  free(splitted_line.values);
   free(line);
 }
