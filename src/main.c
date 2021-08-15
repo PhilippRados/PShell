@@ -108,6 +108,10 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
          if (history_index < command_history->len){
             history_index += 1;
             strcpy(line,*command_history->values[history_index - 1].values);
+            for (int i = 1; i < command_history->values[history_index - 1].len;i++){
+              strcat(line," ");
+              strcat(line,command_history->values[history_index - 1].values[i]);
+            }
           };
           i = strlen(line);
           break;
@@ -115,6 +119,10 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
          if(history_index > 1){
             history_index -= 1;
             strcpy(line,*command_history->values[history_index - 1].values);
+            for (int i = 1; i < command_history->values[history_index - 1].len;i++){
+              strcat(line," ");
+              strcat(line,command_history->values[history_index - 1].values[i]);
+            }
           } else if (history_index > 0){
             history_index -= 1;
             memset(line,0,strlen(line));
