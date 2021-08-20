@@ -200,13 +200,26 @@ void printPrompt(char* dir,color color){
 	printf("%s", command);
 }
 
-int runChildProcess(char** splitted_line) {
+void pipeOutputToFile(char* filename){
+  int file = open(filename, O_WRONLY | O_CREAT,0777);
+
+  int file2 = dup2(file,STDOUT_FILENO);
+  close(file);
+}
+
+int runChildProcess(string_array splitted_line) {
   pid_t pid = fork();
   if (pid == 0){
+    if (splitted_line.len >= 3) {
+      if (strcmp(splitted_line.values[splitted_line.len - 2],">>") == 0){
+        pipeOutputToFile(splitted_line.values[splitted_line.len - 1]);
+      }
+      splitted_line.values[splitted_line.len - 2] = NULL;
+    }
 
-    int error = execvp(splitted_line[0],splitted_line);
+    int error = execvp(splitted_line.values[0],splitted_line.values);
     if (error){
-      printf("couldn't find command %s\n",splitted_line[0]);
+      printf("couldn't find command %s\n",splitted_line.values[0]);
       return false;
     }
   } else {
@@ -239,7 +252,7 @@ bool arrCmp(string_array arr1, string_array arr2){
   return true;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
   char *line;
   string_array splitted_line;
   int child_id;
@@ -250,6 +263,11 @@ int main() {
     .values = {}
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),';');
+  if (argc > 1 && strcmp(argv[argc - 1],"-test") == 0){
+    FILE* test_file = fopen("user_test.txt","w");
+    fclose(test_file);
+  }
+
 
   write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN));
   while (1){
@@ -259,6 +277,13 @@ int main() {
     printPrompt(last_two_dirs,CYAN);
 
     line = readLine(PATH_ARR.values,last_two_dirs,&command_history);
+    if (argc > 1 && strcmp(argv[argc - 1],"-test") == 0){
+      FILE* test_file = fopen("user_test.txt","a");
+      char *new_line = malloc(sizeof(line));
+      strcpy(new_line,line);
+      fwrite(strcat(new_line,"\n"),sizeof(char),strlen(line) + 1,test_file);
+      fclose(test_file);
+    }
     if(strcmp(line,"q") == 0){
       break;
     }
@@ -270,7 +295,7 @@ int main() {
           push(splitted_line,&command_history);
         }
       } else {
-          runChildProcess(splitted_line.values);
+          runChildProcess(splitted_line);
           if (!arrCmp(command_history.values[0],splitted_line)){
             push(splitted_line,&command_history);
           }
