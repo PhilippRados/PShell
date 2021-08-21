@@ -65,3 +65,14 @@ Test(User_journey,typing_command_and_deleting_last_char){
   cr_expect(strcmp(command,"uw\n") == 0,"%s",command);
   fclose(file);
 }
+
+Test(User_journey,typing_command_and_pressing_up_arrow_and_adding_chars){
+  FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r");
+  char* command = NULL;
+  size_t size = 0;
+
+  fseek(file,sizeof("ls\nls -a\nuw"),SEEK_SET);
+  getline(&command,&size,file);
+  cr_expect(strcmp(command,"simeones\n") == 0,"%s",command);
+  fclose(file);
+}

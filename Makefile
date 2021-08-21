@@ -41,7 +41,6 @@ compile_and_run: shell start_shell
 compile_and_test: shell start_test_shell
 	make shell
 	make start_test_shell
-	make run_tests
 
 watch_files: compile_and_run ## watches all C-files and runs test if one changes
 	watchexec -e c ${MAKE} compile_and_run

@@ -33,5 +33,15 @@ tell application "System Events"
   delay 0.5
   keystroke return
   delay 0.5
+
+  --type in command, press up arrow and add more letters
+  keystroke "simone"
+  delay 1
+  key code 126
+  delay 1
+  keystroke "s"
+  delay 1
+  keystroke return
+
 end tell
 EOF
