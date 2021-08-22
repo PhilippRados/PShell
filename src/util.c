@@ -45,3 +45,20 @@ char* getLastTwoDirs(char* cwd){
 
   return last_two_dirs;
 }
+
+long getFileSizeAtIndex(FILE* file,int index){
+  char c;
+  int i = 0;
+  int line_num = 1;
+
+  while ((c = getc(file)) != EOF){
+    if (c == '\n'){
+      line_num++;
+    }
+    if (line_num == index){
+      break;
+    }  
+    i++;
+  }
+  return i + 1;
+}
