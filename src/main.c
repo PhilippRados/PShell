@@ -252,6 +252,14 @@ bool arrCmp(string_array arr1, string_array arr2){
   return true;
 }
 
+void logToTestFile(char* line){
+      FILE* test_file = fopen("user_test.txt","a");
+      char *new_line = malloc(sizeof(line));
+      strcpy(new_line,line);
+      fwrite(strcat(new_line,"\n"),sizeof(char),strlen(line) + 1,test_file);
+      fclose(test_file);
+}
+
 int main(int argc, char* argv[]) {
   char *line;
   string_array splitted_line;
@@ -278,11 +286,7 @@ int main(int argc, char* argv[]) {
 
     line = readLine(PATH_ARR.values,last_two_dirs,&command_history);
     if (argc > 1 && strcmp(argv[argc - 1],"-test") == 0){
-      FILE* test_file = fopen("user_test.txt","a");
-      char *new_line = malloc(sizeof(line));
-      strcpy(new_line,line);
-      fwrite(strcat(new_line,"\n"),sizeof(char),strlen(line) + 1,test_file);
-      fclose(test_file);
+      logToTestFile(line);
     }
     if(strcmp(line,"q") == 0){
       break;
