@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
+#define BACKSPACE 127
 const int BUFFER = 256;
 const char *CLEAR_SCREEN = " \e[1;1H\e[2J";
 
@@ -94,7 +95,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
   int prompt_len = strlen(directories) + 4;
 
   while((c = getch()) != '\n'){
-    if (c == 127){
+    if (c == BACKSPACE){
       coordinates cursor = getCursorPos();
       if (strlen(line) > 0 && i > 0){
         removeCharAtPos(line,cursor.x - prompt_len);
@@ -252,12 +253,26 @@ bool arrCmp(string_array arr1, string_array arr2){
   return true;
 }
 
-void logToTestFile(char* line){
-      FILE* test_file = fopen("user_test.txt","a");
-      char *new_line = malloc(sizeof(line));
-      strcpy(new_line,line);
-      fwrite(strcat(new_line,"\n"),sizeof(char),strlen(line) + 1,test_file);
-      fclose(test_file);
+void logToTestFile(char* line,char* filename){
+  FILE* test_file = fopen(filename,"a");
+  char *new_line = malloc(sizeof(line));
+
+  strcpy(new_line,line);
+  fwrite(strcat(new_line,"\n"),sizeof(char),strlen(line) + 1,test_file);
+  fclose(test_file);
+}
+
+void removeFileContents(char* filename){
+  FILE* test_file = fopen(filename,"w");
+  fclose(test_file);
+}
+
+bool hasTestFlag(int argc, char* argv[]){
+  if (argc > 1 && strcmp(argv[argc - 1],"-test") == 0){
+    return true;
+  } else {
+  return false;
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -271,11 +286,11 @@ int main(int argc, char* argv[]) {
     .values = {}
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),';');
-  if (argc > 1 && strcmp(argv[argc - 1],"-test") == 0){
-    FILE* test_file = fopen("user_test.txt","w");
-    fclose(test_file);
-  }
+  char* test_file = "user_test.txt";
 
+  if (hasTestFlag(argc,argv)){
+    removeFileContents(test_file);
+  }
 
   write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN));
   while (1){
@@ -285,8 +300,8 @@ int main(int argc, char* argv[]) {
     printPrompt(last_two_dirs,CYAN);
 
     line = readLine(PATH_ARR.values,last_two_dirs,&command_history);
-    if (argc > 1 && strcmp(argv[argc - 1],"-test") == 0){
-      logToTestFile(line);
+    if (hasTestFlag(argc,argv)){
+      logToTestFile(line,test_file);
     }
     if(strcmp(line,"q") == 0){
       break;
@@ -299,13 +314,14 @@ int main(int argc, char* argv[]) {
           push(splitted_line,&command_history);
         }
       } else {
-          runChildProcess(splitted_line);
-          if (!arrCmp(command_history.values[0],splitted_line)){
-            push(splitted_line,&command_history);
-          }
+        runChildProcess(splitted_line);
+        if (!arrCmp(command_history.values[0],splitted_line)){
+          push(splitted_line,&command_history);
+        }
       }
     }
   }
   free(splitted_line.values);
   free(line);
+  free(PATH_ARR.values);
 }

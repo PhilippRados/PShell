@@ -42,6 +42,19 @@ tell application "System Events"
   keystroke "s"
   delay 1
   keystroke return
+  delay 1
+
+  --backspace longer than word-len
+  keystroke "ahmed"
+  delay 0.5
+  repeat 6 times
+    key code 51
+    delay 0.5
+  end repeat
+  delay 0.5
+  keystroke "simon"
+  delay 0.5
+  keystroke return
 
 end tell
 EOF

@@ -76,3 +76,14 @@ Test(User_journey,typing_command_and_pressing_up_arrow_and_adding_chars){
   cr_expect(strcmp(command,"simeones\n") == 0,"%s",command);
   fclose(file);
 }
+
+Test(User_journey,deleting_more_chars_than_command_len_and_typing_new){
+  FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r");
+  char* command = NULL;
+  size_t size = 0;
+
+  fseek(file,getFileSizeAtIndex(file,5),SEEK_SET);
+  getline(&command,&size,file);
+  cr_expect(strcmp(command,"simon\n") == 0,"%s",command);
+  fclose(file);
+}
