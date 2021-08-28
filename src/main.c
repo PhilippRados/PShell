@@ -99,7 +99,12 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
       coordinates cursor = getCursorPos();
       if (strlen(line) > 0 && i > 0){
         removeCharAtPos(line,cursor.x - prompt_len);
-        i--;
+          coordinates current_pos = getCursorPos();
+          new_pos.y =  current_pos.y;
+          new_pos.x =  (current_pos.x > prompt_len) ? current_pos.x - 1 : current_pos.x;
+          i = new_pos.x - prompt_len;
+          hit_hori_arrow = true;
+        /* i--; */
       }
     } else if (c == '\033'){
       getch();
