@@ -2,6 +2,13 @@
 
 enum { HISTORY_SIZE = 10} ;
 
+enum cursor_direction {
+  cursor_up,
+  cursor_down,
+  cursor_left,
+  cursor_right
+};
+
 typedef struct coordinates {
   int x;
   int y;

@@ -85,26 +85,42 @@ bool isInPath(char** line, char** PATH_ARR){
   return false;
 }
 
+void updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cursor_direction cursor_direction,char* line){
+  coordinates current_pos = getCursorPos();
+
+  switch (cursor_direction){
+    case (cursor_left):{
+      new_pos->y =  current_pos.y;
+      new_pos->x =  (current_pos.x > prompt_len) ? current_pos.x - 1 : current_pos.x;
+      break;
+    };
+    case (cursor_right):{
+      new_pos->y =  current_pos.y;
+      new_pos->x =  (current_pos.x < (prompt_len + strlen(line))) ? current_pos.x + 1 : current_pos.x;
+    }
+    case (cursor_up):{break;}
+    case (cursor_down):{break;}
+  }
+  *line_index = new_pos->x - prompt_len;
+}
+
 char* readLine(char** PATH,char* directories,history_array *command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
   int history_index = 0;
-  bool hit_hori_arrow = false;
+  bool cursor_moved = false;
   coordinates new_pos;
   int prompt_len = strlen(directories) + 4;
 
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
       coordinates cursor = getCursorPos();
-      if (strlen(line) > 0 && i > 0){
+      if (strlen(line) > 0 && i >= 0){
         removeCharAtPos(line,cursor.x - prompt_len);
-          coordinates current_pos = getCursorPos();
-          new_pos.y =  current_pos.y;
-          new_pos.x =  (current_pos.x > prompt_len) ? current_pos.x - 1 : current_pos.x;
-          i = new_pos.x - prompt_len;
-          hit_hori_arrow = true;
-        /* i--; */
+
+        cursor_moved = true;
+        updateCursorPos(&new_pos,&i,prompt_len,cursor_left,line);
       }
     } else if (c == '\033'){
       getch();
@@ -114,17 +130,20 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
          if (history_index < command_history->len){
             history_index += 1;
             strcpy(line,*command_history->values[history_index - 1].values);
+
             for (int i = 1; i < command_history->values[history_index - 1].len;i++){
               strcat(line," ");
               strcat(line,command_history->values[history_index - 1].values[i]);
             }
           };
+
           i = strlen(line);
           break;
         case 'B':
          if(history_index > 1){
             history_index -= 1;
             strcpy(line,*command_history->values[history_index - 1].values);
+
             for (int i = 1; i < command_history->values[history_index - 1].len;i++){
               strcat(line," ");
               strcat(line,command_history->values[history_index - 1].values[i]);
@@ -136,19 +155,13 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
           i = strlen(line);
           break;
         case 'C':{
-          hit_hori_arrow = true;
-          coordinates current_pos = getCursorPos();
-          new_pos.y =  current_pos.y;
-          new_pos.x =  (current_pos.x < (prompt_len + strlen(line))) ? current_pos.x + 1 : current_pos.x;
-          i = new_pos.x - prompt_len;
+          cursor_moved = true;
+          updateCursorPos(&new_pos,&i,prompt_len,cursor_right,line);
           break;
         }
         case 'D':{
-          hit_hori_arrow = true;
-          coordinates current_pos = getCursorPos();
-          new_pos.y =  current_pos.y;
-          new_pos.x =  (current_pos.x > prompt_len) ? current_pos.x - 1 : current_pos.x;
-          i = new_pos.x - prompt_len;
+          cursor_moved = true;
+          updateCursorPos(&new_pos,&i,prompt_len,cursor_left,line);
           break;
         }
       }
@@ -156,7 +169,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
       if (i == strlen(line)){
         line[i] = c;
       } else {
-        hit_hori_arrow = true;
+        cursor_moved = true;
         insertCharAtPos(line,i,c);
         new_pos.x = i + 1 + prompt_len;
       }
@@ -167,9 +180,9 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
     printPrompt(directories,CYAN);
     // if (lineInPath){color = green} else {color = red}
     printf("%s",line);
-    if (hit_hori_arrow){
+    if (cursor_moved){
       moveCursor(new_pos);
-      hit_hori_arrow = false;
+      cursor_moved = false;
     }
   }
   printf("\n");
