@@ -27,10 +27,16 @@ int getch(){
     return ch;
 }
 
+void logger(char* message){
+  FILE* logfile = fopen("log.txt","a");
+
+  fwrite(message,sizeof(char),strlen(message),logfile);
+  fclose(logfile);
+}
+
 coordinates getCursorPos(){
   char buf[20];
   char data[20];
-  int x_pos;
 	char cmd[]="\033[6n";
   int fd = open(ttyname(STDIN_FILENO), O_RDWR | O_NOCTTY);
   coordinates cursor_pos = {.x = 0,.y = 0};
@@ -49,7 +55,7 @@ coordinates getCursorPos(){
     int j = 0;
     for(int i = 2; buf[i] != 'R';i++){
       data[j] = buf[i];
-        j++;
+      j++;
     }
     string_array splitted = splitString(data,';');
     int x_pos = atoi(splitted.values[1]);
