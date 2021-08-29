@@ -1,2 +1,4 @@
 src/bin/
 tests/bin/
+log.txt
+user_test.txt
