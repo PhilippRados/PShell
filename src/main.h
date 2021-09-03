@@ -9,6 +9,11 @@ enum cursor_direction {
   cursor_right
 };
 
+enum logger_type {
+  integer,
+  string
+};
+
 typedef struct coordinates {
   int x;
   int y;

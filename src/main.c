@@ -27,43 +27,68 @@ int getch(){
     return ch;
 }
 
-void logger(char* message){
+void logger(enum logger_type type,void* message){
   FILE* logfile = fopen("log.txt","a");
 
-  fwrite(message,sizeof(char),strlen(message),logfile);
+  switch (type){
+    case integer: {
+      fprintf(logfile, "%d", *((int *)message));
+      break;
+    }
+    case string: {
+      fprintf(logfile, "%s", (char *)message);
+      break;
+    }
+    default:{break;}
+  }
   fclose(logfile);
 }
 
 coordinates getCursorPos(){
-  char buf[20];
-  char data[20];
+  char buf[1];
+  char data_x[20];
+  char data_y[20];
+  int y,x;
 	char cmd[]="\033[6n";
-  int fd = open(ttyname(STDIN_FILENO), O_RDWR | O_NOCTTY);
   coordinates cursor_pos = {.x = 0,.y = 0};
   struct termios oldattr, newattr;
 
-  tcgetattr( fd, &oldattr );
+  tcgetattr( STDIN_FILENO, &oldattr );
   newattr = oldattr;
   newattr.c_lflag &= ~( ICANON | ECHO );
   newattr.c_cflag &= ~( CREAD );
-  tcsetattr( fd, TCSANOW, &newattr );
+  tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
 
-	if (isatty(fileno(stdin))){
-		write(fd,cmd,sizeof(cmd));
-		read(fd,buf ,sizeof(buf));
+  write(STDIN_FILENO,cmd,sizeof(cmd));
+  read(STDIN_FILENO,buf,1);
 
-    int j = 0;
-    for(int i = 2; buf[i] != 'R';i++){
-      data[j] = buf[i];
-      j++;
+  if (*buf == '\033'){
+    read(STDIN_FILENO,buf,1);
+    if (*buf == '['){
+      read(STDIN_FILENO,buf,1);
+      for (int i = 0;*buf != ';';i++){
+        data_y[i] = *buf;
+        read(STDIN_FILENO,buf,1);
+      }
+      read(STDIN_FILENO,buf,1);
+      for (int i = 0;*buf != 'R';i++){
+        data_x[i] = *buf;
+        read(STDIN_FILENO,buf,1);
+      }
     }
-    string_array splitted = splitString(data,';');
-    int x_pos = atoi(splitted.values[1]);
-    int y_pos = atoi(splitted.values[0]);
-    cursor_pos.x = x_pos;
-    cursor_pos.y = y_pos;
+
+    sscanf(data_y,"%d",&y);
+    sscanf(data_x,"%d",&x);
+
+    logger(integer,&x);
+    logger(string,"|");
+    logger(integer,&y);
+    logger(string,"\n");
+
+    cursor_pos.x = x;
+    cursor_pos.y = y;
 	}
-  tcsetattr( fd, TCSANOW, &oldattr );
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
   return cursor_pos;
 }
 
@@ -317,9 +342,9 @@ int main(int argc, char* argv[]) {
   }
 
   write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN));
+  char* current_dir = getcwd(cd,sizeof(cd));
+  char* last_two_dirs = getLastTwoDirs(current_dir);
   while (1){
-    char* current_dir = getcwd(cd,sizeof(cd));
-    char* last_two_dirs = getLastTwoDirs(current_dir);
     printf("\n");
     printPrompt(last_two_dirs,CYAN);
 
@@ -334,6 +359,8 @@ int main(int argc, char* argv[]) {
       splitted_line = splitString(line,' ');
       if (strcmp(splitted_line.values[0],"cd") == 0){
         chdir(splitted_line.values[1]);
+        current_dir = getcwd(cd,sizeof(cd));
+        last_two_dirs = getLastTwoDirs(current_dir);
         if (!arrCmp(command_history.values[0],splitted_line)){
           push(splitted_line,&command_history);
         }
