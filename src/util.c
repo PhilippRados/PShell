@@ -62,3 +62,9 @@ long getFileSizeAtIndex(FILE* file,int index){
   }
   return i + 1;
 }
+
+char* expectedAndReceived(char* expected, char* received){
+  char* result = (char*)malloc(sizeof(char) * 100);
+  sscanf(result,"\n\tExpected: %s\n\tReceived%s\n",expected,received);
+  return result;
+}

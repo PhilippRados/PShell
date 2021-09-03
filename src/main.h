@@ -62,3 +62,4 @@ char* cycleCommandHistory(const history_array *command_history,int* history_inde
 void printPrompt(char* dir,color color);
 int arrowHit();
 long getFileSizeAtIndex(FILE* file,int index);
+char* expectedAndReceived(char*,char*);
