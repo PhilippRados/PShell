@@ -46,8 +46,7 @@ void logger(enum logger_type type,void* message){
 
 coordinates getCursorPos(){
   char buf[1];
-  char data_x[20];
-  char data_y[20];
+  char data[50];
   int y,x;
 	char cmd[]="\033[6n";
   coordinates cursor_pos = {.x = 0,.y = 0};
@@ -60,33 +59,30 @@ coordinates getCursorPos(){
   tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
 
   write(STDIN_FILENO,cmd,sizeof(cmd));
-  read(STDIN_FILENO,buf,1);
+  read(STDOUT_FILENO,buf,1);
 
   if (*buf == '\033'){
     read(STDIN_FILENO,buf,1);
     if (*buf == '['){
       read(STDIN_FILENO,buf,1);
-      for (int i = 0;*buf != ';';i++){
-        data_y[i] = *buf;
-        read(STDIN_FILENO,buf,1);
-      }
-      read(STDIN_FILENO,buf,1);
       for (int i = 0;*buf != 'R';i++){
-        data_x[i] = *buf;
+        data[i] = *buf;
         read(STDIN_FILENO,buf,1);
       }
+      string_array splitted = splitString(data,';');
+      x = atoi(splitted.values[1]);
+      y = atoi(splitted.values[0]);
+
+      logger(integer,&x);
+      logger(string,"|");
+      logger(integer,&y);
+      logger(string,"     :");
+      logger(string,data);
+      logger(string,"\n");
+
+      cursor_pos.x = x;
+      cursor_pos.y = y;
     }
-
-    sscanf(data_y,"%d",&y);
-    sscanf(data_x,"%d",&x);
-
-    logger(integer,&x);
-    logger(string,"|");
-    logger(integer,&y);
-    logger(string,"\n");
-
-    cursor_pos.x = x;
-    cursor_pos.y = y;
 	}
   tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
   return cursor_pos;
