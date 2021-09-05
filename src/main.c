@@ -73,12 +73,12 @@ coordinates getCursorPos(){
       x = atoi(splitted.values[1]);
       y = atoi(splitted.values[0]);
 
-      logger(integer,&x);
-      logger(string,"|");
-      logger(integer,&y);
-      logger(string,"     :");
-      logger(string,data);
-      logger(string,"\n");
+      /* logger(integer,&x); */
+      /* logger(string,"|"); */
+      /* logger(integer,&y); */
+      /* logger(string,"     :"); */
+      /* logger(string,data); */
+      /* logger(string,"\n"); */
 
       cursor_pos.x = x;
       cursor_pos.y = y;
@@ -142,12 +142,13 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
 
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
-      coordinates cursor = getCursorPos();
+      /* coordinates cursor = getCursorPos(); */
       if (strlen(line) > 0 && i >= 0){
-        removeCharAtPos(line,cursor.x - prompt_len);
+        line = removeCharAtPos(line,i);
 
         cursor_moved = true;
         updateCursorPos(&new_pos,&i,prompt_len,cursor_left,line);
+        logger(integer,&new_pos.y);
       }
     } else if (c == '\033'){
       getch();
@@ -349,6 +350,7 @@ int main(int argc, char* argv[]) {
       logToTestFile(line,test_file);
     }
     if(strcmp(line,"q") == 0){
+      printf("uwe");
       break;
     }
     if (strlen(line) > 0){
