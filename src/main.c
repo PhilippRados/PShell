@@ -76,18 +76,17 @@ coordinates getCursorPos(){
       // check if string matches expected data
       int valid = sscanf(data,"%d;%d",&y,&x);
       if (valid != 2){
-        logger(string,"false");
         return cursor_pos;
       } else if (valid == 2){
         cursor_pos.x = x;
         cursor_pos.y = y;
       }
-      logger(integer,&x);
-      logger(string,"|");
-      logger(integer,&y);
-      logger(string,"     :");
-      logger(string,data);
-      logger(string,"\n");
+      /* logger(integer,&x); */
+      /* logger(string,"|"); */
+      /* logger(integer,&y); */
+      /* logger(string,"     :"); */
+      /* logger(string,data); */
+      /* logger(string,"\n"); */
     }
 	}
   tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
@@ -164,6 +163,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
         case 'A':
          if (history_index < command_history->len){
             history_index += 1;
+            memset(line,0,strlen(line));
             strcpy(line,*command_history->values[history_index - 1].values);
 
             for (int i = 1; i < command_history->values[history_index - 1].len;i++){
@@ -177,6 +177,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
         case 'B':
          if(history_index > 1){
             history_index -= 1;
+            memset(line,0,strlen(line));
             strcpy(line,*command_history->values[history_index - 1].values);
 
             for (int i = 1; i < command_history->values[history_index - 1].len;i++){
