@@ -39,6 +39,10 @@ void logger(enum logger_type type,void* message){
       fprintf(logfile, "%s", (char *)message);
       break;
     }
+    case character: {
+      fprintf(logfile, "%c", (char)message);
+      break;
+    }
     default:{break;}
   }
   fclose(logfile);
@@ -49,7 +53,7 @@ coordinates getCursorPos(){
   char data[50];
   int y,x;
 	char cmd[]="\033[6n";
-  coordinates cursor_pos = {.x = 0,.y = 0};
+  coordinates cursor_pos = {.x = -1,.y = -1};
   struct termios oldattr, newattr;
 
   tcgetattr( STDIN_FILENO, &oldattr );
@@ -69,19 +73,21 @@ coordinates getCursorPos(){
         data[i] = *buf;
         read(STDIN_FILENO,buf,1);
       }
-      string_array splitted = splitString(data,';');
-      x = atoi(splitted.values[1]);
-      y = atoi(splitted.values[0]);
-
-      /* logger(integer,&x); */
-      /* logger(string,"|"); */
-      /* logger(integer,&y); */
-      /* logger(string,"     :"); */
-      /* logger(string,data); */
-      /* logger(string,"\n"); */
-
-      cursor_pos.x = x;
-      cursor_pos.y = y;
+      // check if string matches expected data
+      int valid = sscanf(data,"%d;%d",&y,&x);
+      if (valid != 2){
+        logger(string,"false");
+        return cursor_pos;
+      } else if (valid == 2){
+        cursor_pos.x = x;
+        cursor_pos.y = y;
+      }
+      logger(integer,&x);
+      logger(string,"|");
+      logger(integer,&y);
+      logger(string,"     :");
+      logger(string,data);
+      logger(string,"\n");
     }
 	}
   tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
@@ -115,6 +121,9 @@ bool isInPath(char** line, char** PATH_ARR){
 void updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cursor_direction cursor_direction,char* line){
   coordinates current_pos = getCursorPos();
 
+  if (current_pos.x == -1 && current_pos.y == -1){
+    return;
+  }
   switch (cursor_direction){
     case (cursor_left):{
       new_pos->y =  current_pos.y;
@@ -142,13 +151,11 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
 
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
-      /* coordinates cursor = getCursorPos(); */
       if (strlen(line) > 0 && i >= 0){
         line = removeCharAtPos(line,i);
 
         cursor_moved = true;
         updateCursorPos(&new_pos,&i,prompt_len,cursor_left,line);
-        logger(integer,&new_pos.y);
       }
     } else if (c == '\033'){
       getch();
