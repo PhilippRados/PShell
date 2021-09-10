@@ -117,7 +117,7 @@ bool isInPath(char** line, char** PATH_ARR){
   return false;
 }
 
-void updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cursor_direction cursor_direction,char* line){
+void updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cursor_direction cursor_direction,int line_len){
   coordinates current_pos = getCursorPos();
 
   if (current_pos.x == -1 && current_pos.y == -1){
@@ -131,7 +131,7 @@ void updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cu
     };
     case (cursor_right):{
       new_pos->y =  current_pos.y;
-      new_pos->x =  (current_pos.x < (prompt_len + strlen(line))) ? current_pos.x + 1 : current_pos.x;
+      new_pos->x =  (current_pos.x < (prompt_len + line_len)) ? current_pos.x + 1 : current_pos.x;
     }
     case (cursor_up):{break;}
     case (cursor_down):{break;}
@@ -154,7 +154,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
         line = removeCharAtPos(line,i);
 
         cursor_moved = true;
-        updateCursorPos(&new_pos,&i,prompt_len,cursor_left,line);
+        updateCursorPos(&new_pos,&i,prompt_len,cursor_left,strlen(line));
       }
     } else if (c == '\033'){
       getch();
