@@ -192,12 +192,12 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
           break;
         case 'C':{
           cursor_moved = true;
-          updateCursorPos(&new_pos,&i,prompt_len,cursor_right,line);
+          updateCursorPos(&new_pos,&i,prompt_len,cursor_right,strlen(line));
           break;
         }
         case 'D':{
           cursor_moved = true;
-          updateCursorPos(&new_pos,&i,prompt_len,cursor_left,line);
+          updateCursorPos(&new_pos,&i,prompt_len,cursor_left,strlen(line));
           break;
         }
       }
