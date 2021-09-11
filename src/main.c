@@ -75,18 +75,10 @@ coordinates getCursorPos(){
       }
       // check if string matches expected data
       int valid = sscanf(data,"%d;%d",&y,&x);
-      if (valid != 2){
-        return cursor_pos;
-      } else if (valid == 2){
+      if (valid == 2){
         cursor_pos.x = x;
         cursor_pos.y = y;
       }
-      /* logger(integer,&x); */
-      /* logger(string,"|"); */
-      /* logger(integer,&y); */
-      /* logger(string,"     :"); */
-      /* logger(string,data); */
-      /* logger(string,"\n"); */
     }
 	}
   tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
@@ -153,8 +145,12 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
       if (strlen(line) > 0 && i >= 0){
         line = removeCharAtPos(line,i);
 
-        cursor_moved = true;
         updateCursorPos(&new_pos,&i,prompt_len,cursor_left,strlen(line));
+        if (new_pos.x == -1){
+          cursor_moved = false;
+        } else {
+          cursor_moved = true;
+        }
       }
     } else if (c == '\033'){
       getch();
