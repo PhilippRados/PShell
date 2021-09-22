@@ -63,7 +63,7 @@ coordinates getCursorPos(){
   tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
 
   write(STDIN_FILENO,cmd,sizeof(cmd));
-  read(STDOUT_FILENO,buf,1);
+  read(STDIN_FILENO,buf,1);
 
   if (*buf == '\033'){
     read(STDIN_FILENO,buf,1);
@@ -109,11 +109,11 @@ bool isInPath(char** line, char** PATH_ARR){
   return false;
 }
 
-void updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cursor_direction cursor_direction,int line_len){
+bool updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cursor_direction cursor_direction,int line_len){
   coordinates current_pos = getCursorPos();
 
   if (current_pos.x == -1 && current_pos.y == -1){
-    return;
+    return false;
   }
   switch (cursor_direction){
     case (cursor_left):{
@@ -129,6 +129,7 @@ void updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cu
     case (cursor_down):{break;}
   }
   *line_index = new_pos->x - prompt_len;
+  return true;
 }
 
 char* readLine(char** PATH,char* directories,history_array *command_history){
@@ -137,20 +138,20 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
   int i = 0;
   int history_index = 0;
   bool cursor_moved = false;
-  coordinates new_pos;
+  coordinates new_pos = getCursorPos();
   int prompt_len = strlen(directories) + 4;
+  new_pos.x = prompt_len;
 
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
       if (strlen(line) > 0 && i >= 0){
         line = removeCharAtPos(line,i);
 
-        updateCursorPos(&new_pos,&i,prompt_len,cursor_left,strlen(line));
-        if (new_pos.x == -1){
-          cursor_moved = false;
-        } else {
           cursor_moved = true;
-        }
+        if (new_pos.x > prompt_len){
+          new_pos.x--;
+        } 
+        i = new_pos.x - prompt_len;
       }
     } else if (c == '\033'){
       getch();
@@ -188,18 +189,21 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
           break;
         case 'C':{
           cursor_moved = true;
-          updateCursorPos(&new_pos,&i,prompt_len,cursor_right,strlen(line));
+          new_pos.x = (i < strlen(line)) ? new_pos.x + 1 : new_pos.x;
+          i = new_pos.x - prompt_len;
           break;
         }
         case 'D':{
           cursor_moved = true;
-          updateCursorPos(&new_pos,&i,prompt_len,cursor_left,strlen(line));
+          new_pos.x = (i > 0) ? new_pos.x - 1 : new_pos.x;
+          i = new_pos.x - prompt_len;
           break;
         }
       }
     } else {
       if (i == strlen(line)){
         line[i] = c;
+        new_pos.x = i + 1  + prompt_len;
       } else {
         cursor_moved = true;
         insertCharAtPos(line,i,c);
