@@ -40,7 +40,7 @@ void logger(enum logger_type type,void* message){
       break;
     }
     case character: {
-      fprintf(logfile, "%c", (char)message);
+      fprintf(logfile, "%c", *(char *)message);
       break;
     }
     default:{break;}
@@ -123,6 +123,8 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
   new_pos.x = prompt_len;
 
   while((c = getch()) != '\n'){
+    logger(character,&c);
+    logger(string,"\n");
     if (c == BACKSPACE){
       if (strlen(line) > 0 && i >= 0){
         line = removeCharAtPos(line,i);
