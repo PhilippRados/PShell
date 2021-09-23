@@ -85,13 +85,16 @@ coordinates getCursorPos(){
   return cursor_pos;
 }
 
-void insertCharAtPos(char* line,int index,char c) {
+bool insertCharAtPos(char* line,int index,char c) {
   if (index >= 0 && index <= strlen(line)) {
     for (int i = strlen(line) - 1; i >= index;i--){
       line[i + 1] = line[i];
     }
     line[index] = c;
+  } else {
+    return false;
   }
+  return true;
 }
 
 char* removeCharAtPos(char* line,int x_pos){
@@ -147,7 +150,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
       if (strlen(line) > 0 && i >= 0){
         line = removeCharAtPos(line,i);
 
-          cursor_moved = true;
+        cursor_moved = true;
         if (new_pos.x > prompt_len){
           new_pos.x--;
         } 
@@ -189,13 +192,13 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
           break;
         case 'C':{
           cursor_moved = true;
-          new_pos.x = (i < strlen(line)) ? new_pos.x + 1 : new_pos.x;
+          new_pos.x = (new_pos.x < (prompt_len + strlen(line))) ? new_pos.x + 1 : new_pos.x;
           i = new_pos.x - prompt_len;
           break;
         }
         case 'D':{
           cursor_moved = true;
-          new_pos.x = (i > 0) ? new_pos.x - 1 : new_pos.x;
+          new_pos.x = (new_pos.x > prompt_len) ? new_pos.x - 1 : new_pos.x;
           i = new_pos.x - prompt_len;
           break;
         }
@@ -203,13 +206,16 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
     } else {
       if (i == strlen(line)){
         line[i] = c;
-        new_pos.x = i + 1  + prompt_len;
-      } else {
         cursor_moved = true;
-        insertCharAtPos(line,i,c);
-        new_pos.x = i + 1 + prompt_len;
+        i++;
+        new_pos.x = i + prompt_len;
+      } else {
+        if (insertCharAtPos(line,i,c)){
+          cursor_moved = true;
+          i++;
+          new_pos.x = i + prompt_len;
+        }
       }
-      i++;
     }
     printf("%c[2K", 27);
     printf("\r");
