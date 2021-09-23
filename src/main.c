@@ -112,29 +112,6 @@ bool isInPath(char** line, char** PATH_ARR){
   return false;
 }
 
-bool updateCursorPos(coordinates *new_pos,int *line_index,int prompt_len,enum cursor_direction cursor_direction,int line_len){
-  coordinates current_pos = getCursorPos();
-
-  if (current_pos.x == -1 && current_pos.y == -1){
-    return false;
-  }
-  switch (cursor_direction){
-    case (cursor_left):{
-      new_pos->y =  current_pos.y;
-      new_pos->x =  (current_pos.x > prompt_len) ? current_pos.x - 1 : current_pos.x;
-      break;
-    };
-    case (cursor_right):{
-      new_pos->y =  current_pos.y;
-      new_pos->x =  (current_pos.x < (prompt_len + line_len)) ? current_pos.x + 1 : current_pos.x;
-    }
-    case (cursor_up):{break;}
-    case (cursor_down):{break;}
-  }
-  *line_index = new_pos->x - prompt_len;
-  return true;
-}
-
 char* readLine(char** PATH,char* directories,history_array *command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
