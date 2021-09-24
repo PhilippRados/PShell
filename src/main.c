@@ -112,7 +112,7 @@ bool isInPath(char** line, char** PATH_ARR){
   return false;
 }
 
-void backspaceLogic(char** line, int *i, int *cursor_index, const int prompt_len){
+void backspaceLogic(char** line, int* i, int* cursor_index, const int prompt_len){
   if (strlen(*line) > 0 && i >= 0){
     *line = removeCharAtPos(*line,*i);
 
@@ -123,6 +123,34 @@ void backspaceLogic(char** line, int *i, int *cursor_index, const int prompt_len
   }
 }
 
+void upArrowPress(int* history_index, char** line, const history_array* command_history){
+ if (*history_index < command_history->len){
+    *history_index += 1;
+    memset(*line,0,strlen(*line));
+    strcpy(*line,*command_history->values[*history_index - 1].values);
+
+    for (int i = 1; i < command_history->values[*history_index - 1].len;i++){
+      strcat(*line," ");
+      strcat(*line,command_history->values[*history_index - 1].values[i]);
+    }
+  };
+}
+
+void downArrowPress(int* history_index, char** line, const history_array* command_history){
+ if(*history_index > 1){
+    *history_index -= 1;
+    memset(*line,0,strlen(*line));
+    strcpy(*line,*command_history->values[*history_index - 1].values);
+
+    for (int i = 1; i < command_history->values[*history_index - 1].len;i++){
+      strcat(*line," ");
+      strcat(*line,command_history->values[*history_index - 1].values[i]);
+    }
+  } else if (*history_index > 0){
+    *history_index -= 1;
+    memset(*line,0,strlen(*line));
+  };
+}
 
 char* readLine(char** PATH,char* directories,history_array *command_history){
   char c;
@@ -141,34 +169,14 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
       int value = getch();
       switch(value) {
         case 'A':
-         if (history_index < command_history->len){
-            history_index += 1;
-            memset(line,0,strlen(line));
-            strcpy(line,*command_history->values[history_index - 1].values);
-
-            for (int i = 1; i < command_history->values[history_index - 1].len;i++){
-              strcat(line," ");
-              strcat(line,command_history->values[history_index - 1].values[i]);
-            }
-          };
+          upArrowPress(&history_index, &line, command_history);
 
           i = strlen(line);
           new_pos.x = i + prompt_len;
           break;
         case 'B':
-         if(history_index > 1){
-            history_index -= 1;
-            memset(line,0,strlen(line));
-            strcpy(line,*command_history->values[history_index - 1].values);
+          downArrowPress(&history_index, &line, command_history);
 
-            for (int i = 1; i < command_history->values[history_index - 1].len;i++){
-              strcat(line," ");
-              strcat(line,command_history->values[history_index - 1].values[i]);
-            }
-          } else if (history_index > 0){
-            history_index -= 1;
-            memset(line,0,strlen(line));
-          };
           i = strlen(line);
           new_pos.x = i + prompt_len;
           break;
