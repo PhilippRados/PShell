@@ -152,6 +152,21 @@ void downArrowPress(int* history_index, char** line, const history_array* comman
   };
 }
 
+bool typedLetter(char** line, const char c, const int i){
+  bool cursor_moved = false;
+
+  if (c < 0 || c > 127){
+    getch();
+  } else if (i == strlen(*line)){
+    (*line)[i] = c;
+    cursor_moved = true;
+  } else if (insertCharAtPos(*line,i,c)){
+      cursor_moved = true;
+  }
+
+  return cursor_moved;
+}
+
 char* readLine(char** PATH,char* directories,history_array *command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
@@ -192,17 +207,9 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
         }
       }
     } else {
-      if (c < 0 || c > 127){
-        getch();
-      } else if (i == strlen(line)){
-        line[i] = c;
+      if (typedLetter(&line, c, i)){
         i++;
         new_pos.x = i + prompt_len;
-      } else {
-        if (insertCharAtPos(line,i,c)){
-          i++;
-          new_pos.x = i + prompt_len;
-        }
       }
     }
     printf("%c[2K", 27);
