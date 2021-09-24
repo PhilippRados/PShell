@@ -181,7 +181,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
         }
       }
     } else {
-      if ((c - '0') < 0 || (c - '0') > 127){
+      if (c < 0 || c > 127){
         getch();
         cursor_moved = true;
       } else if (i == strlen(line)){
