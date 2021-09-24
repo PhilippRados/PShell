@@ -12,6 +12,7 @@
 #include <fcntl.h>
 
 #define BACKSPACE 127
+#define CLEAR_LINE printf("%c[2K", 27);
 const int BUFFER = 256;
 const char *CLEAR_SCREEN = " \e[1;1H\e[2J";
 
@@ -212,7 +213,8 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
         new_pos.x = i + prompt_len;
       }
     }
-    printf("%c[2K", 27);
+
+    CLEAR_LINE;
     printf("\r");
     printPrompt(directories,CYAN);
     // if (lineInPath){color = green} else {color = red}
