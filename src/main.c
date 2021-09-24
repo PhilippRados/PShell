@@ -117,7 +117,6 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
   int history_index = 0;
-  bool cursor_moved = false;
   coordinates new_pos = getCursorPos();
   int prompt_len = strlen(directories) + 4;
   new_pos.x = prompt_len;
@@ -127,7 +126,6 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
       if (strlen(line) > 0 && i >= 0){
         line = removeCharAtPos(line,i);
 
-        cursor_moved = true;
         if (new_pos.x > prompt_len){
           new_pos.x--;
         } 
@@ -150,6 +148,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
           };
 
           i = strlen(line);
+          new_pos.x = i + prompt_len;
           break;
         case 'B':
          if(history_index > 1){
@@ -166,15 +165,14 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
             memset(line,0,strlen(line));
           };
           i = strlen(line);
+          new_pos.x = i + prompt_len;
           break;
         case 'C':{
-          cursor_moved = true;
           new_pos.x = (new_pos.x < (prompt_len + strlen(line))) ? new_pos.x + 1 : new_pos.x;
           i = new_pos.x - prompt_len;
           break;
         }
         case 'D':{
-          cursor_moved = true;
           new_pos.x = (new_pos.x > prompt_len) ? new_pos.x - 1 : new_pos.x;
           i = new_pos.x - prompt_len;
           break;
@@ -183,15 +181,12 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
     } else {
       if (c < 0 || c > 127){
         getch();
-        cursor_moved = true;
       } else if (i == strlen(line)){
         line[i] = c;
-        cursor_moved = true;
         i++;
         new_pos.x = i + prompt_len;
       } else {
         if (insertCharAtPos(line,i,c)){
-          cursor_moved = true;
           i++;
           new_pos.x = i + prompt_len;
         }
@@ -202,10 +197,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
     printPrompt(directories,CYAN);
     // if (lineInPath){color = green} else {color = red}
     printf("%s",line);
-    if (cursor_moved){
-      moveCursor(new_pos);
-      cursor_moved = false;
-    }
+    moveCursor(new_pos);
   }
   printf("\n");
   return line;
