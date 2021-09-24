@@ -123,8 +123,6 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
   new_pos.x = prompt_len;
 
   while((c = getch()) != '\n'){
-    logger(character,&c);
-    logger(string,"\n");
     if (c == BACKSPACE){
       if (strlen(line) > 0 && i >= 0){
         line = removeCharAtPos(line,i);
@@ -183,7 +181,10 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
         }
       }
     } else {
-      if (i == strlen(line)){
+      if ((c - '0') < 0 || (c - '0') > 127){
+        getch();
+        cursor_moved = true;
+      } else if (i == strlen(line)){
         line[i] = c;
         cursor_moved = true;
         i++;
