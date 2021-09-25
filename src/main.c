@@ -167,6 +167,32 @@ bool typedLetter(char** line, const char c, const int i){
   return cursor_moved;
 }
 
+void arrowPress(char** line,int* i, int* history_index,  const history_array* command_history, const char value){
+  switch(value) {
+    case 'A':
+      upArrowPress(history_index, line, command_history);
+
+      *i = strlen(*line);
+      break;
+
+    case 'B':
+      downArrowPress(history_index, line, command_history);
+
+      *i = strlen(*line);
+      break;
+
+    case 'C':{
+      *i = (*i < strlen(*line)) ? (*i) + 1 : *i;
+      break;
+    }
+
+    case 'D':{
+      *i = (*i > 0) ? (*i) - 1 : *i;
+      break;
+    }
+  }
+}
+
 char* readLine(char** PATH,char* directories,history_array *command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
@@ -178,29 +204,12 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
       backspaceLogic(&line,&i,&cursor_pos.x,prompt_len);
+
     } else if (c == '\033'){
       getch();
       int value = getch();
-      switch(value) {
-        case 'A':
-          upArrowPress(&history_index, &line, command_history);
+      arrowPress(&line,&i,&history_index,command_history,value);
 
-          i = strlen(line);
-          break;
-        case 'B':
-          downArrowPress(&history_index, &line, command_history);
-
-          i = strlen(line);
-          break;
-        case 'C':{
-          i = (i < strlen(line)) ? i + 1 : i;
-          break;
-        }
-        case 'D':{
-          i = (i > 0) ? i - 1 : i;
-          break;
-        }
-      }
     } else {
       if (typedLetter(&line, c, i)){
         i++;
