@@ -117,10 +117,9 @@ void backspaceLogic(char** line, int* i, int* cursor_index, const int prompt_len
   if (strlen(*line) > 0 && i >= 0){
     *line = removeCharAtPos(*line,*i);
 
-    if (*cursor_index > prompt_len){
-      *cursor_index -= 1;
-    } 
-    *i = *cursor_index - prompt_len;
+    if (*i > 0){
+      *i -= 1;
+    }
   }
 }
 
@@ -173,13 +172,12 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
   int history_index = 0;
-  coordinates new_pos = getCursorPos();
+  coordinates cursor_pos = getCursorPos();
   int prompt_len = strlen(directories) + 4;
-  new_pos.x = prompt_len;
 
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
-      backspaceLogic(&line,&i,&new_pos.x,prompt_len);
+      backspaceLogic(&line,&i,&cursor_pos.x,prompt_len);
     } else if (c == '\033'){
       getch();
       int value = getch();
@@ -188,29 +186,24 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
           upArrowPress(&history_index, &line, command_history);
 
           i = strlen(line);
-          new_pos.x = i + prompt_len;
           break;
         case 'B':
           downArrowPress(&history_index, &line, command_history);
 
           i = strlen(line);
-          new_pos.x = i + prompt_len;
           break;
         case 'C':{
-          new_pos.x = (new_pos.x < (prompt_len + strlen(line))) ? new_pos.x + 1 : new_pos.x;
-          i = new_pos.x - prompt_len;
+          i = (i < strlen(line)) ? i + 1 : i;
           break;
         }
         case 'D':{
-          new_pos.x = (new_pos.x > prompt_len) ? new_pos.x - 1 : new_pos.x;
-          i = new_pos.x - prompt_len;
+          i = (i > 0) ? i - 1 : i;
           break;
         }
       }
     } else {
       if (typedLetter(&line, c, i)){
         i++;
-        new_pos.x = i + prompt_len;
       }
     }
 
@@ -219,7 +212,8 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
     printPrompt(directories,CYAN);
     // if (lineInPath){color = green} else {color = red}
     printf("%s",line);
-    moveCursor(new_pos);
+    cursor_pos.x = i + prompt_len;
+    moveCursor(cursor_pos);
   }
   printf("\n");
   return line;
