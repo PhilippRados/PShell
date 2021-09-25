@@ -113,7 +113,7 @@ bool isInPath(char** line, char** PATH_ARR){
   return false;
 }
 
-void backspaceLogic(char** line, int* i, int* cursor_index, const int prompt_len){
+void backspaceLogic(char** line, int* i, const int prompt_len){
   if (strlen(*line) > 0 && i >= 0){
     *line = removeCharAtPos(*line,*i);
 
@@ -203,7 +203,7 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
 
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
-      backspaceLogic(&line,&i,&cursor_pos.x,prompt_len);
+      backspaceLogic(&line,&i,prompt_len);
 
     } else if (c == '\033'){
       getch();
