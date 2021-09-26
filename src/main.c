@@ -225,8 +225,13 @@ char* readLine(string_array PATH_BINS,char* directories,history_array* command_h
     CLEAR_LINE;
     printf("\r");
     printPrompt(directories,CYAN);
-    isInPath(line,PATH_BINS) ? printColor(line,GREEN) : printColor(line,RED);
 
+    string_array command_line = splitString(line,' ');
+
+    isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN) : printColor(command_line.values[0],RED);
+    for (int i = 1; i < command_line.len; i++){
+      printf("%s ",command_line.values[i]);
+    }
     /* printf("%s",line); */
     cursor_pos.x = i + prompt_len;
     moveCursor(cursor_pos);
