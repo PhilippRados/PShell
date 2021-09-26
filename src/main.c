@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <dirent.h>
 
 #define BACKSPACE 127
 #define CLEAR_LINE printf("%c[2K", 27);
@@ -109,7 +110,12 @@ void moveCursor(coordinates new_pos){
   printf("\033[%d;%dH",new_pos.y,new_pos.x);
 }
 
-bool isInPath(char** line, char** PATH_ARR){
+bool isInPath(char* line, string_array PATH_BINS){
+  for (int i = 0; i < PATH_BINS.len;i++){
+    if (strcmp(PATH_BINS.values[i],line) == 0){
+      return true;
+    }
+  }
   return false;
 }
 
@@ -193,7 +199,7 @@ void arrowPress(char** line,int* i, int* history_index,  const history_array* co
   }
 }
 
-char* readLine(char** PATH,char* directories,history_array *command_history){
+char* readLine(string_array PATH_BINS,char* directories,history_array* command_history){
   char c;
   char *line = calloc(BUFFER,sizeof(char));
   int i = 0;
@@ -219,8 +225,9 @@ char* readLine(char** PATH,char* directories,history_array *command_history){
     CLEAR_LINE;
     printf("\r");
     printPrompt(directories,CYAN);
-    // if (lineInPath){color = green} else {color = red}
-    printf("%s",line);
+    isInPath(line,PATH_BINS) ? printColor(line,GREEN) : printColor(line,RED);
+
+    /* printf("%s",line); */
     cursor_pos.x = i + prompt_len;
     moveCursor(cursor_pos);
   }
@@ -332,18 +339,55 @@ bool hasTestFlag(int argc, char* argv[]){
   }
 }
 
+string_array getAllPathBinaries(string_array PATH_ARR){
+  struct dirent* bin;
+  string_array all_path_bins; 
+  char** binaries = (char**)calloc(1024, sizeof(char) * 24);
+  int j = 0;
+  int realloc_index = 1;
+
+  for (int i = 0; i < PATH_ARR.len; i++){
+    DIR* dr = opendir(PATH_ARR.values[i]);
+
+    while((bin = readdir(dr)) != NULL){
+      if (j >= (1024 * realloc_index)){
+        realloc_index++;
+        binaries = (char**)realloc(binaries,realloc_index * (1024 * (sizeof(char) * 24)));
+        if (binaries == NULL){
+          exit(0);
+        }
+      }
+      if (!(strcmp(bin->d_name,".") == 0) && !(strcmp(bin->d_name,"..") == 0)){
+        binaries[j] = (char*)calloc(strlen(bin->d_name) + 1,sizeof(char));
+        strcpy(binaries[j],bin->d_name);
+        j++;
+      }
+    }
+    closedir(dr);
+  }
+  all_path_bins.values = binaries;
+  all_path_bins.len = j;
+  return all_path_bins;
+}
+
 int main(int argc, char* argv[]) {
   char *line;
   string_array splitted_line;
   int child_id;
   int status;
   char cd[512];
+  char* test_file = "user_test.txt";
   history_array command_history = {
     .len = 0,
     .values = {}
   }; 
-  string_array PATH_ARR = splitString(getenv("PATH"),';');
-  char* test_file = "user_test.txt";
+  string_array PATH_ARR = splitString(getenv("PATH"),':');
+  string_array PATH_BINS = getAllPathBinaries(PATH_ARR);
+
+  for (int i = 0; i < PATH_BINS.len; i++){
+    logger(string,PATH_BINS.values[i]);
+    logger(string,"\n");
+  }
 
   if (hasTestFlag(argc,argv)){
     removeFileContents(test_file);
@@ -352,16 +396,16 @@ int main(int argc, char* argv[]) {
   write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN));
   char* current_dir = getcwd(cd,sizeof(cd));
   char* last_two_dirs = getLastTwoDirs(current_dir);
+
   while (1){
     printf("\n");
     printPrompt(last_two_dirs,CYAN);
 
-    line = readLine(PATH_ARR.values,last_two_dirs,&command_history);
+    line = readLine(PATH_BINS,last_two_dirs,&command_history);
     if (hasTestFlag(argc,argv)){
       logToTestFile(line,test_file);
     }
     if(strcmp(line,"q") == 0){
-      printf("uwe");
       break;
     }
     if (strlen(line) > 0){
@@ -381,6 +425,7 @@ int main(int argc, char* argv[]) {
       }
     }
   }
+
   free(splitted_line.values);
   free(line);
   free(PATH_ARR.values);

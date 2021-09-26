@@ -50,7 +50,7 @@ const color RED = {
 
 const color GREEN = {
   .attr = 0,
-  .fg = 31,
+  .fg = 32,
   .bg = 10,
 };
 
@@ -69,3 +69,4 @@ void printPrompt(char* dir,color color);
 int arrowHit();
 long getFileSizeAtIndex(FILE* file,int index);
 char* expectedAndReceived(char*,char*);
+void printColor(char* string,color color);
