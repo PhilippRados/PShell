@@ -342,7 +342,7 @@ bool hasTestFlag(int argc, char* argv[]){
 string_array getAllPathBinaries(string_array PATH_ARR){
   struct dirent* bin;
   string_array all_path_bins; 
-  char** binaries = (char**)calloc(1024, sizeof(char) * 24);
+  char** binaries = (char**)calloc(1024, sizeof(char*));
   int j = 0;
   int realloc_index = 1;
 
@@ -383,11 +383,6 @@ int main(int argc, char* argv[]) {
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),':');
   string_array PATH_BINS = getAllPathBinaries(PATH_ARR);
-
-  for (int i = 0; i < PATH_BINS.len; i++){
-    logger(string,PATH_BINS.values[i]);
-    logger(string,"\n");
-  }
 
   if (hasTestFlag(argc,argv)){
     removeFileContents(test_file);
