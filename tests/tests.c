@@ -29,6 +29,12 @@ Test(Split_func,end_string_split_with_NULL){
   cr_expect_null(result.values[3]);
 }
 
+Test(Split_func,only_command_len){
+  string_array result = splitString("ma",' ');
+
+  cr_expect(result.len == 1);
+}
+
 Test(Parsing_directory,get_last_two_dirs){
   char* last_two_dirs = getLastTwoDirs("/Users/philipprados/Documents/coding/c/pshell");
 

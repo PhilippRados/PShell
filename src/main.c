@@ -11,9 +11,12 @@
 #include <stdbool.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <sys/ioctl.h>
 
 #define BACKSPACE 127
+#define TAB 9
 #define CLEAR_LINE printf("%c[2K", 27);
+#define CLEAR_BELOW_CURSOR printf("%c[0J",27);
 const int BUFFER = 256;
 const char *CLEAR_SCREEN = " \e[1;1H\e[2J";
 
@@ -202,13 +205,76 @@ void arrowPress(char** line,int* i, int* history_index,  const history_array* co
   }
 }
 
+string_array filterBinaries(const char* line, const string_array PATH_BINS){
+  int buf_size = 24;
+  int realloc_index = 1;
+  char** matching_binaries = calloc(buf_size,sizeof(char*));
+  string_array result;
+  int j = 0;
+
+  for (int i = 0; i < PATH_BINS.len; i++){
+    if (strncmp(PATH_BINS.values[i],line,strlen(line)) == 0){
+      if (j >= (realloc_index * buf_size)){
+        realloc_index++;
+        matching_binaries = realloc(matching_binaries,realloc_index * buf_size * sizeof(char*));
+      }
+      matching_binaries[j] = calloc(strlen(PATH_BINS.values[i]) + 1,sizeof(char));
+      strcpy(matching_binaries[j],PATH_BINS.values[i]);
+      j++;
+    }
+  }
+  result.values = matching_binaries;
+  result.len = j;
+
+  return result;
+}
+
+
+string_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS){
+  string_array possible_autocomplete = {
+    .len = 0
+  };
+  if (command_line.len == 1){
+    possible_autocomplete = filterBinaries(command_line.values[0],PATH_BINS);
+  }
+  
+  return possible_autocomplete;
+}
+
+coordinates getTerminalSize(){
+  coordinates size;
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+  size.x = w.ws_col;
+  size.y = w.ws_row;
+
+  return size;
+}
+
+int getLongestWordInArray(const string_array array){
+  int longest = 0;
+  int currrent_len = 0;
+
+  for (int i = 0; i < array.len; i++){
+    currrent_len = strlen(array.values[i]);
+    if (currrent_len > longest){
+      longest = currrent_len;
+    }
+  }
+  
+  return longest;
+}
+
 char* readLine(string_array PATH_BINS,char* directories,history_array* command_history){
   char c;
-  char *line = calloc(BUFFER,sizeof(char));
+  char* line = calloc(BUFFER,sizeof(char));
+  string_array possible_autocomplete;
   int i = 0;
   int history_index = 0;
   coordinates cursor_pos = getCursorPos();
   int prompt_len = strlen(directories) + 4;
+  bool interactive_mode = false;
 
   while((c = getch()) != '\n'){
     if (c == BACKSPACE){
@@ -219,25 +285,61 @@ char* readLine(string_array PATH_BINS,char* directories,history_array* command_h
       int value = getch();
       arrowPress(&line,&i,&history_index,command_history,value);
 
+    } else if (c == TAB){
+      if (i > 0){
+        int format_width = getLongestWordInArray(possible_autocomplete) + 2;
+        int terminal_width = getTerminalSize().x;
+        int col_size = terminal_width / format_width;
+        int row_size = possible_autocomplete.len / col_size;
+        int j = 0;
+        bool running = true;
+        interactive_mode = true;
+
+        while (running){
+          printf("\n");
+          for (int x = 0; x < col_size; x++){
+            if (j >= possible_autocomplete.len){
+              running = false;
+              break;
+            }
+            printf("%-*s",format_width,possible_autocomplete.values[j]);
+            j++;
+          }
+        }
+      } else {
+        CLEAR_BELOW_CURSOR;
+      }
     } else {
       if (typedLetter(&line, c, i)){
         i++;
       }
     }
 
-    CLEAR_LINE;
-    printf("\r");
-    printPrompt(directories,CYAN);
+    if (i > 0){
+      string_array command_line = splitString(line,' ');
+      possible_autocomplete = checkForCommandAutoComplete(command_line,PATH_BINS);
 
-    string_array command_line = splitString(line,' ');
+      if (!interactive_mode){
+        CLEAR_LINE;
+        CLEAR_BELOW_CURSOR;
+        printf("\r");
+        printPrompt(directories,CYAN);
 
-    isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN) : printColor(command_line.values[0],RED);
-    for (int i = 1; i < command_line.len; i++){
-      printf("%s ",command_line.values[i]);
+        isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN) : printColor(command_line.values[0],RED);
+        for (int i = 1; i < command_line.len; i++){
+          printf(" %s",command_line.values[i]);
+        }
+      }
+    } else {
+      CLEAR_LINE;
+      CLEAR_BELOW_CURSOR;
+      printf("\r");
+      printPrompt(directories,CYAN);
     }
-    /* printf("%s",line); */
+
     cursor_pos.x = i + prompt_len;
     moveCursor(cursor_pos);
+    interactive_mode = false;
   }
   printf("\n");
   return line;
@@ -248,7 +350,7 @@ void printColor(char* string,color color){
 
 	sprintf(command, "%c[%d;%d;%dm", 0x1B, color.attr, color.fg, color.bg);
 	printf("%s", command);
-  printf("%s ",string);
+  printf("%s",string);
 
 	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
 	printf("%s", command);
@@ -258,6 +360,7 @@ void printPrompt(char* dir,color color){
   char command[13];
 
   printColor(dir,color);
+  printf(" ");
 
   //pick unicode char
   setlocale(LC_CTYPE, "");
