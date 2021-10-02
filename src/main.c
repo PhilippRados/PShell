@@ -160,6 +160,9 @@ void downArrowPress(int* history_index, char** line, const history_array* comman
 
 bool typedLetter(char** line, const char c, const int i){
   bool cursor_moved = false;
+  if (strlen(*line) == 0 && c == 32){
+    return false;
+  }
 
   if (c < 0 || c > 127){
     getch();
