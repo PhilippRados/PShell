@@ -275,11 +275,24 @@ char* readLine(string_array PATH_BINS,char* directories,history_array* command_h
   coordinates cursor_pos = getCursorPos();
   int prompt_len = strlen(directories) + 4;
   bool interactive_mode = false;
+  int tab_index = -1;
 
-  while((c = getch()) != '\n'){
-    if (c == BACKSPACE){
+  while((c = getch())){
+    if (c == '\n'){
+      if (interactive_mode && tab_index != -1){
+        strcpy(line,possible_autocomplete.values[tab_index]);
+        i = strlen(line);
+
+        interactive_mode = false;
+        tab_index = -1;
+      } else {
+        break;
+      }
+    } else if (c == BACKSPACE){
       backspaceLogic(&line,&i,prompt_len);
 
+      interactive_mode = false;
+      tab_index = -1;
     } else if (c == '\033'){
       getch();
       int value = getch();
@@ -293,8 +306,12 @@ char* readLine(string_array PATH_BINS,char* directories,history_array* command_h
         int row_size = possible_autocomplete.len / col_size;
         int j = 0;
         bool running = true;
-        interactive_mode = true;
 
+        if (tab_index < possible_autocomplete.len - 1){
+          tab_index++;
+        } else {
+          tab_index = 0;
+        }
         while (running){
           printf("\n");
           for (int x = 0; x < col_size; x++){
@@ -302,16 +319,26 @@ char* readLine(string_array PATH_BINS,char* directories,history_array* command_h
               running = false;
               break;
             }
-            printf("%-*s",format_width,possible_autocomplete.values[j]);
+
+            if (tab_index == j){
+              int diff_len = strlen(possible_autocomplete.values[j]) - format_width;
+              printColor(possible_autocomplete.values[j],GREEN);
+              printf("%-*s",diff_len,"");
+            } else { 
+              printf("%-*s",format_width,possible_autocomplete.values[j]);
+            }
             j++;
           }
         }
+        interactive_mode = true;
       } else {
         CLEAR_BELOW_CURSOR;
       }
     } else {
       if (typedLetter(&line, c, i)){
         i++;
+        interactive_mode = false;
+        tab_index = -1;
       }
     }
 
@@ -339,7 +366,6 @@ char* readLine(string_array PATH_BINS,char* directories,history_array* command_h
 
     cursor_pos.x = i + prompt_len;
     moveCursor(cursor_pos);
-    interactive_mode = false;
   }
   printf("\n");
   return line;
