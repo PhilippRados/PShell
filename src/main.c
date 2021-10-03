@@ -307,30 +307,38 @@ char* readLine(string_array PATH_BINS,char* directories,history_array* command_h
         int j = 0;
         bool running = true;
 
-        if (tab_index < possible_autocomplete.len - 1){
-          tab_index++;
-        } else {
-          tab_index = 0;
-        }
-        while (running){
-          printf("\n");
-          for (int x = 0; x < col_size; x++){
-            if (j >= possible_autocomplete.len){
-              running = false;
-              break;
-            }
+        if (possible_autocomplete.len == 1){
+          strcpy(line,possible_autocomplete.values[0]);
+          i = strlen(line);
 
-            if (tab_index == j){
-              int diff_len = strlen(possible_autocomplete.values[j]) - format_width;
-              printColor(possible_autocomplete.values[j],GREEN);
-              printf("%-*s",diff_len,"");
-            } else { 
-              printf("%-*s",format_width,possible_autocomplete.values[j]);
-            }
-            j++;
+          interactive_mode = false;
+          tab_index = -1;
+        } else {
+          if (tab_index < possible_autocomplete.len - 1){
+            tab_index++;
+          } else {
+            tab_index = 0;
           }
+          while (running){
+            printf("\n");
+            for (int x = 0; x < col_size; x++){
+              if (j >= possible_autocomplete.len){
+                running = false;
+                break;
+              }
+
+              if (tab_index == j){
+                int diff_len = strlen(possible_autocomplete.values[j]) - format_width;
+                printColor(possible_autocomplete.values[j],GREEN);
+                printf("%-*s",diff_len,"");
+              } else { 
+                printf("%-*s",format_width,possible_autocomplete.values[j]);
+              }
+              j++;
+            }
+          }
+          interactive_mode = true;
         }
-        interactive_mode = true;
       } else {
         CLEAR_BELOW_CURSOR;
       }
