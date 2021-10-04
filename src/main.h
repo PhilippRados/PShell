@@ -26,11 +26,6 @@ typedef struct {
 } string_array;
 
 typedef struct {
-  int len;
-  string_array values[HISTORY_SIZE];
-} history_array;
-
-typedef struct {
   int attr;
   int fg;
   int bg;
@@ -64,7 +59,6 @@ string_array splitString(char*,char);
 char* getLastTwoDirs(char*);
 int isBuiltIn(char*);
 int getch();
-char* cycleCommandHistory(const history_array *command_history,int* history_index);
 void printPrompt(char* dir,color color);
 int arrowHit();
 long getFileSizeAtIndex(FILE* file,int index);
