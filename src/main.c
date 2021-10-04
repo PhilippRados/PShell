@@ -137,7 +137,6 @@ void upArrowPress(int* history_index, char** line, const string_array* command_h
     *history_index += 1;
     memset(*line,0,strlen(*line));
     strcpy(*line,command_history->values[*history_index -1]);
-
   };
 }
 
@@ -171,7 +170,7 @@ bool typedLetter(char** line, const char c, const int i){
   return cursor_moved;
 }
 
-void arrowPress(char** line,int* i, int* history_index,  const string_array* command_history, const char value){
+void arrowPress(char** line,int* i, int* history_index, const bool autocomplete, const char* possible_autocomplete,const string_array* command_history, const char value){
   switch(value) {
     case 'A':
       upArrowPress(history_index, line, command_history);
@@ -186,7 +185,14 @@ void arrowPress(char** line,int* i, int* history_index,  const string_array* com
       break;
 
     case 'C':{
-      *i = (*i < strlen(*line)) ? (*i) + 1 : *i;
+      if (autocomplete){
+        memset(*line,0,strlen(*line));
+        strcpy(*line,possible_autocomplete);
+        *i = strlen(*line);
+        logger(string,&possible_autocomplete);
+      } else {
+        *i = (*i < strlen(*line)) ? (*i) + 1 : *i;
+      }
       break;
     }
 
@@ -261,6 +267,7 @@ int getLongestWordInArray(const string_array array){
 char* readLine(string_array PATH_BINS,char* directories,string_array* command_history){
   char c;
   char* line = calloc(BUFFER,sizeof(char));
+  char* possible_autocomplete = calloc(BUFFER,sizeof(char));
   string_array possible_tabcomplete;
   int i = 0;
   int history_index = 0;
@@ -268,6 +275,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   int prompt_len = strlen(directories) + 4;
   bool interactive_mode = false;
   int tab_index = -1;
+  bool autocomplete = false;
 
   while((c = getch())){
     if (c == '\n'){
@@ -288,7 +296,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
     } else if (c == '\033'){
       getch();
       int value = getch();
-      arrowPress(&line,&i,&history_index,command_history,value);
+      arrowPress(&line,&i,&history_index,autocomplete,possible_autocomplete,command_history,value);
 
     } else if (c == TAB){
       if (i > 0){
@@ -357,11 +365,16 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         for (int i = 1; i < command_line.len; i++){
           printf(" %s",command_line.values[i]);
         }
-        /* for (int i = 0; i < command_history->len; i++){ */
-        /*   if (strncmp(line,command_history->values[i],strlen(line)) == 0){ */
-        /*     printf("%s",&command_history->values[i][strlen(line)]); */
-        /*   } */
-        /* } */
+
+        autocomplete = false;
+        for (int i = 0; i < command_history->len; i++){
+          if (strncmp(line,command_history->values[i],strlen(line)) == 0){
+            strcpy(possible_autocomplete,command_history->values[i]);
+            autocomplete = true;
+            printf("%s",&command_history->values[i][strlen(line)]);
+            break;
+          }         
+        }
       }
     } else {
       CLEAR_LINE;
