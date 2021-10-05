@@ -55,12 +55,12 @@ const color CYAN = {
   .bg = 10,
 };
 
-string_array splitString(char*,char);
+string_array splitString(const char*,char);
 char* getLastTwoDirs(char*);
 int isBuiltIn(char*);
 int getch();
-void printPrompt(char* dir,color color);
+void printPrompt(const char* dir,color color);
 int arrowHit();
 long getFileSizeAtIndex(FILE* file,int index);
 char* expectedAndReceived(char*,char*);
-void printColor(char* string,color color);
+void printColor(const char* string,color color);

@@ -15,6 +15,7 @@
 
 #define BACKSPACE 127
 #define TAB 9
+#define ARROW '\033'
 #define CLEAR_LINE printf("%c[2K", 27);
 #define CLEAR_BELOW_CURSOR printf("%c[0J",27);
 const int BUFFER = 256;
@@ -264,6 +265,66 @@ int getLongestWordInArray(const string_array array){
   return longest;
 }
 
+bool filterHistoryForMatchingAutoComplete(const string_array command_history, const char* line, char* possible_autocomplete){
+  for (int i = 0; i < command_history.len; i++){
+    if (strncmp(line,command_history.values[i],strlen(line)) == 0){
+      strcpy(possible_autocomplete, command_history.values[i]);
+
+      return true;
+    }         
+  }
+
+  return false;
+}
+
+void render(const char* line, const string_array command_history, const string_array PATH_BINS, const bool autocomplete, const char* possible_autocomplete){
+  string_array command_line = splitString(line,' ');
+
+  isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN) : printColor(command_line.values[0],RED);
+  for (int i = 1; i < command_line.len; i++){
+    printf(" %s",command_line.values[i]);
+  }
+
+  if (autocomplete){
+    printf("%s",&possible_autocomplete[strlen(line)]);
+  }
+}
+
+void tabRender(int* i, string_array* possible_tabcomplete, char* line, int* tab_index, string_array PATH_BINS){
+  *possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
+  int format_width = getLongestWordInArray(*possible_tabcomplete) + 2;
+  int terminal_width = getTerminalSize().x;
+  int col_size = terminal_width / format_width;
+  int row_size = possible_tabcomplete->len / col_size;
+  int j = 0;
+  bool running = true;
+
+  if (*tab_index < possible_tabcomplete->len - 1){
+    *tab_index += 1;
+  } else {
+    *tab_index = 0;
+  }
+
+  while (running){
+    printf("\n");
+    for (int x = 0; x < col_size; x++){
+      if (j >= possible_tabcomplete->len){
+        running = false;
+        break;
+      }
+
+      if (*tab_index == j){
+        int diff_len = strlen(possible_tabcomplete->values[j]) - format_width;
+        printColor(possible_tabcomplete->values[j],GREEN);
+        printf("%-*s",diff_len,"");
+      } else { 
+        printf("%-*s",format_width,possible_tabcomplete->values[j]);
+      }
+      j++;
+    }
+  }
+}
+
 char* readLine(string_array PATH_BINS,char* directories,string_array* command_history){
   char c;
   char* line = calloc(BUFFER,sizeof(char));
@@ -278,119 +339,81 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   bool autocomplete = false;
 
   while((c = getch())){
-    if (c == '\n'){
-      if (interactive_mode && tab_index != -1){
-        strcpy(line,possible_tabcomplete.values[tab_index]);
-        i = strlen(line);
+    switch (c){
+      case '\n':{
+        if (interactive_mode && tab_index != -1){
+          strcpy(line,possible_tabcomplete.values[tab_index]);
+          i = strlen(line);
 
-        interactive_mode = false;
-        tab_index = -1;
-      } else {
+          tab_index = -1;
+          interactive_mode = false;
+        } else {
+          goto ENDLOOP;
+        }
         break;
       }
-    } else if (c == BACKSPACE){
-      backspaceLogic(&line,&i,prompt_len);
+      case (BACKSPACE): {
+        backspaceLogic(&line,&i,prompt_len);
 
-      interactive_mode = false;
-      tab_index = -1;
-    } else if (c == '\033'){
-      getch();
-      int value = getch();
-      arrowPress(&line,&i,&history_index,autocomplete,possible_autocomplete,command_history,value);
-
-    } else if (c == TAB){
-      if (i > 0){
-        possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
-        int format_width = getLongestWordInArray(possible_tabcomplete) + 2;
-        int terminal_width = getTerminalSize().x;
-        int col_size = terminal_width / format_width;
-        int row_size = possible_tabcomplete.len / col_size;
-        int j = 0;
-        bool running = true;
-
+        tab_index = -1;
+        interactive_mode = false;
+        break;
+      }
+      case (ARROW): {
+        getch();
+        int value = getch();
+        arrowPress(&line,&i,&history_index,autocomplete,possible_autocomplete,command_history,value);
+        break;
+      }
+      case (TAB): {
         if (possible_tabcomplete.len == 1){
           strcpy(line,possible_tabcomplete.values[0]);
           i = strlen(line);
 
-          interactive_mode = false;
           tab_index = -1;
+          interactive_mode = false;
         } else {
-          if (tab_index < possible_tabcomplete.len - 1){
-            tab_index++;
-          } else {
-            tab_index = 0;
-          }
-          while (running){
-            printf("\n");
-            for (int x = 0; x < col_size; x++){
-              if (j >= possible_tabcomplete.len){
-                running = false;
-                break;
-              }
-
-              if (tab_index == j){
-                int diff_len = strlen(possible_tabcomplete.values[j]) - format_width;
-                printColor(possible_tabcomplete.values[j],GREEN);
-                printf("%-*s",diff_len,"");
-              } else { 
-                printf("%-*s",format_width,possible_tabcomplete.values[j]);
-              }
-              j++;
-            }
-          }
           interactive_mode = true;
         }
-      } else {
-        CLEAR_BELOW_CURSOR;
+        break;
       }
-    } else {
-      if (typedLetter(&line, c, i)){
-        i++;
-        interactive_mode = false;
-        tab_index = -1;
+      default: {
+        if (typedLetter(&line, c, i)){
+          i++;
+          tab_index = -1;
+          interactive_mode = false;
+        }
+        break;
       }
     }
 
+    cursor_pos.x = i + prompt_len;
+    autocomplete = filterHistoryForMatchingAutoComplete(*command_history,line, possible_autocomplete);
 
-    if (strlen(line) > 0){
-      string_array command_line = splitString(line,' ');
+    if (interactive_mode){
+      CLEAR_BELOW_CURSOR;
+      tabRender(&i, &possible_tabcomplete, line, &tab_index,PATH_BINS);
 
-      if (!interactive_mode){
-        CLEAR_LINE;
-        CLEAR_BELOW_CURSOR;
-        printf("\r");
-        printPrompt(directories,CYAN);
-
-        isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN) : printColor(command_line.values[0],RED);
-        for (int i = 1; i < command_line.len; i++){
-          printf(" %s",command_line.values[i]);
-        }
-
-        autocomplete = false;
-        for (int i = 0; i < command_history->len; i++){
-          if (strncmp(line,command_history->values[i],strlen(line)) == 0){
-            strcpy(possible_autocomplete,command_history->values[i]);
-            autocomplete = true;
-            printf("%s",&command_history->values[i][strlen(line)]);
-            break;
-          }         
-        }
-      }
     } else {
       CLEAR_LINE;
       CLEAR_BELOW_CURSOR;
       printf("\r");
       printPrompt(directories,CYAN);
+
+      if (strlen(line) > 0){
+        render(line, *command_history, PATH_BINS, autocomplete,possible_autocomplete);
+      }
     }
 
-    cursor_pos.x = i + prompt_len;
     moveCursor(cursor_pos);
   }
+  ENDLOOP:
+
   printf("\n");
   return line;
 }
 
-void printColor(char* string,color color){
+void printColor(const char* string,color color){
   char command[13];
 
 	sprintf(command, "%c[%d;%d;%dm", 0x1B, color.attr, color.fg, color.bg);
@@ -401,7 +424,7 @@ void printColor(char* string,color color){
 	printf("%s", command);
 }
 
-void printPrompt(char* dir,color color){
+void printPrompt(const char* dir,color color){
   char command[13];
 
   printColor(dir,color);
