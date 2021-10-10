@@ -190,7 +190,6 @@ void arrowPress(char** line,int* i, int* history_index, const bool autocomplete,
         memset(*line,0,strlen(*line));
         strcpy(*line,possible_autocomplete);
         *i = strlen(*line);
-        logger(string,&possible_autocomplete);
       } else {
         *i = (*i < strlen(*line)) ? (*i) + 1 : *i;
       }
@@ -290,73 +289,100 @@ void render(const char* line, const string_array command_history, const string_a
   }
 }
 
-void tabRender(int* i, string_array* possible_tabcomplete, char* line, int* tab_index, string_array PATH_BINS){
-  *possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
-  int format_width = getLongestWordInArray(*possible_tabcomplete) + 2;
+void tabRender(char* line, string_array possible_tabcomplete, int tab_index, string_array PATH_BINS){
+  int format_width = getLongestWordInArray(possible_tabcomplete) + 2;
   int terminal_width = getTerminalSize().x;
   int col_size = terminal_width / format_width;
-  int row_size = possible_tabcomplete->len / col_size;
+  int row_size = possible_tabcomplete.len / col_size;
   int j = 0;
   bool running = true;
-
-  if (*tab_index < possible_tabcomplete->len - 1){
-    *tab_index += 1;
-  } else {
-    *tab_index = 0;
-  }
 
   while (running){
     printf("\n");
     for (int x = 0; x < col_size; x++){
-      if (j >= possible_tabcomplete->len){
+      if (j >= possible_tabcomplete.len){
         running = false;
         break;
       }
 
-      if (*tab_index == j){
-        int diff_len = strlen(possible_tabcomplete->values[j]) - format_width;
-        printColor(possible_tabcomplete->values[j],GREEN);
+      if (tab_index == j){
+        int diff_len = strlen(possible_tabcomplete.values[j]) - format_width;
+
+        printColor(possible_tabcomplete.values[j],GREEN);
         printf("%-*s",diff_len,"");
       } else { 
-        printf("%-*s",format_width,possible_tabcomplete->values[j]);
+        printf("%-*s",format_width,possible_tabcomplete.values[j]);
       }
       j++;
     }
   }
 }
 
+
+char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_pos){
+  char c = TAB;
+  string_array possible_tabcomplete;
+  int tab_index = -1;
+
+  do {
+    CLEAR_BELOW_CURSOR;
+    if (c == TAB){
+      if (possible_tabcomplete.len == 1){
+        strcpy(line,possible_tabcomplete.values[0]);
+
+      } else {
+        possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
+
+        if (tab_index < possible_tabcomplete.len - 1){
+          tab_index += 1;
+        } else {
+          tab_index = 0;
+        }
+
+        tabRender(line, possible_tabcomplete, tab_index, PATH_BINS);
+        moveCursor(cursor_pos);
+      }
+    } else if (c == '\n'){
+      strcpy(line, possible_tabcomplete.values[tab_index]);
+      return c;
+
+    } else {
+      return c;
+    }
+  } while ((c = getch()));
+
+  return 0;
+}
+
+
 char* readLine(string_array PATH_BINS,char* directories,string_array* command_history){
   char c;
   char* line = calloc(BUFFER,sizeof(char));
   char* possible_autocomplete = calloc(BUFFER,sizeof(char));
-  string_array possible_tabcomplete;
   int i = 0;
   int history_index = 0;
   coordinates cursor_pos = getCursorPos();
   int prompt_len = strlen(directories) + 4;
-  bool interactive_mode = false;
-  int tab_index = -1;
   bool autocomplete = false;
+  char temp;
 
   while((c = getch())){
+    if (c == TAB && strlen(line) > 0){
+      if ((temp = tabLoop(line, PATH_BINS, cursor_pos)) != '\n'){
+        c = temp;
+      } else {
+        c = -1;
+      }
+      i = strlen(line);
+    }
     switch (c){
-      case '\n':{
-        if (interactive_mode && tab_index != -1){
-          strcpy(line,possible_tabcomplete.values[tab_index]);
-          i = strlen(line);
-
-          tab_index = -1;
-          interactive_mode = false;
-        } else {
-          goto ENDLOOP;
-        }
+      case ('\n'):{
+        goto ENDLOOP;
         break;
       }
       case (BACKSPACE): {
         backspaceLogic(&line,&i,prompt_len);
 
-        tab_index = -1;
-        interactive_mode = false;
         break;
       }
       case (ARROW): {
@@ -365,23 +391,9 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         arrowPress(&line,&i,&history_index,autocomplete,possible_autocomplete,command_history,value);
         break;
       }
-      case (TAB): {
-        if (possible_tabcomplete.len == 1){
-          strcpy(line,possible_tabcomplete.values[0]);
-          i = strlen(line);
-
-          tab_index = -1;
-          interactive_mode = false;
-        } else {
-          interactive_mode = true;
-        }
-        break;
-      }
       default: {
-        if (typedLetter(&line, c, i)){
+        if (c != -1 && typedLetter(&line, c, i)){
           i++;
-          tab_index = -1;
-          interactive_mode = false;
         }
         break;
       }
@@ -390,19 +402,13 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
     cursor_pos.x = i + prompt_len;
     autocomplete = filterHistoryForMatchingAutoComplete(*command_history,line, possible_autocomplete);
 
-    if (interactive_mode){
-      CLEAR_BELOW_CURSOR;
-      tabRender(&i, &possible_tabcomplete, line, &tab_index,PATH_BINS);
+    CLEAR_LINE;
+    CLEAR_BELOW_CURSOR;
+    printf("\r");
+    printPrompt(directories,CYAN);
 
-    } else {
-      CLEAR_LINE;
-      CLEAR_BELOW_CURSOR;
-      printf("\r");
-      printPrompt(directories,CYAN);
-
-      if (strlen(line) > 0){
-        render(line, *command_history, PATH_BINS, autocomplete,possible_autocomplete);
-      }
+    if (strlen(line) > 0){
+      render(line, *command_history, PATH_BINS, autocomplete,possible_autocomplete);
     }
 
     moveCursor(cursor_pos);
