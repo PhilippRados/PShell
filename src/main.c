@@ -57,7 +57,7 @@ void logger(enum logger_type type,void* message){
 coordinates getCursorPos(){
   char buf[1];
   char data[50];
-  long y,x;
+  int y,x;
 	char cmd[]="\033[6n";
   coordinates cursor_pos = {.x = -1,.y = -1};
   struct termios oldattr, newattr;
@@ -80,7 +80,7 @@ coordinates getCursorPos(){
         read(STDIN_FILENO,buf,1);
       }
       // check if string matches expected data
-      int valid = sscanf(data,"%lul;%lul",&y,&x);
+      int valid = sscanf(data,"%d;%d",&y,&x);
       if (valid == 2){
         cursor_pos.x = x;
         cursor_pos.y = y;
@@ -264,10 +264,45 @@ int getLongestWordInArray(const string_array array){
   return longest;
 }
 
-bool filterHistoryForMatchingAutoComplete(const string_array command_history, const char* line, char* possible_autocomplete){
+/* string_array concatenateArrays(const string_array one, const string_array two){ */
+/*   string_array concatenated = {.values = calloc((one.len + two.len), sizeof(char*))}; */
+/*   int i = 0; */
+/*  */
+/*  */
+/*   for (int k = 0; k < one.len; k++){ */
+    /* concatenated.values[i] = calloc(strlen(one.values[k]), sizeof(char)); */
+    /* concatenated.values[i] = one.values[k]; */
+/*     strcpy(concatenated.values[i],one.values[k]); */
+/*     i++; */
+/*   } */
+/*   for (int i = 0; i < two.len; i++){ */
+/*     logger(string,two.values[i]); */
+/*   } */
+/*   for (int j = 0; j < two.len; j++){ */
+    /* concatenated.values[i] = calloc(strlen(two.values[j]) + 1, sizeof(char)); */
+    /* concatenated.values[i] = two.values[j]; */
+/*     strcpy(concatenated.values[i],two.values[j]); */
+/*     i++; */
+/*   } */
+/*   concatenated.len = i; */
+/*  */
+/*   return concatenated; */
+/* } */
+
+bool filterHistoryForMatchingAutoComplete(const string_array command_history,const string_array global_command_history, const char* line, char* possible_autocomplete){
+  /* string_array concatenated = concatenateArrays(command_history, global_command_history); */
+
   for (int i = 0; i < command_history.len; i++){
     if (strncmp(line,command_history.values[i],strlen(line)) == 0){
       strcpy(possible_autocomplete, command_history.values[i]);
+
+      return true;
+    }         
+  }
+
+  for (int j = 0; j < global_command_history.len; j++){
+    if (strncmp(line,global_command_history.values[j],strlen(line)) == 0){
+      strcpy(possible_autocomplete, global_command_history.values[j]);
 
       return true;
     }         
@@ -364,7 +399,7 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
 }
 
 
-char* readLine(string_array PATH_BINS,char* directories,string_array* command_history){
+char* readLine(string_array PATH_BINS,char* directories,string_array* command_history, const string_array global_command_history){
   char c;
   char* line = calloc(BUFFER,sizeof(char));
   char* possible_autocomplete = calloc(BUFFER,sizeof(char));
@@ -409,7 +444,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
     }
 
     cursor_pos.x = i + prompt_len;
-    autocomplete = filterHistoryForMatchingAutoComplete(*command_history,line, possible_autocomplete);
+    autocomplete = filterHistoryForMatchingAutoComplete(*command_history,global_command_history,line, possible_autocomplete);
 
     CLEAR_LINE;
     CLEAR_BELOW_CURSOR;
@@ -480,12 +515,9 @@ int runChildProcess(string_array splitted_line) {
     if (error){
       printf("couldn't find command %s\n",splitted_line.values[0]);
 
-      /* waitpid(pid,NULL,0); */
-      /* return false; */
     }
   } else {
     return pid;
-    /* waitpid(pid,NULL,0); */
   }
   return true;
 }
@@ -586,8 +618,10 @@ string_array getAllHistoryCommands(){
       realloc_index++;
       result.values = realloc(result.values,realloc_index * 512 * sizeof(char*));
     }
-    result.values[i] = calloc(buf_size,sizeof(char));
-    strcpy(result.values[i], buf);
+    /* insertCharAtPos(buf, strlen(buf) - 1, '\0'); */
+    /* buf[strlen(buf) - 1] = 0; */
+    result.values[i] = calloc(strlen(buf),sizeof(char));
+    strncpy(result.values[i], buf, strlen(buf) - 1);
     i++;
   }
   result.len = i;
@@ -637,7 +671,7 @@ int main(int argc, char* argv[]) {
     printf("\n");
     printPrompt(last_two_dirs,CYAN);
 
-    line = readLine(PATH_BINS,last_two_dirs,&command_history);
+    line = readLine(PATH_BINS,last_two_dirs,&command_history, global_command_history);
     if (hasTestFlag(argc,argv)){
       logToTestFile(line,test_file);
     }
