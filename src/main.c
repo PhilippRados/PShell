@@ -642,7 +642,7 @@ int main(int argc, char* argv[]) {
       logToTestFile(line,test_file);
     }
     if(strcmp(line,"q") == 0){
-      goto END_PROG;
+      break;
     }
     if (strlen(line) > 0){
       splitted_line = splitString(line,' ');
@@ -670,7 +670,6 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  END_PROG:
 
   writeSessionCommandsToGlobalHistoryFile(command_history);
   free(splitted_line.values);
