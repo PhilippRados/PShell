@@ -155,7 +155,7 @@ void downArrowPress(int* history_index, char** line, const string_array* command
 
 bool typedLetter(char** line, const char c, const int i){
   bool cursor_moved = false;
-  if (strlen(*line) == 0 && c == 32){
+  if (strlen(*line) == 0 && (c == 32 || c == TAB)){
     return false;
   }
 
@@ -318,12 +318,22 @@ void tabRender(char* line, string_array possible_tabcomplete, int tab_index, str
   }
 }
 
-
 char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_pos){
   char c = TAB;
   string_array possible_tabcomplete;
   int tab_index = -1;
+  char answer;
+  possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
 
+  if (possible_tabcomplete.len > 30){
+    printf("\nThe list of possible matches is %d. Do you want to print all of them? (y/n) ", possible_tabcomplete.len);
+    answer = getch();
+
+    moveCursor(cursor_pos);
+    if (answer != 'y'){
+      return '\n';
+    }
+  }
   do {
     CLEAR_BELOW_CURSOR;
     if (c == TAB){
@@ -331,7 +341,6 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
         strcpy(line,possible_tabcomplete.values[0]);
 
       } else {
-        possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
 
         if (tab_index < possible_tabcomplete.len - 1){
           tab_index += 1;
