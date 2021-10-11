@@ -185,8 +185,8 @@ void arrowPress(char** line,int* i, int* history_index, const bool autocomplete,
       *i = strlen(*line);
       break;
 
-    case 'C':{
-      if (autocomplete){
+    case 'C':{ // right-arrow
+      if (autocomplete && strcmp(*line,possible_autocomplete) != 0){
         memset(*line,0,strlen(*line));
         strcpy(*line,possible_autocomplete);
         *i = strlen(*line);
@@ -196,7 +196,7 @@ void arrowPress(char** line,int* i, int* history_index, const bool autocomplete,
       break;
     }
 
-    case 'D':{
+    case 'D':{ // left-arrow
       *i = (*i > 0) ? (*i) - 1 : *i;
       break;
     }
