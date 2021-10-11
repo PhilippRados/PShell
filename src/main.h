@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-enum { HISTORY_SIZE = 10} ;
+enum { HISTORY_SIZE = 512} ;
 
 enum cursor_direction {
   cursor_up,

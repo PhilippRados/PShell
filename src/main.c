@@ -57,7 +57,7 @@ void logger(enum logger_type type,void* message){
 coordinates getCursorPos(){
   char buf[1];
   char data[50];
-  int y,x;
+  long y,x;
 	char cmd[]="\033[6n";
   coordinates cursor_pos = {.x = -1,.y = -1};
   struct termios oldattr, newattr;
@@ -80,7 +80,7 @@ coordinates getCursorPos(){
         read(STDIN_FILENO,buf,1);
       }
       // check if string matches expected data
-      int valid = sscanf(data,"%d;%d",&y,&x);
+      int valid = sscanf(data,"%lul;%lul",&y,&x);
       if (valid == 2){
         cursor_pos.x = x;
         cursor_pos.y = y;
@@ -479,10 +479,13 @@ int runChildProcess(string_array splitted_line) {
     int error = execvp(splitted_line.values[0],splitted_line.values);
     if (error){
       printf("couldn't find command %s\n",splitted_line.values[0]);
-      return false;
+
+      /* waitpid(pid,NULL,0); */
+      /* return false; */
     }
   } else {
-    waitpid(pid,NULL,0);
+    return pid;
+    /* waitpid(pid,NULL,0); */
   }
   return true;
 }
@@ -565,6 +568,47 @@ string_array getAllPathBinaries(string_array PATH_ARR){
   return all_path_bins;
 }
 
+string_array getAllHistoryCommands(){
+  string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
+  FILE* file_to_read = fopen(".psh_history","r");
+  char* buf = calloc(64, sizeof(char));
+  int line_len;
+  unsigned long buf_size;
+  int i = 0;
+  int realloc_index = 1;
+
+  if (file_to_read == NULL){
+    return result;
+  }
+
+  while ((line_len = getline(&buf, &buf_size, file_to_read)) != -1){
+    if (i >= (realloc_index * 512)){
+      realloc_index++;
+      result.values = realloc(result.values,realloc_index * 512 * sizeof(char*));
+    }
+    result.values[i] = calloc(buf_size,sizeof(char));
+    strcpy(result.values[i], buf);
+    i++;
+  }
+  result.len = i;
+
+  fclose(file_to_read);
+  return result;
+}
+
+void writeSessionCommandsToGlobalHistoryFile(string_array command_history){
+  FILE* file_to_write = fopen(".psh_history", "a");
+  if (file_to_write == NULL){
+    return;
+  }
+
+  for (int i = 0; i < command_history.len; i++){
+    fprintf(file_to_write, "%s\n", command_history.values[i]);
+  }
+
+  fclose(file_to_write);
+}
+
 int main(int argc, char* argv[]) {
   char *line;
   string_array splitted_line;
@@ -578,6 +622,8 @@ int main(int argc, char* argv[]) {
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),':');
   string_array PATH_BINS = getAllPathBinaries(PATH_ARR);
+
+  string_array global_command_history = getAllHistoryCommands();
 
   if (hasTestFlag(argc,argv)){
     removeFileContents(test_file);
@@ -596,7 +642,7 @@ int main(int argc, char* argv[]) {
       logToTestFile(line,test_file);
     }
     if(strcmp(line,"q") == 0){
-      break;
+      goto END_PROG;
     }
     if (strlen(line) > 0){
       splitted_line = splitString(line,' ');
@@ -609,7 +655,14 @@ int main(int argc, char* argv[]) {
           push(line,&command_history);
         }
       } else {
-        runChildProcess(splitted_line);
+        pid_t child;
+        int wstatus;
+
+        child = runChildProcess(splitted_line);
+
+        if (waitpid(child, &wstatus, WUNTRACED | WCONTINUED) == -1) {
+          exit(EXIT_FAILURE);
+        }
 
         if (command_history.len == 0 || strcmp(command_history.values[0],line) != 0){
           push(line,&command_history);
@@ -617,7 +670,9 @@ int main(int argc, char* argv[]) {
       }
     }
   }
+  END_PROG:
 
+  writeSessionCommandsToGlobalHistoryFile(command_history);
   free(splitted_line.values);
   free(line);
   free(PATH_ARR.values);
