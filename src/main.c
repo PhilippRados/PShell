@@ -602,7 +602,9 @@ string_array getAllPathBinaries(string_array PATH_ARR){
 
 string_array getAllHistoryCommands(){
   string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
-  FILE* file_to_read = fopen(".psh_history","r");
+  char* home_dir = getenv("HOME");
+  char* file_path = strncat(home_dir, "/.psh_history", strlen("/.psh_history"));
+  FILE* file_to_read = fopen(file_path,"r");
   char* buf = calloc(64, sizeof(char));
   int line_len;
   unsigned long buf_size;
@@ -631,7 +633,8 @@ string_array getAllHistoryCommands(){
 }
 
 void writeSessionCommandsToGlobalHistoryFile(string_array command_history){
-  FILE* file_to_write = fopen(".psh_history", "a");
+  char* home_dir = getenv("HOME"); // weird that home_dir now already includes .psh_history
+  FILE* file_to_write = fopen(home_dir, "a");
   if (file_to_write == NULL){
     return;
   }
