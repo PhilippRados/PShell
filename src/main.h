@@ -55,6 +55,12 @@ const color CYAN = {
   .bg = 10,
 };
 
+const color HIGHLIGHT = {
+  .attr = 1,
+  .fg = 37,
+  .bg = 42,
+};
+
 string_array splitString(const char*,char);
 char* getLastTwoDirs(char*);
 int isBuiltIn(char*);

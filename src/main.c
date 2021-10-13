@@ -18,8 +18,10 @@
 #define ARROW '\033'
 #define CLEAR_LINE printf("%c[2K", 27);
 #define CLEAR_BELOW_CURSOR printf("%c[0J",27);
+#define HIDE_CURSOR printf("\e[?25l");
+#define ENABLE_CURSOR printf("\e[?25h");
+#define CLEAR_SCREEN printf(" \e[1;1H\e[2J");
 const int BUFFER = 256;
-const char *CLEAR_SCREEN = " \e[1;1H\e[2J";
 
 int getch(){
     struct termios oldattr, newattr;
@@ -398,6 +400,110 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
   return 0;
 }
 
+void drawPopupBox(const coordinates terminal_size, const int width, const int height){
+  /* write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN)); */
+  CLEAR_SCREEN
+
+  for (int row = 0; row < terminal_size.y; row++){
+    if (row == (height / 2) || row == (terminal_size.y - (height / 2))){
+      for (int i = 0; i < terminal_size.x; i++){
+        if (i > (width / 2) && i < (terminal_size.x - (width / 2))){
+          printf("\u2550");
+        } else if (i == (width / 2)){
+          if (row == (height / 2)){
+            printf("\u2554");
+          } else {
+            printf("\u255A");
+          }
+        } else if (i == (terminal_size.x - (width / 2))){
+          if (row == (height / 2)){
+            printf("\u2557");
+          } else {
+            printf("\u255D");
+          }
+        } else {
+          printf(" ");
+        }
+      }
+    } else if (row > (height / 2) && row < (terminal_size.y - (height / 2))){
+      for (int col = 0; col < terminal_size.x; col++){
+        if (col == (width / 2) || col == (terminal_size.x - (width / 2))){
+          printf("\u2551");
+        } else {
+          printf(" ");
+        }
+      }
+    } else {
+      printf("\n");
+    }
+  }
+  coordinates bottom_box_pos = {
+    .x = (width / 2) + 3,
+    .y = terminal_size.y - (height / 2)
+  };
+  moveCursor(bottom_box_pos);
+  printf("q: quit\t\u2191/\u2193: move through commands\tENTER: show command output");
+}
+
+void popupOutputHistory(const string_array command_history){
+  char c;
+  coordinates terminal_size = getTerminalSize();
+  int width = terminal_size.x * 0.4;
+  int height = terminal_size.y * 0.3;
+  int index = 0;
+  int initial_y = 0;
+
+  drawPopupBox(terminal_size, width, height);
+
+  coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
+  moveCursor(cursor);
+  printf("View output from past commands:");
+  HIDE_CURSOR
+
+  initial_y = cursor.y + 2;
+  cursor.y = initial_y;
+  for (int i = 0; i < command_history.len; i++){
+    cursor.y += 1;
+    moveCursor(cursor);
+
+    if (i == index){
+      printColor(command_history.values[i],HIGHLIGHT);
+    } else {
+      printf("%s", command_history.values[i]);
+    }
+  }
+
+  while ((c = getch()) != 'q'){
+    cursor.y = initial_y;
+    if (c == '\n'){
+      //show output of that command
+    } else if (c == ARROW){
+      getch();
+      int value = getch();
+
+      if (value == 'A'){
+        (index > 0) ? index-- : index;
+      } else if (value == 'B'){
+        (index < command_history.len - 1) ? index++ : index;
+      }
+    }
+
+    for (int i = 0; i < command_history.len; i++){
+      cursor.y += 1;
+      moveCursor(cursor);
+
+      if (i == index){
+        printColor(command_history.values[i],HIGHLIGHT);
+      } else {
+        printf("%s", command_history.values[i]);
+      }
+    }
+  }
+
+  CLEAR_SCREEN
+  ENABLE_CURSOR
+  printf("\n");
+}
 
 char* readLine(string_array PATH_BINS,char* directories,string_array* command_history, const string_array global_command_history){
   char c;
@@ -436,7 +542,14 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         break;
       }
       default: {
-        if (c != -1 && typedLetter(&line, c, i)){
+        if ((int)c == 6){ //control+f
+          logger(string,"ctrl-a\n");
+
+          popupOutputHistory(*command_history);
+          moveCursor(cursor_pos);
+        } else if ((int)c == 8){ //control+h
+          logger(string,"ctrl-h\n");
+        } else if (c != -1 && typedLetter(&line, c, i)){
           i++;
         }
         break;
@@ -666,7 +779,8 @@ int main(int argc, char* argv[]) {
     removeFileContents(test_file);
   }
 
-  write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN));
+  /* write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN)); */
+  CLEAR_SCREEN
   char* current_dir = getcwd(cd,sizeof(cd));
   char* last_two_dirs = getLastTwoDirs(current_dir);
 
