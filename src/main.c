@@ -266,8 +266,26 @@ int getLongestWordInArray(const string_array array){
   return longest;
 }
 
-bool filterHistoryForMatchingAutoComplete(const string_array command_history,const string_array global_command_history, const char* line, char* possible_autocomplete){
-  string_array concatenated = concatenateArrays(command_history, global_command_history);
+string_array filterHistory(const string_array concatenated, const char* line){
+  char** possible_matches = calloc(512, sizeof(char*));
+  int matches_num = 0;
+
+  for (int i = 0; i < concatenated.len; i++){
+    if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
+      possible_matches[i] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
+      strcpy(possible_matches[i], concatenated.values[i]);
+      matches_num++;
+    }         
+  }
+  string_array result = {
+    .values = possible_matches,
+    .len = matches_num
+  };
+
+  return result;
+}
+
+bool filterHistoryForMatchingAutoComplete(const string_array concatenated, const char* line, char* possible_autocomplete){
 
   for (int i = 0; i < concatenated.len; i++){
     if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
@@ -412,38 +430,51 @@ void drawPopupBox(const coordinates terminal_size, const int width, const int he
   printf("q: quit\t\u2191/\u2193: move through commands\tENTER: show command output");
 }
 
-void popupFuzzyFinder(const string_array command_history){
+char* popupFuzzyFinder(const string_array all_time_command_history){
   char c;
   coordinates terminal_size = getTerminalSize();
   int width = terminal_size.x * 0.4;
   int height = terminal_size.y * 0.3;
   int index = 0;
   int initial_y = 0;
+  char* line = calloc(64, sizeof(char));
 
   drawPopupBox(terminal_size, width, height);
 
   coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
   moveCursor(cursor);
-  printf("View output from past commands:");
-  HIDE_CURSOR
+  printf("Fuzzy Find through past commands");
+  /* HIDE_CURSOR */
 
   initial_y = cursor.y + 2;
   cursor.y = initial_y;
-  for (int i = 0; i < command_history.len; i++){
+  moveCursor(cursor);
+  printf("\u2771 ");
+
+  char* text = calloc(100, sizeof(char));
+  scanf("%s",text);
+
+  logger(string, "Getline returns: ");
+  logger(string, &text);
+  
+  string_array matching_commands = filterHistory(all_time_command_history, text);
+  printf("%d\n", matching_commands.len);
+  for (int i = 0; i < matching_commands.len; i++){
     cursor.y += 1;
     moveCursor(cursor);
 
     if (i == index){
-      printColor(command_history.values[i],HIGHLIGHT);
+      printColor(matching_commands.values[i],HIGHLIGHT);
     } else {
-      printf("%s", command_history.values[i]);
+      printf("%s", matching_commands.values[i]);
     }
   }
 
   while ((c = getch()) != 'q'){
     cursor.y = initial_y;
     if (c == '\n'){
-      //show output of that command
+      strcpy(line, matching_commands.values[index]);
+      break;
     } else if (c == ARROW){
       getch();
       int value = getch();
@@ -451,18 +482,18 @@ void popupFuzzyFinder(const string_array command_history){
       if (value == 'A'){
         (index > 0) ? index-- : index;
       } else if (value == 'B'){
-        (index < command_history.len - 1) ? index++ : index;
+        (index < matching_commands.len - 1) ? index++ : index;
       }
     }
 
-    for (int i = 0; i < command_history.len; i++){
+    for (int i = 0; i < matching_commands.len; i++){
       cursor.y += 1;
       moveCursor(cursor);
 
       if (i == index){
-        printColor(command_history.values[i],HIGHLIGHT);
+        printColor(matching_commands.values[i],HIGHLIGHT);
       } else {
-        printf("%s", command_history.values[i]);
+        printf("%s", matching_commands.values[i]);
       }
     }
   }
@@ -470,6 +501,8 @@ void popupFuzzyFinder(const string_array command_history){
   CLEAR_SCREEN
   ENABLE_CURSOR
   printf("\n");
+
+  return line;
 }
 
 char* readLine(string_array PATH_BINS,char* directories,string_array* command_history, const string_array global_command_history){
@@ -484,6 +517,8 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   char temp;
 
   while((c = getch())){
+    string_array all_time_command_history = concatenateArrays(*command_history, global_command_history);
+
     if (c == TAB && strlen(line) > 0){
       if ((temp = tabLoop(line, PATH_BINS, cursor_pos)) != '\n'){
         c = temp;
@@ -509,10 +544,11 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         break;
       }
       default: {
-        logger(character,&c);
         if ((int)c == 6){ //control+f
 
-          popupFuzzyFinder(*command_history);
+          string_array concatenatedHistoryCommands = concatenateArrays(global_command_history, *command_history);
+          line = popupFuzzyFinder(concatenatedHistoryCommands);
+          i = strlen(line);
           moveCursor(cursor_pos);
         } else if ((int)c == 8){ //control+h
         } else if (c != -1 && typedLetter(&line, c, i)){
@@ -523,7 +559,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
     }
 
     cursor_pos.x = i + prompt_len;
-    autocomplete = filterHistoryForMatchingAutoComplete(*command_history,global_command_history,line, possible_autocomplete);
+    autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history,line, possible_autocomplete);
 
     CLEAR_LINE;
     CLEAR_BELOW_CURSOR;

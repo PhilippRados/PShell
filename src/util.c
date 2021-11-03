@@ -73,16 +73,13 @@ string_array concatenateArrays(const string_array one, const string_array two){
   string_array concatenated = {.values = calloc((one.len + two.len), sizeof(char*))};
   int i = 0;
 
-
   for (int k = 0; k < one.len; k++){
     concatenated.values[i] = calloc(strlen(one.values[k]) + 1, sizeof(char));
-    /* concatenated.values[i] = one.values[k]; */
     strcpy(concatenated.values[i],one.values[k]);
     i++;
   }
   for (int j = 0; j < two.len; j++){
     concatenated.values[i] = calloc(strlen(two.values[j]) + 1, sizeof(char));
-    /* concatenated.values[i] = two.values[j]; */
     strcpy(concatenated.values[i],two.values[j]);
     i++;
   }
