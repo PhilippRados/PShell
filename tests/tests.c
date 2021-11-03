@@ -41,6 +41,62 @@ Test(Parsing_directory,get_last_two_dirs){
   cr_expect(strcmp(last_two_dirs,"c/pshell") == 0);
 }
 
+Test(Concatenating_command_history,check_concat_len){
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = { one, two };
+
+  char* three = "three";
+  char* four = "four";
+  char* addr_two[] = { three, four };
+
+  string_array arr1 = {
+    .len = 2,
+    .values = addr_one
+  };
+
+  string_array arr2 = {
+    .len = 2,
+    .values = addr_two
+  };
+  string_array result = concatenateArrays(arr1,arr2);
+
+  cr_expect(result.len == 4);
+}
+
+Test(Concatenating_command_history,check_concat_elements){
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = { one, two };
+
+  char* three = "three";
+  char* four = "four";
+  char* addr_two[] = { three, four };
+
+  string_array arr1 = {
+    .len = 2,
+    .values = addr_one
+  };
+
+  string_array arr2 = {
+    .len = 2,
+    .values = addr_two
+  };
+  string_array result = concatenateArrays(arr1,arr2);
+  char* concat[] = {one, two, three, four};
+  string_array correct = {
+    .values = concat,
+    .len = 4
+  };
+
+  bool works = true;
+  for (int i = 0; i < correct.len; i++){
+    if (strcmp(correct.values[i],result.values[i]) != 0){
+      works = false;
+    }
+  }
+  cr_expect(works == true);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */

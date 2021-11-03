@@ -70,3 +70,4 @@ int arrowHit();
 long getFileSizeAtIndex(FILE* file,int index);
 char* expectedAndReceived(char*,char*);
 void printColor(const char* string,color color);
+string_array concatenateArrays(const string_array one, const string_array two);

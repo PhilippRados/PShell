@@ -266,45 +266,12 @@ int getLongestWordInArray(const string_array array){
   return longest;
 }
 
-/* string_array concatenateArrays(const string_array one, const string_array two){ */
-/*   string_array concatenated = {.values = calloc((one.len + two.len), sizeof(char*))}; */
-/*   int i = 0; */
-/*  */
-/*  */
-/*   for (int k = 0; k < one.len; k++){ */
-    /* concatenated.values[i] = calloc(strlen(one.values[k]), sizeof(char)); */
-    /* concatenated.values[i] = one.values[k]; */
-/*     strcpy(concatenated.values[i],one.values[k]); */
-/*     i++; */
-/*   } */
-/*   for (int i = 0; i < two.len; i++){ */
-/*     logger(string,two.values[i]); */
-/*   } */
-/*   for (int j = 0; j < two.len; j++){ */
-    /* concatenated.values[i] = calloc(strlen(two.values[j]) + 1, sizeof(char)); */
-    /* concatenated.values[i] = two.values[j]; */
-/*     strcpy(concatenated.values[i],two.values[j]); */
-/*     i++; */
-/*   } */
-/*   concatenated.len = i; */
-/*  */
-/*   return concatenated; */
-/* } */
-
 bool filterHistoryForMatchingAutoComplete(const string_array command_history,const string_array global_command_history, const char* line, char* possible_autocomplete){
-  /* string_array concatenated = concatenateArrays(command_history, global_command_history); */
+  string_array concatenated = concatenateArrays(command_history, global_command_history);
 
-  for (int i = 0; i < command_history.len; i++){
-    if (strncmp(line,command_history.values[i],strlen(line)) == 0){
-      strcpy(possible_autocomplete, command_history.values[i]);
-
-      return true;
-    }         
-  }
-
-  for (int j = 0; j < global_command_history.len; j++){
-    if (strncmp(line,global_command_history.values[j],strlen(line)) == 0){
-      strcpy(possible_autocomplete, global_command_history.values[j]);
+  for (int i = 0; i < concatenated.len; i++){
+    if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
+      strcpy(possible_autocomplete, concatenated.values[i]);
 
       return true;
     }         
@@ -445,7 +412,7 @@ void drawPopupBox(const coordinates terminal_size, const int width, const int he
   printf("q: quit\t\u2191/\u2193: move through commands\tENTER: show command output");
 }
 
-void popupOutputHistory(const string_array command_history){
+void popupFuzzyFinder(const string_array command_history){
   char c;
   coordinates terminal_size = getTerminalSize();
   int width = terminal_size.x * 0.4;
@@ -542,13 +509,12 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         break;
       }
       default: {
+        logger(character,&c);
         if ((int)c == 6){ //control+f
-          logger(string,"ctrl-a\n");
 
-          popupOutputHistory(*command_history);
+          popupFuzzyFinder(*command_history);
           moveCursor(cursor_pos);
         } else if ((int)c == 8){ //control+h
-          logger(string,"ctrl-h\n");
         } else if (c != -1 && typedLetter(&line, c, i)){
           i++;
         }
@@ -616,23 +582,16 @@ void pipeOutputToFile(char* filename){
 
 int runChildProcess(string_array splitted_line) {
   pid_t pid = fork();
-  if (pid == 0){
-    if (splitted_line.len >= 3) {
-      if (strcmp(splitted_line.values[splitted_line.len - 2],">>") == 0){
-        pipeOutputToFile(splitted_line.values[splitted_line.len - 1]);
-      }
-      splitted_line.values[splitted_line.len - 2] = NULL;
-    }
 
+  if (pid == 0){
     int error = execvp(splitted_line.values[0],splitted_line.values);
     if (error){
       printf("couldn't find command %s\n",splitted_line.values[0]);
-
     }
   } else {
     return pid;
   }
-  return true;
+  return false;
 }
 
 void push(char* line,string_array* command_history){
