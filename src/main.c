@@ -271,9 +271,9 @@ string_array filterHistory(const string_array concatenated, const char* line){
   int matches_num = 0;
 
   for (int i = 0; i < concatenated.len; i++){
-    if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
-      possible_matches[i] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
-      strcpy(possible_matches[i], concatenated.values[i]);
+    if (strncmp(line,concatenated.values[i],strlen(line) - 1) == 0){
+      possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
+      strcpy(possible_matches[matches_num], concatenated.values[i]);
       matches_num++;
     }         
   }
@@ -386,7 +386,6 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
 }
 
 void drawPopupBox(const coordinates terminal_size, const int width, const int height){
-  /* write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN)); */
   CLEAR_SCREEN
 
   for (int row = 0; row < terminal_size.y; row++){
@@ -427,7 +426,34 @@ void drawPopupBox(const coordinates terminal_size, const int width, const int he
     .y = terminal_size.y - (height / 2)
   };
   moveCursor(bottom_box_pos);
-  printf("q: quit\t\u2191/\u2193: move through commands\tENTER: show command output");
+  printf("esc: quit\t\u2191/\u2193: move through commands\tENTER: show command output");
+}
+
+bool inArray(char* value, string_array array){
+  for (int i = 0; i < array.len; i++){
+    if (strcmp(value, array.values[i]) == 0){
+      return true;
+    }
+  }
+  return false;
+}
+
+string_array removeDuplicates(string_array matching_commands){
+  int j = 0;
+  string_array no_dup_array;
+  no_dup_array.values = calloc(matching_commands.len, sizeof(char*));
+  no_dup_array.len = 0;
+
+  for (int i = 0; i < matching_commands.len; i++){
+    if (!inArray(matching_commands.values[i], no_dup_array)){
+      no_dup_array.values[j] = calloc(strlen(matching_commands.values[i]) + 1, sizeof(char));
+      strcpy(no_dup_array.values[j], matching_commands.values[i]);
+      no_dup_array.len += 1;
+      j++;
+    }
+  }
+
+  return no_dup_array;
 }
 
 char* popupFuzzyFinder(const string_array all_time_command_history){
@@ -439,53 +465,27 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
   int initial_y = 0;
   char* line = calloc(64, sizeof(char));
 
-  drawPopupBox(terminal_size, width, height);
+  while (true){
+    drawPopupBox(terminal_size, width, height);
 
-  coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
-  moveCursor(cursor);
-  printf("Fuzzy Find through past commands");
-  /* HIDE_CURSOR */
-
-  initial_y = cursor.y + 2;
-  cursor.y = initial_y;
-  moveCursor(cursor);
-  printf("\u2771 ");
-
-  char* text = calloc(100, sizeof(char));
-  scanf("%s",text);
-
-  logger(string, "Getline returns: ");
-  logger(string, &text);
-  
-  string_array matching_commands = filterHistory(all_time_command_history, text);
-  printf("%d\n", matching_commands.len);
-  for (int i = 0; i < matching_commands.len; i++){
-    cursor.y += 1;
+    coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
     moveCursor(cursor);
+    printf("Fuzzy Find through past commands");
 
-    if (i == index){
-      printColor(matching_commands.values[i],HIGHLIGHT);
-    } else {
-      printf("%s", matching_commands.values[i]);
-    }
-  }
-
-  while ((c = getch()) != 'q'){
+    initial_y = cursor.y + 2;
     cursor.y = initial_y;
-    if (c == '\n'){
-      strcpy(line, matching_commands.values[index]);
-      break;
-    } else if (c == ARROW){
-      getch();
-      int value = getch();
+    moveCursor(cursor);
+    printf("\u2771 ");
 
-      if (value == 'A'){
-        (index > 0) ? index-- : index;
-      } else if (value == 'B'){
-        (index < matching_commands.len - 1) ? index++ : index;
-      }
+    char* text = calloc(100, sizeof(char));
+    fgets(text,100,stdin);
+    HIDE_CURSOR
+    
+    string_array matching_commands = removeDuplicates(filterHistory(all_time_command_history, text));
+    if (matching_commands.len == 0){
+      ENABLE_CURSOR;
+      continue;
     }
-
     for (int i = 0; i < matching_commands.len; i++){
       cursor.y += 1;
       moveCursor(cursor);
@@ -496,7 +496,44 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
         printf("%s", matching_commands.values[i]);
       }
     }
+
+    while ((c = getch())){
+      cursor.y = initial_y;
+
+      if (c == '\n'){
+        strcpy(line, matching_commands.values[index]);
+        goto FINISH_LOOP;
+      } else if (c == ARROW){
+        getch();
+        int value = getch();
+
+        if (value == 'A'){
+          if (index == 0){
+            ENABLE_CURSOR;
+            break;
+          } else {
+            (index > 0) ? index-- : index;
+          }
+        } else if (value == 'B'){
+          (index < matching_commands.len - 1) ? index++ : index;
+        } else {
+          goto FINISH_LOOP;
+        }
+      }
+
+      for (int i = 0; i < matching_commands.len; i++){
+        cursor.y += 1;
+        moveCursor(cursor);
+
+        if (i == index){
+          printColor(matching_commands.values[i],HIGHLIGHT);
+        } else {
+          printf("%s", matching_commands.values[i]);
+        }
+      }
+    }
   }
+  FINISH_LOOP:
 
   CLEAR_SCREEN
   ENABLE_CURSOR
@@ -546,8 +583,8 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
       default: {
         if ((int)c == 6){ //control+f
 
-          string_array concatenatedHistoryCommands = concatenateArrays(global_command_history, *command_history);
-          line = popupFuzzyFinder(concatenatedHistoryCommands);
+          string_array concatenated_history_commands = concatenateArrays(global_command_history, *command_history);
+          line = popupFuzzyFinder(concatenated_history_commands);
           i = strlen(line);
           moveCursor(cursor_pos);
         } else if ((int)c == 8){ //control+h
@@ -774,7 +811,6 @@ int main(int argc, char* argv[]) {
     removeFileContents(test_file);
   }
 
-  /* write(STDOUT_FILENO,CLEAR_SCREEN,strlen(CLEAR_SCREEN)); */
   CLEAR_SCREEN
   char* current_dir = getcwd(cd,sizeof(cd));
   char* last_two_dirs = getLastTwoDirs(current_dir);
