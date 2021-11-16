@@ -161,7 +161,7 @@ bool typedLetter(char** line, const char c, const int i){
     return false;
   }
 
-  if (c < 0 || c > 127){
+  if (c < 0 || c > 127){
     getch();
   } else if (i == strlen(*line)){
     (*line)[i] = c;
@@ -389,7 +389,7 @@ void drawPopupBox(const coordinates terminal_size, const int width, const int he
   CLEAR_SCREEN
 
   for (int row = 0; row < terminal_size.y; row++){
-    if (row == (height / 2) || row == (terminal_size.y - (height / 2))){
+    if (row == (height / 2) || row == (terminal_size.y - (height / 2))){
       for (int i = 0; i < terminal_size.x; i++){
         if (i > (width / 2) && i < (terminal_size.x - (width / 2))){
           printf("\u2550");
@@ -409,7 +409,7 @@ void drawPopupBox(const coordinates terminal_size, const int width, const int he
           printf(" ");
         }
       }
-    } else if (row > (height / 2) && row < (terminal_size.y - (height / 2))){
+    } else if (row > (height / 2) && row < (terminal_size.y - (height / 2))){
       for (int col = 0; col < terminal_size.x; col++){
         if (col == (width / 2) || col == (terminal_size.x - (width / 2))){
           printf("\u2551");
@@ -647,7 +647,7 @@ void printPrompt(const char* dir,color color){
 }
 
 void pipeOutputToFile(char* filename){
-  int file = open(filename, O_WRONLY | O_CREAT,0777);
+  int file = open(filename, O_WRONLY | O_CREAT,0777);
 
   int file2 = dup2(file,STDOUT_FILENO);
   close(file);
