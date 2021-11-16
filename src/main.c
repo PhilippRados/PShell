@@ -15,7 +15,7 @@
 
 #define BACKSPACE 127
 #define TAB 9
-#define ARROW '\033'
+#define ESCAPE '\033'
 #define CLEAR_LINE printf("%c[2K", 27);
 #define CLEAR_BELOW_CURSOR printf("%c[0J",27);
 #define HIDE_CURSOR printf("\e[?25l");
@@ -125,7 +125,7 @@ bool isInPath(char* line, string_array PATH_BINS){
   return false;
 }
 
-void backspaceLogic(char** line, int* i, const int prompt_len){
+void backspaceLogic(char** line, int* i){
   if (strlen(*line) > 0 && i >= 0){
     *line = removeCharAtPos(*line,*i);
 
@@ -270,12 +270,14 @@ string_array filterHistory(const string_array concatenated, const char* line){
   char** possible_matches = calloc(512, sizeof(char*));
   int matches_num = 0;
 
-  for (int i = 0; i < concatenated.len; i++){
-    if (strncmp(line,concatenated.values[i],strlen(line) - 1) == 0){
-      possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
-      strcpy(possible_matches[matches_num], concatenated.values[i]);
-      matches_num++;
-    }         
+  if (strlen(line) > 0){
+    for (int i = 0; i < concatenated.len; i++){
+      if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
+        possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
+        strcpy(possible_matches[matches_num], concatenated.values[i]);
+        matches_num++;
+      }         
+    }
   }
   string_array result = {
     .values = possible_matches,
@@ -456,87 +458,90 @@ string_array removeDuplicates(string_array matching_commands){
   return no_dup_array;
 }
 
+void clearFuzzyWindow(int start_x, int start_y, int box_width, int box_height){
+  for (int rows = start_x - 2; rows < box_width; rows++){
+    for (int cols = start_y; cols < box_height; cols++){
+      coordinates cursor = {.x = rows, .y = cols};
+      moveCursor(cursor);
+      printf(" ");
+    }
+  }
+}
+
 char* popupFuzzyFinder(const string_array all_time_command_history){
   char c;
   coordinates terminal_size = getTerminalSize();
   int width = terminal_size.x * 0.4;
   int height = terminal_size.y * 0.3;
   int index = 0;
-  int initial_y = 0;
+  int i = 0;
   char* line = calloc(64, sizeof(char));
 
-  while (true){
-    drawPopupBox(terminal_size, width, height);
+  drawPopupBox(terminal_size, width, height);
 
-    coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
-    moveCursor(cursor);
-    printf("Fuzzy Find through past commands");
+  coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
+  moveCursor(cursor);
+  printf("Fuzzy Find through past commands");
 
-    initial_y = cursor.y + 2;
-    cursor.y = initial_y;
-    moveCursor(cursor);
-    printf("\u2771 ");
+  int initial_y = cursor.y + 2;
+  int initial_x = cursor.x + 2;
+  cursor.y = initial_y;
+  moveCursor(cursor);
+  printf("\u2771 ");
 
-    char* text = calloc(100, sizeof(char));
-    fgets(text,100,stdin);
-    HIDE_CURSOR
+  string_array matching_commands;
+  matching_commands.len = 0;
+
+  while ((c = getch())){
+    clearFuzzyWindow(initial_x, initial_y, terminal_size.x - width, terminal_size.y - height);
     
-    string_array matching_commands = removeDuplicates(filterHistory(all_time_command_history, text));
-    if (matching_commands.len == 0){
-      ENABLE_CURSOR;
-      continue;
+    if (c == '\n'){
+      if (matching_commands.len > 0){
+        memset(line,0,strlen(line));
+        strcpy(line, matching_commands.values[index]);
+      }
+      goto FINISH_LOOP;
+    } else if (c == BACKSPACE){
+      backspaceLogic(&line, &i);
+    } else if (c == ESCAPE){
+      getch();
+      int value = getch();
+
+      if (value == 'A'){
+        (index > 0) ? index-- : index;
+      } else if (value == 'B'){
+        (index < matching_commands.len - 1) ? index++ : index;
+      }
+    } else {
+      if (strlen(line) < 63){
+        index = 0;
+        line[i] = c;
+        i++;
+      }
     }
-    for (int i = 0; i < matching_commands.len; i++){
+    
+    matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
+
+    for (int j = 0; j < matching_commands.len; j++){
       cursor.y += 1;
+      cursor.x = initial_x;
       moveCursor(cursor);
 
-      if (i == index){
-        printColor(matching_commands.values[i],HIGHLIGHT);
+      if (j == index){
+        printColor(matching_commands.values[j],HIGHLIGHT);
       } else {
-        printf("%s", matching_commands.values[i]);
+        printf("%s", matching_commands.values[j]);
       }
     }
 
-    while ((c = getch())){
-      cursor.y = initial_y;
-
-      if (c == '\n'){
-        strcpy(line, matching_commands.values[index]);
-        goto FINISH_LOOP;
-      } else if (c == ARROW){
-        getch();
-        int value = getch();
-
-        if (value == 'A'){
-          if (index == 0){
-            ENABLE_CURSOR;
-            break;
-          } else {
-            (index > 0) ? index-- : index;
-          }
-        } else if (value == 'B'){
-          (index < matching_commands.len - 1) ? index++ : index;
-        } else {
-          goto FINISH_LOOP;
-        }
-      }
-
-      for (int i = 0; i < matching_commands.len; i++){
-        cursor.y += 1;
-        moveCursor(cursor);
-
-        if (i == index){
-          printColor(matching_commands.values[i],HIGHLIGHT);
-        } else {
-          printf("%s", matching_commands.values[i]);
-        }
-      }
-    }
+    cursor.y = initial_y;
+    cursor.x = initial_x - 2;
+    moveCursor(cursor);
+    printf("\u2771 %s", line);
   }
   FINISH_LOOP:
 
-  CLEAR_SCREEN
-  ENABLE_CURSOR
+  CLEAR_SCREEN;
   printf("\n");
 
   return line;
@@ -570,11 +575,11 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         break;
       }
       case (BACKSPACE): {
-        backspaceLogic(&line,&i,prompt_len);
+        backspaceLogic(&line,&i);
 
         break;
       }
-      case (ARROW): {
+      case (ESCAPE): {
         getch();
         int value = getch();
         arrowPress(&line,&i,&history_index,autocomplete,possible_autocomplete,command_history,value);
