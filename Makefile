@@ -8,13 +8,10 @@ help:  ## Display this help
 
 .SILENT:
 shell: compile_main ## compile the shell
-	${CC} ${CFLAGS} src/bin/main.o src/bin/util.o -o src/bin/pshell
+	${CC} ${CFLAGS} src/bin/main.o src/bin/util.o src/bin/fuzzy_finder.o -o src/bin/pshell
 
 start_shell: src/bin/pshell ## start the shell after compilation
 	./src/bin/pshell
-
-# start_test_shell: src/bin/pshell ## start the test-shell after compilation
-# 	./src/bin/pshell -test
 
 run_tests: compile_tests compile_main ## Run tests
 	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ./tests/bin/tests.o src/bin/util.o -lcriterion.3.1.0
@@ -27,23 +24,11 @@ compile_tests:
 compile_main:
 	${CC} ${CFLAGS} -c src/util.c -o ./src/bin/util.o
 	${CC} ${CFLAGS} -c src/main.c -o ./src/bin/main.o
-
-# user_test: #start shell script to emulate user-events
-# 	bash /Users/philipprados/documents/coding/c/pshell/tests/start_test.sh
-# 
-# watch_tests: ## watches all C-files and runs test if one changes
-# 	watchexec -e c ${MAKE} run_tests
+	${CC} ${CFLAGS} -c src/fuzzy_finder.c -o ./src/bin/fuzzy_finder.o
 
 compile_and_run: shell start_shell
 	make shell
 	make start_shell
-
-# compile_and_test: shell start_test_shell
-# 	make shell
-# 	make start_test_shell
-# 
-# watch_files: compile_and_run ## watches all C-files and runs test if one changes
-# 	watchexec -e c ${MAKE} compile_and_run
 
 clean: ## cleans up all binary and object files
 	rm -f -R *.o ./tests/bin/* ./src/bin/*

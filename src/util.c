@@ -1,35 +1,26 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include "main.h"
 
-typedef struct {
-  int len;
-  char** values;
-} string_array;
+string_array splitString(const char* string_to_split,char delimeter){
+  int start = 0;
+  int j = 0;
+  char** splitted_strings = (char**)calloc(strlen(string_to_split),sizeof(char*));
+  string_array result; 
 
-string_array splitString(char* string_to_split,char delimeter){
-    int start = 0;
-    int j = 0;
-    char** splitted_strings = (char**)calloc(strlen(string_to_split),sizeof(char*));
-    string_array result; 
-
-    for (int i = 0;;i++){
-        if (string_to_split[i] == delimeter || string_to_split[i] == '\0'){
-            splitted_strings[j] = (char*)calloc(i-start + 1,sizeof(char));
-            memcpy(splitted_strings[j],&string_to_split[start], i - start);
-            start = i + 1;
-            j++;
-        }
-        if (string_to_split[i] == '\0') break;
+  for (int i = 0;;i++){
+    if (string_to_split[i] == delimeter || string_to_split[i] == '\0'){
+      splitted_strings[j] = (char*)calloc(i-start + 1,sizeof(char));
+      memcpy(splitted_strings[j],&string_to_split[start], i - start);
+      start = i + 1;
+      j++;
     }
-    result.len = j;
-    result.values = splitted_strings;
-    return result;
+    if (string_to_split[i] == '\0') break;
+  }
+  result.len = j;
+  result.values = splitted_strings;
+  return result;
 }
 
 char* getLastTwoDirs(char* cwd){
-  char* last_dir;
-  int start = 1;
   int i = 1;
   int last_slash_pos = 0;
   int second_to_last_slash = 0;
@@ -87,3 +78,86 @@ string_array concatenateArrays(const string_array one, const string_array two){
 
   return concatenated;
 }
+
+void moveCursor(coordinates new_pos){
+  printf("\033[%d;%dH",new_pos.y,new_pos.x);
+}
+
+
+coordinates getTerminalSize(){
+  coordinates size;
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+  size.x = w.ws_col;
+  size.y = w.ws_row;
+
+  return size;
+}
+
+bool inArray(char* value, string_array array){
+  for (int i = 0; i < array.len; i++){
+    if (strcmp(value, array.values[i]) == 0){
+      return true;
+    }
+  }
+  return false;
+}
+
+string_array filterHistory(const string_array concatenated, const char* line){
+  char** possible_matches = calloc(512, sizeof(char*));
+  int matches_num = 0;
+
+  if (strlen(line) > 0){
+    for (int i = 0; i < concatenated.len; i++){
+      if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
+        possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
+        strcpy(possible_matches[matches_num], concatenated.values[i]);
+        matches_num++;
+      }         
+    }
+  }
+  string_array result = {
+    .values = possible_matches,
+    .len = matches_num
+  };
+
+  return result;
+}
+
+string_array removeDuplicates(string_array matching_commands){
+  int j = 0;
+  string_array no_dup_array;
+  no_dup_array.values = calloc(matching_commands.len, sizeof(char*));
+  no_dup_array.len = 0;
+
+  for (int i = 0; i < matching_commands.len; i++){
+    if (!inArray(matching_commands.values[i], no_dup_array)){
+      no_dup_array.values[j] = calloc(strlen(matching_commands.values[i]) + 1, sizeof(char));
+      strcpy(no_dup_array.values[j], matching_commands.values[i]);
+      no_dup_array.len += 1;
+      j++;
+    }
+  }
+
+  return no_dup_array;
+}
+
+char* removeCharAtPos(char* line,int x_pos){
+  for (int i = x_pos - 1; i < strlen(line); i++){
+    line[i] = line[i + 1];
+  }
+  return line;
+}
+
+void backspaceLogic(char** line, int* i){
+  if (strlen(*line) > 0 && i >= 0){
+    *line = removeCharAtPos(*line,*i);
+
+    if (*i > 0){
+      *i -= 1;
+    }
+  }
+}
+
+

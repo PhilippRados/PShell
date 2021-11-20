@@ -1,38 +1,17 @@
 #include "main.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <wchar.h>
-#include <locale.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <sys/ioctl.h>
 
-#define BACKSPACE 127
-#define TAB 9
-#define ESCAPE '\033'
-#define CLEAR_LINE printf("%c[2K", 27);
-#define CLEAR_BELOW_CURSOR printf("%c[0J",27);
-#define HIDE_CURSOR printf("\e[?25l");
-#define ENABLE_CURSOR printf("\e[?25h");
-#define CLEAR_SCREEN printf(" \e[1;1H\e[2J");
 const int BUFFER = 256;
 
 int getch(){
-    struct termios oldattr, newattr;
-    int ch;
-    tcgetattr( STDIN_FILENO, &oldattr );
-    newattr = oldattr;
-    newattr.c_lflag &= ~( ICANON | ECHO );
-    tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
-    ch = getchar();
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
-    return ch;
+  struct termios oldattr, newattr;
+  int ch;
+  tcgetattr( STDIN_FILENO, &oldattr );
+  newattr = oldattr;
+  newattr.c_lflag &= ~( ICANON | ECHO );
+  tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
+  ch = getchar();
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+  return ch;
 }
 
 void logger(enum logger_type type,void* message){
@@ -105,17 +84,6 @@ bool insertCharAtPos(char* line,int index,char c) {
   return true;
 }
 
-char* removeCharAtPos(char* line,int x_pos){
-  for (int i = x_pos - 1; i < strlen(line); i++){
-    line[i] = line[i + 1];
-  }
-  return line;
-}
-
-void moveCursor(coordinates new_pos){
-  printf("\033[%d;%dH",new_pos.y,new_pos.x);
-}
-
 bool isInPath(char* line, string_array PATH_BINS){
   for (int i = 0; i < PATH_BINS.len;i++){
     if (strcmp(PATH_BINS.values[i],line) == 0){
@@ -125,15 +93,6 @@ bool isInPath(char* line, string_array PATH_BINS){
   return false;
 }
 
-void backspaceLogic(char** line, int* i){
-  if (strlen(*line) > 0 && i >= 0){
-    *line = removeCharAtPos(*line,*i);
-
-    if (*i > 0){
-      *i -= 1;
-    }
-  }
-}
 
 void upArrowPress(int* history_index, char** line, const string_array* command_history){
  if (*history_index < command_history->len){
@@ -241,17 +200,6 @@ string_array checkForCommandAutoComplete(const string_array command_line,const s
   return possible_autocomplete;
 }
 
-coordinates getTerminalSize(){
-  coordinates size;
-  struct winsize w;
-  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-
-  size.x = w.ws_col;
-  size.y = w.ws_row;
-
-  return size;
-}
-
 int getLongestWordInArray(const string_array array){
   int longest = 0;
   int currrent_len = 0;
@@ -264,27 +212,6 @@ int getLongestWordInArray(const string_array array){
   }
   
   return longest;
-}
-
-string_array filterHistory(const string_array concatenated, const char* line){
-  char** possible_matches = calloc(512, sizeof(char*));
-  int matches_num = 0;
-
-  if (strlen(line) > 0){
-    for (int i = 0; i < concatenated.len; i++){
-      if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
-        possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
-        strcpy(possible_matches[matches_num], concatenated.values[i]);
-        matches_num++;
-      }         
-    }
-  }
-  string_array result = {
-    .values = possible_matches,
-    .len = matches_num
-  };
-
-  return result;
 }
 
 bool filterHistoryForMatchingAutoComplete(const string_array concatenated, const char* line, char* possible_autocomplete){
@@ -387,168 +314,6 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
   return 0;
 }
 
-void drawPopupBox(const coordinates terminal_size, const int width, const int height){
-  CLEAR_SCREEN
-
-  for (int row = 0; row < terminal_size.y; row++){
-    if (row == (height / 2) || row == (terminal_size.y - (height / 2))){
-      for (int i = 0; i < terminal_size.x; i++){
-        if (i > (width / 2) && i < (terminal_size.x - (width / 2))){
-          printf("\u2550");
-        } else if (i == (width / 2)){
-          if (row == (height / 2)){
-            printf("\u2554");
-          } else {
-            printf("\u255A");
-          }
-        } else if (i == (terminal_size.x - (width / 2))){
-          if (row == (height / 2)){
-            printf("\u2557");
-          } else {
-            printf("\u255D");
-          }
-        } else {
-          printf(" ");
-        }
-      }
-    } else if (row > (height / 2) && row < (terminal_size.y - (height / 2))){
-      for (int col = 0; col < terminal_size.x; col++){
-        if (col == (width / 2) || col == (terminal_size.x - (width / 2))){
-          printf("\u2551");
-        } else {
-          printf(" ");
-        }
-      }
-    } else {
-      printf("\n");
-    }
-  }
-  coordinates bottom_box_pos = {
-    .x = (width / 2) + 3,
-    .y = terminal_size.y - (height / 2)
-  };
-  moveCursor(bottom_box_pos);
-}
-
-bool inArray(char* value, string_array array){
-  for (int i = 0; i < array.len; i++){
-    if (strcmp(value, array.values[i]) == 0){
-      return true;
-    }
-  }
-  return false;
-}
-
-string_array removeDuplicates(string_array matching_commands){
-  int j = 0;
-  string_array no_dup_array;
-  no_dup_array.values = calloc(matching_commands.len, sizeof(char*));
-  no_dup_array.len = 0;
-
-  for (int i = 0; i < matching_commands.len; i++){
-    if (!inArray(matching_commands.values[i], no_dup_array)){
-      no_dup_array.values[j] = calloc(strlen(matching_commands.values[i]) + 1, sizeof(char));
-      strcpy(no_dup_array.values[j], matching_commands.values[i]);
-      no_dup_array.len += 1;
-      j++;
-    }
-  }
-
-  return no_dup_array;
-}
-
-void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width, int box_height){
-  for (int rows = initial_cursor_pos.x + 2; rows < box_width; rows++){
-    for (int cols = initial_cursor_pos.y; cols < box_height; cols++){
-      coordinates cursor = {.x = rows, .y = cols};
-      moveCursor(cursor);
-      printf(" ");
-    }
-  }
-
-  moveCursor(initial_cursor_pos);
-}
-
-char* popupFuzzyFinder(const string_array all_time_command_history){
-  char c;
-  coordinates terminal_size = getTerminalSize();
-  int width = terminal_size.x * 0.4;
-  int height = terminal_size.y * 0.3;
-  int index = 0;
-  int i = 0;
-  char* line = calloc(64, sizeof(char));
-
-  drawPopupBox(terminal_size, width, height);
-
-  coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
-  moveCursor(cursor);
-  printf("Fuzzy Find through past commands");
-
-  coordinates initial_cursor_pos = {
-    .x = cursor.x,
-    .y = cursor.y + 2,
-  };
-  moveCursor(initial_cursor_pos);
-  printf("\u2771 ");
-
-  string_array matching_commands;
-  matching_commands.len = 0;
-
-  while ((c = getch())){
-    clearFuzzyWindow(initial_cursor_pos, terminal_size.x - width, terminal_size.y - height);
-    if (c == '\n'){
-      if (matching_commands.len > 0){
-        memset(line,0,strlen(line));
-        strcpy(line, matching_commands.values[index]);
-      }
-      goto FINISH_LOOP;
-    } else if (c == BACKSPACE){
-      backspaceLogic(&line, &i);
-    } else if (c == ESCAPE){
-      if (getch() == ESCAPE){
-        goto FINISH_LOOP;
-      }
-      int value = getch();
-
-      if (value == 'A'){
-        (index > 0) ? index-- : index;
-      } else if (value == 'B'){
-        (index < matching_commands.len - 1) ? index++ : index;
-      }
-    } else {
-      if (strlen(line) < 63){
-        index = 0;
-        line[i] = c;
-        i++;
-      }
-    }
-    
-    matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
-
-    for (int j = 0; j < matching_commands.len; j++){
-      coordinates drawing_pos = {
-        .y = initial_cursor_pos.y + j + 1,
-        .x = initial_cursor_pos.x + 2,
-      };
-      moveCursor(drawing_pos);
-
-      if (j == index){
-        printColor(matching_commands.values[j],HIGHLIGHT);
-      } else {
-        printf("%s", matching_commands.values[j]);
-      }
-    }
-
-    moveCursor(initial_cursor_pos);
-    printf("\u2771 %s", line);
-  }
-  FINISH_LOOP:
-
-  CLEAR_SCREEN;
-  printf("\n");
-
-  return line;
-}
 
 char* readLine(string_array PATH_BINS,char* directories,string_array* command_history, const string_array global_command_history){
   char c;
@@ -700,28 +465,6 @@ bool arrCmp(string_array arr1, string_array arr2){
   return true;
 }
 
-void logToTestFile(char* line,char* filename){
-  FILE* test_file = fopen(filename,"a");
-  char *new_line = malloc(sizeof(line));
-
-  strcpy(new_line,line);
-  fwrite(strcat(new_line,"\n"),sizeof(char),strlen(line) + 1,test_file);
-  fclose(test_file);
-}
-
-void removeFileContents(char* filename){
-  FILE* test_file = fopen(filename,"w");
-  fclose(test_file);
-}
-
-bool hasTestFlag(int argc, char* argv[]){
-  if (argc > 1 && strcmp(argv[argc - 1],"-test") == 0){
-    return true;
-  } else {
-  return false;
-  }
-}
-
 string_array getAllPathBinaries(string_array PATH_ARR){
   struct dirent* bin;
   string_array all_path_bins; 
@@ -802,22 +545,14 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history){
 int main(int argc, char* argv[]) {
   char *line;
   string_array splitted_line;
-  int child_id;
-  int status;
   char cd[512];
-  char* test_file = "user_test.txt";
   string_array command_history = {
     .len = 0,
     .values = calloc(HISTORY_SIZE,sizeof(char*))
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),':');
   string_array PATH_BINS = getAllPathBinaries(PATH_ARR);
-
   string_array global_command_history = getAllHistoryCommands();
-
-  if (hasTestFlag(argc,argv)){
-    removeFileContents(test_file);
-  }
 
   CLEAR_SCREEN
   char* current_dir = getcwd(cd,sizeof(cd));
@@ -828,9 +563,6 @@ int main(int argc, char* argv[]) {
     printPrompt(last_two_dirs,CYAN);
 
     line = readLine(PATH_BINS,last_two_dirs,&command_history, global_command_history);
-    if (hasTestFlag(argc,argv)){
-      logToTestFile(line,test_file);
-    }
     if(strcmp(line,"q") == 0){
       break;
     }

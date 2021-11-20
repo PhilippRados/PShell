@@ -1,4 +1,26 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <wchar.h>
+#include <locale.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <sys/ioctl.h>
+#include "colors.h"
+
+#define BACKSPACE 127
+#define TAB 9
+#define ESCAPE '\033'
+#define CLEAR_LINE printf("%c[2K", 27);
+#define CLEAR_BELOW_CURSOR printf("%c[0J",27);
+#define HIDE_CURSOR printf("\e[?25l");
+#define ENABLE_CURSOR printf("\e[?25h");
+#define CLEAR_SCREEN printf(" \e[1;1H\e[2J");
 
 enum { HISTORY_SIZE = 512} ;
 
@@ -25,42 +47,6 @@ typedef struct {
   char** values;
 } string_array;
 
-typedef struct {
-  int attr;
-  int fg;
-  int bg;
-} color;
-
-const color WHITE = {
-  .attr = 0,
-  .fg = 37,
-  .bg = 10,
-};
-
-const color RED = {
-  .attr = 0,
-  .fg = 31,
-  .bg = 10,
-};
-
-const color GREEN = {
-  .attr = 0,
-  .fg = 32,
-  .bg = 10,
-};
-
-const color CYAN = {
-  .attr = 1,
-  .fg = 36,
-  .bg = 10,
-};
-
-const color HIGHLIGHT = {
-  .attr = 1,
-  .fg = 37,
-  .bg = 42,
-};
-
 string_array splitString(const char*,char);
 char* getLastTwoDirs(char*);
 int isBuiltIn(char*);
@@ -71,3 +57,9 @@ long getFileSizeAtIndex(FILE* file,int index);
 char* expectedAndReceived(char*,char*);
 void printColor(const char* string,color color);
 string_array concatenateArrays(const string_array one, const string_array two);
+void moveCursor(coordinates new_pos);
+char* popupFuzzyFinder(const string_array all_time_command_history);
+coordinates getTerminalSize();
+string_array filterHistory(const string_array concatenated, const char* line);
+string_array removeDuplicates(string_array matching_commands);
+void backspaceLogic(char** line, int* i);
