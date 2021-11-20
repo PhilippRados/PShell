@@ -428,7 +428,6 @@ void drawPopupBox(const coordinates terminal_size, const int width, const int he
     .y = terminal_size.y - (height / 2)
   };
   moveCursor(bottom_box_pos);
-  printf("esc: quit\t\u2191/\u2193: move through commands\tENTER: show command output");
 }
 
 bool inArray(char* value, string_array array){
@@ -458,14 +457,16 @@ string_array removeDuplicates(string_array matching_commands){
   return no_dup_array;
 }
 
-void clearFuzzyWindow(int start_x, int start_y, int box_width, int box_height){
-  for (int rows = start_x - 2; rows < box_width; rows++){
-    for (int cols = start_y; cols < box_height; cols++){
+void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width, int box_height){
+  for (int rows = initial_cursor_pos.x + 2; rows < box_width; rows++){
+    for (int cols = initial_cursor_pos.y; cols < box_height; cols++){
       coordinates cursor = {.x = rows, .y = cols};
       moveCursor(cursor);
       printf(" ");
     }
   }
+
+  moveCursor(initial_cursor_pos);
 }
 
 char* popupFuzzyFinder(const string_array all_time_command_history){
@@ -483,18 +484,18 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
   moveCursor(cursor);
   printf("Fuzzy Find through past commands");
 
-  int initial_y = cursor.y + 2;
-  int initial_x = cursor.x + 2;
-  cursor.y = initial_y;
-  moveCursor(cursor);
+  coordinates initial_cursor_pos = {
+    .x = cursor.x,
+    .y = cursor.y + 2,
+  };
+  moveCursor(initial_cursor_pos);
   printf("\u2771 ");
 
   string_array matching_commands;
   matching_commands.len = 0;
 
   while ((c = getch())){
-    clearFuzzyWindow(initial_x, initial_y, terminal_size.x - width, terminal_size.y - height);
-    
+    clearFuzzyWindow(initial_cursor_pos, terminal_size.x - width, terminal_size.y - height);
     if (c == '\n'){
       if (matching_commands.len > 0){
         memset(line,0,strlen(line));
@@ -504,7 +505,9 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
     } else if (c == BACKSPACE){
       backspaceLogic(&line, &i);
     } else if (c == ESCAPE){
-      getch();
+      if (getch() == ESCAPE){
+        goto FINISH_LOOP;
+      }
       int value = getch();
 
       if (value == 'A'){
@@ -523,9 +526,11 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
     matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
 
     for (int j = 0; j < matching_commands.len; j++){
-      cursor.y += 1;
-      cursor.x = initial_x;
-      moveCursor(cursor);
+      coordinates drawing_pos = {
+        .y = initial_cursor_pos.y + j + 1,
+        .x = initial_cursor_pos.x + 2,
+      };
+      moveCursor(drawing_pos);
 
       if (j == index){
         printColor(matching_commands.values[j],HIGHLIGHT);
@@ -534,9 +539,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
       }
     }
 
-    cursor.y = initial_y;
-    cursor.x = initial_x - 2;
-    moveCursor(cursor);
+    moveCursor(initial_cursor_pos);
     printf("\u2771 %s", line);
   }
   FINISH_LOOP:
