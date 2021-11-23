@@ -104,27 +104,6 @@ bool inArray(char* value, string_array array){
   return false;
 }
 
-string_array filterHistory(const string_array concatenated, const char* line){
-  char** possible_matches = calloc(512, sizeof(char*));
-  int matches_num = 0;
-
-  if (strlen(line) > 0){
-    for (int i = 0; i < concatenated.len; i++){
-      if (strncmp(line,concatenated.values[i],strlen(line)) == 0){
-        possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
-        strcpy(possible_matches[matches_num], concatenated.values[i]);
-        matches_num++;
-      }         
-    }
-  }
-  string_array result = {
-    .values = possible_matches,
-    .len = matches_num
-  };
-
-  return result;
-}
-
 string_array removeDuplicates(string_array matching_commands){
   int j = 0;
   string_array no_dup_array;
@@ -160,4 +139,37 @@ void backspaceLogic(char** line, int* i){
   }
 }
 
+void logger(enum logger_type type,void* message){
+  FILE* logfile = fopen("log.txt","a");
 
+  switch (type){
+    case integer: {
+      fprintf(logfile, "%d", *((int *)message));
+      break;
+    }
+    case string: {
+      fprintf(logfile, "%s", (char *)message);
+      break;
+    }
+    case character: {
+      fprintf(logfile, "%c", *(char *)message);
+      break;
+    }
+    default:{break;}
+  }
+  fclose(logfile);
+}
+
+char* removeWhitespace(char* s1){
+  char* stripped = calloc(strlen(s1) + 1, sizeof(char));
+  int j = 0;
+
+  for (int i = 0; i < strlen(s1); i++){
+    if (s1[i] != ' '){
+      stripped[j] = s1[i];
+      j++;
+    }
+  }
+
+  return stripped;
+}

@@ -14,7 +14,7 @@ start_shell: src/bin/pshell ## start the shell after compilation
 	./src/bin/pshell
 
 run_tests: compile_tests compile_main ## Run tests
-	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ./tests/bin/tests.o src/bin/util.o -lcriterion.3.1.0
+	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ./tests/bin/tests.o src/bin/util.o -L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0
 	./tests/bin/compiled_tests -l
 	./tests/bin/compiled_tests
 

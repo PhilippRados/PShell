@@ -14,27 +14,6 @@ int getch(){
   return ch;
 }
 
-void logger(enum logger_type type,void* message){
-  FILE* logfile = fopen("log.txt","a");
-
-  switch (type){
-    case integer: {
-      fprintf(logfile, "%d", *((int *)message));
-      break;
-    }
-    case string: {
-      fprintf(logfile, "%s", (char *)message);
-      break;
-    }
-    case character: {
-      fprintf(logfile, "%c", *(char *)message);
-      break;
-    }
-    default:{break;}
-  }
-  fclose(logfile);
-}
-
 coordinates getCursorPos(){
   char buf[1];
   char data[50];

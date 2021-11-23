@@ -1,5 +1,56 @@
 #include "main.h"
 
+#define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
+
+int levenshtein(const char *s1, char *s2, int s1_len) {
+  char* s2_substring = calloc(strlen(s1) + 1, sizeof(char));
+  s2_substring = strncpy(s2_substring,&s2[0], strlen(s1));
+
+  unsigned int s1len, s2len, x, y, lastdiag, olddiag;
+  s1len = strlen(s1);
+  s2len = s1len;
+  unsigned int column[s1len + 1];
+
+  for (y = 1; y <= s1len; y++){
+    column[y] = y;
+  }
+
+  for (x = 1; x <= s2len; x++) {
+    column[0] = x;
+    for (y = 1, lastdiag = x - 1; y <= s1len; y++) {
+      olddiag = column[y];
+      column[y] = MIN3(column[y] + 1, column[y - 1] + 1, lastdiag + (s1[y-1] == s2_substring[x - 1] ? 0 : 1));
+      lastdiag = olddiag;
+    }
+  }
+
+  return column[s1len];
+}
+
+string_array filterHistory(const string_array concatenated, char* line){
+  char** possible_matches = calloc(512, sizeof(char*));
+  int matches_num = 0;
+  char* line_no_whitespace = removeWhitespace(strdup(line));
+
+  if (strlen(line) > 0){
+    for (int i = 0; i < concatenated.len; i++){
+      char* values_no_whitespace = removeWhitespace(strdup(concatenated.values[i]));
+
+      if (levenshtein(line_no_whitespace, values_no_whitespace,strlen(line_no_whitespace)) < 2){
+        possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
+        strcpy(possible_matches[matches_num], concatenated.values[i]);
+        matches_num++;
+      }         
+    }
+  }
+  string_array result = {
+    .values = possible_matches,
+    .len = matches_num
+  };
+
+  return result;
+}
+
 void drawPopupBox(const coordinates terminal_size, const int width, const int height){
   CLEAR_SCREEN
 
@@ -102,7 +153,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
         (index < matching_commands.len - 1) ? index++ : index;
       }
     } else {
-      if (strlen(line) < 63){
+      if (strlen(line) < 63 && c > 0 && c < 127){
         index = 0;
         line[i] = c;
         i++;

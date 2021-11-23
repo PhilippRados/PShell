@@ -97,6 +97,38 @@ Test(Concatenating_command_history,check_concat_elements){
   }
   cr_expect(works == true);
 }
+
+Test(removing_whitespace, initial_string_didnt_change){
+  char* s1 = calloc(12, sizeof(char));
+  s1 = "test ing";
+
+  char* result = calloc(12,sizeof(char));
+  result = removeWhitespace(strdup(s1));
+
+  cr_expect(strcmp(s1, "test ing") == 0);
+}
+
+Test(removing_whitespace, removing_single_whitespace){
+  char* s1 = calloc(12, sizeof(char));
+  s1 = "test ing";
+
+  char* result = calloc(12,sizeof(char));
+  result = removeWhitespace(strdup(s1));
+
+  printf("%s\n", result);
+  cr_expect(strcmp(result, "testing") == 0);
+}
+
+Test(removing_whitespace, removing_multiple_whitespaces){
+  char* s1 = calloc(12, sizeof(char));
+  s1 = "test    ing";
+
+  char* result = calloc(12,sizeof(char));
+  result = removeWhitespace(strdup(s1));
+
+  printf("%s\n", result);
+  cr_expect(strcmp(result, "testing") == 0);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */
