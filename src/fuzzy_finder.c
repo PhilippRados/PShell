@@ -138,12 +138,12 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
         memset(line,0,strlen(line));
         strcpy(line, matching_commands.values[index]);
       }
-      goto FINISH_LOOP;
+      break;
     } else if (c == BACKSPACE){
       backspaceLogic(&line, &i);
     } else if (c == ESCAPE){
       if (getch() == ESCAPE){
-        goto FINISH_LOOP;
+        break;
       }
       int value = getch();
 
@@ -179,7 +179,6 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
     moveCursor(initial_cursor_pos);
     printf("\u2771 %s", line);
   }
-  FINISH_LOOP:
 
   CLEAR_SCREEN;
   printf("\n");
