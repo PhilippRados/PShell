@@ -244,7 +244,6 @@ void tabRender(char* line, string_array possible_tabcomplete, int tab_index, str
   int format_width = getLongestWordInArray(possible_tabcomplete) + 2;
   int terminal_width = getTerminalSize().x;
   int col_size = terminal_width / format_width;
-  int row_size = possible_tabcomplete.len / col_size;
   int j = 0;
   bool running = true;
 
@@ -354,13 +353,14 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         break;
       }
       default: {
-        if ((int)c == 6){ //control+f
+        if ((int)c == CONTROL_F){ //control+f
 
           string_array concatenated_history_commands = concatenateArrays(global_command_history, *command_history);
           line = popupFuzzyFinder(concatenated_history_commands);
           i = strlen(line);
+
+          cursor_pos.y = 2;
           moveCursor(cursor_pos);
-        } else if ((int)c == 8){ //control+h
         } else if (c != -1 && typedLetter(&line, c, i)){
           i++;
         }

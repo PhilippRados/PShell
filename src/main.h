@@ -14,6 +14,7 @@
 #include "colors.h"
 
 #define BACKSPACE 127
+#define CONTROL_F 6
 #define TAB 9
 #define ESCAPE '\033'
 #define CLEAR_LINE printf("%c[2K", 27);
