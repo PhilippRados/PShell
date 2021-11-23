@@ -103,7 +103,7 @@ Test(removing_whitespace, initial_string_didnt_change){
   s1 = "test ing";
 
   char* result = calloc(12,sizeof(char));
-  result = removeWhitespace(strdup(s1));
+  result = removeWhitespace(s1);
 
   cr_expect(strcmp(s1, "test ing") == 0);
 }
@@ -113,7 +113,7 @@ Test(removing_whitespace, removing_single_whitespace){
   s1 = "test ing";
 
   char* result = calloc(12,sizeof(char));
-  result = removeWhitespace(strdup(s1));
+  result = removeWhitespace(s1);
 
   printf("%s\n", result);
   cr_expect(strcmp(result, "testing") == 0);
@@ -124,7 +124,7 @@ Test(removing_whitespace, removing_multiple_whitespaces){
   s1 = "test    ing";
 
   char* result = calloc(12,sizeof(char));
-  result = removeWhitespace(strdup(s1));
+  result = removeWhitespace(s1);
 
   printf("%s\n", result);
   cr_expect(strcmp(result, "testing") == 0);

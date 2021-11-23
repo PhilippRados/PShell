@@ -30,11 +30,11 @@ int levenshtein(const char *s1, char *s2, int s1_len) {
 string_array filterHistory(const string_array concatenated, char* line){
   char** possible_matches = calloc(512, sizeof(char*));
   int matches_num = 0;
-  char* line_no_whitespace = removeWhitespace(strdup(line));
+  char* line_no_whitespace = removeWhitespace(line);
 
   if (strlen(line) > 0){
     for (int i = 0; i < concatenated.len; i++){
-      char* values_no_whitespace = removeWhitespace(strdup(concatenated.values[i]));
+      char* values_no_whitespace = removeWhitespace(concatenated.values[i]);
 
       if (levenshtein(line_no_whitespace, values_no_whitespace,strlen(line_no_whitespace)) < 2){
         possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
