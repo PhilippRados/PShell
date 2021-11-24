@@ -106,6 +106,45 @@ void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width, int box_hei
   moveCursor(initial_cursor_pos);
 }
 
+void renderMatches(string_array matching_commands, coordinates initial_cursor_pos, int index, int cursor_diff){
+  int i = 0;
+  int start = 0;
+  int end = matching_commands.len;
+  
+  if (index >= cursor_diff){
+    start = index - cursor_diff;
+    end = index + 1;
+  }
+
+  for (int j = start; j < end; j++){
+    coordinates drawing_pos = {
+      .y = initial_cursor_pos.y + i + 1,
+      .x = initial_cursor_pos.x + 2,
+    };
+    moveCursor(drawing_pos);
+
+    if (j == index){
+      printColor(matching_commands.values[j],HIGHLIGHT);
+    } else {
+      printf("%s", matching_commands.values[j]);
+    }
+    i++;
+  }
+}
+
+void printInputLine(coordinates initial_cursor_pos, int terminal_width, char* line, int index, int matching_commands_len){
+  coordinates end_of_line = {
+    .x = initial_cursor_pos.x + (terminal_width - 10),
+    .y = initial_cursor_pos.y,
+  };
+
+  moveCursor(end_of_line);
+  printf("%d/%d", index + 1, matching_commands_len);
+
+  moveCursor(initial_cursor_pos);
+  printf("\u2771 %s", line);
+}
+
 char* popupFuzzyFinder(const string_array all_time_command_history){
   char c;
   coordinates terminal_size = getTerminalSize();
@@ -129,6 +168,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
 
   string_array matching_commands;
   matching_commands.len = 0;
+  int cursor_terminal_height_diff = terminal_size.y - initial_cursor_pos.y - 1;
 
   while ((c = getch())){
     CLEAR_LINE;
@@ -162,23 +202,9 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
     }
     
     matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
+    renderMatches(matching_commands, initial_cursor_pos,index, cursor_terminal_height_diff);
 
-    for (int j = 0; j < matching_commands.len; j++){
-      coordinates drawing_pos = {
-        .y = initial_cursor_pos.y + j + 1,
-        .x = initial_cursor_pos.x + 2,
-      };
-      moveCursor(drawing_pos);
-
-      if (j == index){
-        printColor(matching_commands.values[j],HIGHLIGHT);
-      } else {
-        printf("%s", matching_commands.values[j]);
-      }
-    }
-
-    moveCursor(initial_cursor_pos);
-    printf("\u2771 %s", line);
+    printInputLine(initial_cursor_pos, terminal_size.x, line, index, matching_commands.len);
   }
 
   CLEAR_SCREEN;

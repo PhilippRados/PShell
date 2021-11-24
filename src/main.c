@@ -105,7 +105,7 @@ bool typedLetter(char** line, const char c, const int i){
     (*line)[i] = c;
     cursor_moved = true;
   } else if (insertCharAtPos(*line,i,c)){
-      cursor_moved = true;
+    cursor_moved = true;
   }
 
   return cursor_moved;
@@ -303,9 +303,9 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   int prompt_len = strlen(directories) + 4;
   bool autocomplete = false;
   char temp;
+  string_array all_time_command_history = concatenateArrays(*command_history, global_command_history);
 
   while((c = getch())){
-    string_array all_time_command_history = concatenateArrays(*command_history, global_command_history);
 
     if (c == TAB && strlen(line) > 0){
       if ((temp = tabLoop(line, PATH_BINS, cursor_pos)) != '\n'){
@@ -332,7 +332,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         break;
       }
       default: {
-        if ((int)c == CONTROL_F){ //control+f
+        if ((int)c == CONTROL_F){
 
           string_array concatenated_history_commands = concatenateArrays(global_command_history, *command_history);
           line = popupFuzzyFinder(concatenated_history_commands);

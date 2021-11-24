@@ -115,7 +115,6 @@ Test(removing_whitespace, removing_single_whitespace){
   char* result = calloc(12,sizeof(char));
   result = removeWhitespace(s1);
 
-  printf("%s\n", result);
   cr_expect(strcmp(result, "testing") == 0);
 }
 
@@ -126,7 +125,6 @@ Test(removing_whitespace, removing_multiple_whitespaces){
   char* result = calloc(12,sizeof(char));
   result = removeWhitespace(s1);
 
-  printf("%s\n", result);
   cr_expect(strcmp(result, "testing") == 0);
 }
 /* // End-to-end user-journey tests */
