@@ -109,17 +109,16 @@ void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width, int box_hei
 char* popupFuzzyFinder(const string_array all_time_command_history){
   char c;
   coordinates terminal_size = getTerminalSize();
-  int width = terminal_size.x * 0.4;
-  int height = terminal_size.y * 0.3;
   int index = 0;
   int i = 0;
   char* line = calloc(64, sizeof(char));
 
-  drawPopupBox(terminal_size, width, height);
-
-  coordinates cursor = {.x = (width / 2) + 3, .y = (height / 2)};
+  coordinates cursor = {.x = 2, .y = terminal_size.y * 0.9};
   moveCursor(cursor);
-  printf("Fuzzy Find through past commands");
+  CLEAR_BELOW_CURSOR;
+  for (int i = 0; i < terminal_size.x - 1; i++){
+    printf("\u2501");
+  }
 
   coordinates initial_cursor_pos = {
     .x = cursor.x,
@@ -132,7 +131,9 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
   matching_commands.len = 0;
 
   while ((c = getch())){
-    clearFuzzyWindow(initial_cursor_pos, terminal_size.x - width, terminal_size.y - height);
+    CLEAR_LINE;
+    CLEAR_BELOW_CURSOR;
+
     if (c == '\n'){
       if (matching_commands.len > 0){
         memset(line,0,strlen(line));
