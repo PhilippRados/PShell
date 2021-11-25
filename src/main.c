@@ -475,12 +475,18 @@ string_array getAllPathBinaries(string_array PATH_ARR){
   return all_path_bins;
 }
 
-string_array getAllHistoryCommands(){
-  string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
-  char* home_dir = getenv("HOME");
+char* joinHistoryFilePath(char* home_dir, char* destination_file){
   char* home_dir_copied = calloc(strlen(home_dir) + strlen("/.psh_history") + 1, sizeof(char));
   strcpy(home_dir_copied, home_dir);
+
   char* file_path = strcat(home_dir_copied, "/.psh_history");
+
+  return file_path;
+}
+
+string_array getAllHistoryCommands(){
+  string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
+  char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_read = fopen(file_path,"r");
   char* buf = calloc(64, sizeof(char));
   int line_len;
@@ -510,10 +516,7 @@ string_array getAllHistoryCommands(){
 
 void writeSessionCommandsToGlobalHistoryFile(string_array command_history){
   string_array history_commands = getAllHistoryCommands();
-  char* home_dir = getenv("HOME");
-  char* home_dir_copied = calloc(strlen(home_dir) + strlen("/.psh_history") + 1, sizeof(char));
-  strcpy(home_dir_copied, home_dir);
-  char* file_path = strcat(home_dir_copied, "/.psh_history");
+  char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_write = fopen(file_path, "a");
 
   if (file_to_write == NULL){
