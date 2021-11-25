@@ -48,6 +48,11 @@ typedef struct {
   char** values;
 } string_array;
 
+typedef struct {
+  int one;
+  int second;
+} integer_tuple;
+
 string_array splitString(const char*,char);
 char* getLastTwoDirs(char*);
 int isBuiltIn(char*);
@@ -66,3 +71,4 @@ void backspaceLogic(char** line, int* i);
 char* removeCharAtPos(char* line,int x_pos);
 void logger(enum logger_type type,void* message);
 char* removeWhitespace(char* s1);
+integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff, int index);

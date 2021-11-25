@@ -127,6 +127,31 @@ Test(removing_whitespace, removing_multiple_whitespaces){
 
   cr_expect(strcmp(result, "testing") == 0);
 }
+
+Test(findDisplayIndices, if_matching_commands_less_than_fuzzy_height){
+  int matching_commands_len = 3;
+  int cursor_height = 7;
+  int index = 2;
+
+  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
+  cr_expect(result.one == 0);
+  cr_expect(result.second == 3);
+}
+
+Test(findDisplayIndices, if_matching_commands_more_than_fuzzy_height_but_index_less){
+  int matching_commands_len = 30;
+  int cursor_height = 7;
+  int index = 2;
+
+  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
+  cr_expect(result.one == 0);
+  cr_expect(result.second == 8);
+}
+
+
+
+
+
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */

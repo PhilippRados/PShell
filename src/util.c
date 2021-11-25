@@ -173,3 +173,20 @@ char* removeWhitespace(char* s1){
 
   return stripped;
 }
+
+integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff, int index){
+  int start = 0;
+  int end = (matching_commands_len < cursor_diff + 1) ? matching_commands_len : cursor_diff + 1;
+  
+  if (index >= cursor_diff){
+    start = index - cursor_diff;
+    end = index + 1;
+  }
+
+  integer_tuple result = {
+    .one = start,
+    .second = end,
+  };
+
+  return result;
+}
