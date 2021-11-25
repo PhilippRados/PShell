@@ -478,7 +478,9 @@ string_array getAllPathBinaries(string_array PATH_ARR){
 string_array getAllHistoryCommands(){
   string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
   char* home_dir = getenv("HOME");
-  char* file_path = strncat(home_dir, "/.psh_history", strlen("/.psh_history"));
+  char* home_dir_copied = calloc(strlen(home_dir) + strlen("/.psh_history") + 1, sizeof(char));
+  strcpy(home_dir_copied, home_dir);
+  char* file_path = strcat(home_dir_copied, "/.psh_history");
   FILE* file_to_read = fopen(file_path,"r");
   char* buf = calloc(64, sizeof(char));
   int line_len;
@@ -495,8 +497,7 @@ string_array getAllHistoryCommands(){
       realloc_index++;
       result.values = realloc(result.values,realloc_index * 512 * sizeof(char*));
     }
-    /* insertCharAtPos(buf, strlen(buf) - 1, '\0'); */
-    /* buf[strlen(buf) - 1] = 0; */
+
     result.values[i] = calloc(strlen(buf),sizeof(char));
     strncpy(result.values[i], buf, strlen(buf) - 1);
     i++;
@@ -508,14 +509,22 @@ string_array getAllHistoryCommands(){
 }
 
 void writeSessionCommandsToGlobalHistoryFile(string_array command_history){
-  char* home_dir = getenv("HOME"); // weird that home_dir now already includes .psh_history
-  FILE* file_to_write = fopen(home_dir, "a");
+  string_array history_commands = getAllHistoryCommands();
+  char* home_dir = getenv("HOME");
+  char* home_dir_copied = calloc(strlen(home_dir) + strlen("/.psh_history") + 1, sizeof(char));
+  strcpy(home_dir_copied, home_dir);
+  char* file_path = strcat(home_dir_copied, "/.psh_history");
+  FILE* file_to_write = fopen(file_path, "a");
+
   if (file_to_write == NULL){
+    logger(string, "error\n");
     return;
   }
 
   for (int i = 0; i < command_history.len; i++){
-    fprintf(file_to_write, "%s\n", command_history.values[i]);
+    if (!inArray(command_history.values[i], history_commands)){
+      fprintf(file_to_write, "%s\n", command_history.values[i]);
+    }
   }
 
   fclose(file_to_write);
@@ -533,9 +542,10 @@ int main(int argc, char* argv[]) {
   string_array PATH_BINS = getAllPathBinaries(PATH_ARR);
   string_array global_command_history = getAllHistoryCommands();
 
-  CLEAR_SCREEN
   char* current_dir = getcwd(cd,sizeof(cd));
   char* last_two_dirs = getLastTwoDirs(current_dir);
+
+  CLEAR_SCREEN;
 
   while (1){
     printf("\n");
@@ -573,7 +583,7 @@ int main(int argc, char* argv[]) {
   }
 
   writeSessionCommandsToGlobalHistoryFile(command_history);
-  free(splitted_line.values);
-  free(line);
-  free(PATH_ARR.values);
+  /* free(splitted_line.values); */
+  /* free(line); */
+  /* free(PATH_ARR.values); */
 }

@@ -100,32 +100,38 @@ Test(Concatenating_command_history,check_concat_elements){
 
 Test(removing_whitespace, initial_string_didnt_change){
   char* s1 = calloc(12, sizeof(char));
-  s1 = "test ing";
+  strcpy(s1,"test ing");
 
   char* result = calloc(12,sizeof(char));
   result = removeWhitespace(s1);
 
   cr_expect(strcmp(s1, "test ing") == 0);
+  free(s1);
+  free(result);
 }
 
 Test(removing_whitespace, removing_single_whitespace){
   char* s1 = calloc(12, sizeof(char));
-  s1 = "test ing";
+  strcpy(s1, "test ing");
 
   char* result = calloc(12,sizeof(char));
   result = removeWhitespace(s1);
 
   cr_expect(strcmp(result, "testing") == 0);
+  free(s1);
+  free(result);
 }
 
 Test(removing_whitespace, removing_multiple_whitespaces){
   char* s1 = calloc(12, sizeof(char));
-  s1 = "test    ing";
+  strcpy(s1,"test    ing");
 
   char* result = calloc(12,sizeof(char));
   result = removeWhitespace(s1);
 
   cr_expect(strcmp(result, "testing") == 0);
+  free(s1);
+  free(result);
 }
 
 Test(findDisplayIndices, if_matching_commands_less_than_fuzzy_height){
