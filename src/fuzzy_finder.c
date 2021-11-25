@@ -125,14 +125,17 @@ void renderMatches(string_array matching_commands, coordinates initial_cursor_po
   }
 }
 
-void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char* line, int index, int matching_commands_len){
+void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char* line, int index, string_array matching_commands, int cursor_terminal_height_diff){
   coordinates end_of_line = {
     .x = initial_cursor_pos.x + (terminal_width - 10),
     .y = initial_cursor_pos.y,
   };
 
+  integer_tuple display_ranges = findDisplayIndices(matching_commands.len, cursor_terminal_height_diff, index);
+  renderMatches(matching_commands, initial_cursor_pos,index, display_ranges);
+
   moveCursor(end_of_line);
-  printf("%d/%d", index + 1, matching_commands_len);
+  printf("%d/%d", index + 1, matching_commands.len);
 
   moveCursor(initial_cursor_pos);
   printf("\u2771 %s", line);
@@ -145,23 +148,20 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
   int i = 0;
   char* line = calloc(64, sizeof(char));
 
-  coordinates cursor = {.x = 2, .y = terminal_size.y * 0.85};
-  moveCursor(cursor);
+  coordinates initial_cursor_pos = {.x = 2, .y = terminal_size.y * 0.85};
+  moveCursor(initial_cursor_pos);
   CLEAR_BELOW_CURSOR;
   for (int i = 0; i < terminal_size.x - 1; i++){
     printf("\u2501");
   }
 
-  coordinates initial_cursor_pos = {
-    .x = cursor.x,
-    .y = cursor.y + 2,
-  };
+  initial_cursor_pos.y += 2;
   moveCursor(initial_cursor_pos);
   printf("\u2771 ");
 
   string_array matching_commands;
   matching_commands.len = 0;
-  int cursor_terminal_height_diff = terminal_size.y - initial_cursor_pos.y - 1;
+  int cursor_terminal_height_diff = terminal_size.y - initial_cursor_pos.y;
 
   while ((c = getch())){
     CLEAR_LINE;
@@ -196,10 +196,8 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
     }
     
     matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
-    integer_tuple display_ranges = findDisplayIndices(matching_commands.len, cursor_terminal_height_diff, index);
-    renderMatches(matching_commands, initial_cursor_pos,index, display_ranges);
 
-    renderFuzzyFinder(initial_cursor_pos, terminal_size.x, line, index, matching_commands.len);
+    renderFuzzyFinder(initial_cursor_pos, terminal_size.x, line, index, matching_commands, cursor_terminal_height_diff);
   }
 
   CLEAR_SCREEN;
