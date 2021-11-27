@@ -338,7 +338,6 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
           line = popupFuzzyFinder(concatenated_history_commands);
           i = strlen(line);
 
-          cursor_pos.y = 2;
           moveCursor(cursor_pos);
         } else if (c != -1 && typedLetter(&line, c, i)){
           i++;
@@ -542,7 +541,7 @@ int main(int argc, char* argv[]) {
     .values = calloc(HISTORY_SIZE,sizeof(char*))
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),':');
-  string_array PATH_BINS = getAllPathBinaries(PATH_ARR);
+  string_array PATH_BINS = removeDuplicates(getAllPathBinaries(PATH_ARR));
   string_array global_command_history = getAllHistoryCommands();
 
   char* current_dir = getcwd(cd,sizeof(cd));

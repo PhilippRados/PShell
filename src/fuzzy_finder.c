@@ -142,13 +142,9 @@ void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char*
 }
 
 void drawFuzzyPopup(coordinates initial_cursor_pos, int terminal_width){
-  coordinates drawing_pos = {
-    .x = initial_cursor_pos.x,
-    .y = initial_cursor_pos.y - 2,
-  };
-
-  moveCursor(drawing_pos);
+  moveCursor((coordinates){ initial_cursor_pos.x, initial_cursor_pos.y - 2});
   CLEAR_BELOW_CURSOR;
+
   for (int i = 0; i < terminal_width - 1; i++){
     printf("\u2501");
   }
@@ -202,12 +198,14 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
       }
     }
     
-    matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
+    matching_commands = filterHistory(all_time_command_history, line);
 
     renderFuzzyFinder(initial_cursor_pos, terminal_size.x, line, index, matching_commands, cursor_terminal_height_diff);
   }
 
-  CLEAR_SCREEN;
+  moveCursor((coordinates){0, initial_cursor_pos.y - 2});
+  CLEAR_LINE;
+  CLEAR_BELOW_CURSOR;
   printf("\n");
 
   return line;
