@@ -198,7 +198,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
       }
     }
     
-    matching_commands = filterHistory(all_time_command_history, line);
+    matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
 
     renderFuzzyFinder(initial_cursor_pos, terminal_size.x, line, index, matching_commands, cursor_terminal_height_diff);
   }

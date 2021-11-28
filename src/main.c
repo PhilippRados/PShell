@@ -268,15 +268,23 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
     if (c == TAB){
       if (possible_tabcomplete.len == 1){
         strcpy(line,possible_tabcomplete.values[0]);
-
       } else {
-
         if (tab_index < possible_tabcomplete.len - 1){
           tab_index += 1;
         } else {
           tab_index = 0;
         }
-
+        tabRender(line, possible_tabcomplete, tab_index, PATH_BINS);
+        moveCursor(cursor_pos);
+      }
+    } else if (c == ESCAPE){
+      getch();
+      if (getch() == 'Z'){
+        if (tab_index > 0){
+          tab_index--;
+        } else {
+          tab_index = possible_tabcomplete.len - 1;
+        }
         tabRender(line, possible_tabcomplete, tab_index, PATH_BINS);
         moveCursor(cursor_pos);
       }
@@ -378,23 +386,9 @@ void printColor(const char* string,color color){
 }
 
 void printPrompt(const char* dir,color color){
-  char command[13];
-
   printColor(dir,color);
   printf(" ");
-
-  //pick unicode char
-  setlocale(LC_CTYPE, "");
-  wchar_t arrow = 0x2771;
-
-  //set unicode color and print
-	sprintf(command, "%c[%d;%d;%dm", 0x1B, 1, 32, 10);
-	printf("%s", command);
-  wprintf(L"%lc ", arrow);
-
-  //resetting colors
-	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
-	printf("%s", command);
+  printColor("\u2771 ", GREEN);
 }
 
 void pipeOutputToFile(char* filename){
