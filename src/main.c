@@ -219,12 +219,14 @@ void render(const char* line, const string_array command_history, const string_a
   }
 }
 
-void tabRender(char* line, string_array possible_tabcomplete, int tab_index, string_array PATH_BINS){
+void tabRender(char* line, string_array possible_tabcomplete, int tab_index, string_array PATH_BINS, coordinates* cursor_pos){
   int format_width = getLongestWordInArray(possible_tabcomplete) + 2;
-  int terminal_width = getTerminalSize().x;
-  int col_size = terminal_width / format_width;
+  coordinates terminal_size = getTerminalSize();
+  int col_size = terminal_size.x / format_width;
   int j = 0;
   bool running = true;
+  int cursor_height_diff = terminal_size.y - cursor_pos->y;
+  int row_size = ceil(possible_tabcomplete.len / (float)col_size);
 
   while (running){
     printf("\n");
@@ -245,9 +247,16 @@ void tabRender(char* line, string_array possible_tabcomplete, int tab_index, str
       j++;
     }
   }
+
+  if (cursor_height_diff <= row_size || cursor_height_diff == 0){
+    cursor_pos->y =  cursor_pos->y - (row_size - cursor_height_diff);
+    moveCursor(*cursor_pos);
+  } else {
+    moveCursor(*cursor_pos);
+  }
 }
 
-char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_pos){
+char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS){
   char c = TAB;
   string_array possible_tabcomplete;
   int tab_index = -1;
@@ -258,7 +267,7 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
     printf("\nThe list of possible matches is %d. Do you want to print all of them? (y/n) ", possible_tabcomplete.len);
     answer = getch();
 
-    moveCursor(cursor_pos);
+    moveCursor(*cursor_pos);
     if (answer != 'y'){
       return '\n';
     }
@@ -274,19 +283,17 @@ char tabLoop(char* line, const string_array PATH_BINS, const coordinates cursor_
         } else {
           tab_index = 0;
         }
-        tabRender(line, possible_tabcomplete, tab_index, PATH_BINS);
-        moveCursor(cursor_pos);
+        tabRender(line, possible_tabcomplete, tab_index, PATH_BINS, cursor_pos);
       }
     } else if (c == ESCAPE){
       getch();
-      if (getch() == 'Z'){
+      if (getch() == 'Z'){ // Shift-Tab
         if (tab_index > 0){
           tab_index--;
         } else {
           tab_index = possible_tabcomplete.len - 1;
         }
-        tabRender(line, possible_tabcomplete, tab_index, PATH_BINS);
-        moveCursor(cursor_pos);
+        tabRender(line, possible_tabcomplete, tab_index, PATH_BINS, cursor_pos);
       }
     } else if (c == '\n'){
       strcpy(line, possible_tabcomplete.values[tab_index]);
@@ -316,7 +323,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   while((c = getch())){
 
     if (c == TAB && strlen(line) > 0){
-      if ((temp = tabLoop(line, PATH_BINS, cursor_pos)) != '\n'){
+      if ((temp = tabLoop(line, &cursor_pos, PATH_BINS)) != '\n'){
         c = temp;
       } else {
         c = -1;

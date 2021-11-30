@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <sys/ioctl.h>
 #include "colors.h"
+#include <math.h>
 
 #define BACKSPACE 127
 #define CONTROL_F 6
