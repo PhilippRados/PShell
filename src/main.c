@@ -219,6 +219,15 @@ void render(const char* line, const string_array command_history, const string_a
   }
 }
 
+void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size){
+  if (cursor_height_diff <= row_size || cursor_height_diff == 0){
+    cursor_pos->y =  cursor_pos->y - (row_size - cursor_height_diff);
+    moveCursor(*cursor_pos);
+  } else {
+    moveCursor(*cursor_pos);
+  }
+}
+
 void tabRender(char* line, string_array possible_tabcomplete, int tab_index, string_array PATH_BINS, coordinates* cursor_pos){
   int format_width = getLongestWordInArray(possible_tabcomplete) + 2;
   coordinates terminal_size = getTerminalSize();
@@ -247,13 +256,7 @@ void tabRender(char* line, string_array possible_tabcomplete, int tab_index, str
       j++;
     }
   }
-
-  if (cursor_height_diff <= row_size || cursor_height_diff == 0){
-    cursor_pos->y =  cursor_pos->y - (row_size - cursor_height_diff);
-    moveCursor(*cursor_pos);
-  } else {
-    moveCursor(*cursor_pos);
-  }
+  moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
 }
 
 char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS){
