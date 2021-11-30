@@ -74,3 +74,4 @@ void logger(enum logger_type type,void* message);
 char* removeWhitespace(char* s1);
 integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff, int index);
 bool inArray(char* value, string_array array);
+char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS);
