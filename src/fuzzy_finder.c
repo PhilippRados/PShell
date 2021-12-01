@@ -141,18 +141,17 @@ void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char*
   printf("\u2771 %s", line);
 }
 
-void shiftPromptIfOverlap(int current_cursor_height, int fuzzy_cursor_height){
-  if (current_cursor_height <= fuzzy_cursor_height) return;
+void shiftPromptIfOverlap(int current_cursor_height, int fuzzy_popup_height){
+  if (current_cursor_height < fuzzy_popup_height) return;
 
-  for (int i = fuzzy_cursor_height; i < current_cursor_height; i++){
+  for (int i = fuzzy_popup_height; i <= current_cursor_height; i++){
     printf("\n");
   }
 }
 
 void drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos, int terminal_width){
-  shiftPromptIfOverlap(current_cursor_height, initial_cursor_pos.y - 3);
+  shiftPromptIfOverlap(current_cursor_height, initial_cursor_pos.y - 2);
   moveCursor((coordinates){ initial_cursor_pos.x, initial_cursor_pos.y - 2});
-  CLEAR_BELOW_CURSOR;
 
   for (int i = 0; i < terminal_width - 1; i++){
     printf("\u2501");
@@ -162,9 +161,8 @@ void drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos, i
   printf("\u2771 ");
 }
 
-char* popupFuzzyFinder(const string_array all_time_command_history, int current_cursor_height){
+char* popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size, int current_cursor_height){
   char c;
-  coordinates terminal_size = getTerminalSize();
   int index = 0;
   int i = 0;
   char* line = calloc(64, sizeof(char));
@@ -173,6 +171,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history, int current_
   string_array matching_commands;
   matching_commands.len = 0;
 
+  moveCursor(terminal_size); // moving Cursor to bottom so that newline character shifts line up
   drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x);
 
   while ((c = getch())){
@@ -215,7 +214,6 @@ char* popupFuzzyFinder(const string_array all_time_command_history, int current_
   moveCursor((coordinates){0, fuzzy_cursor_height.y - 2});
   CLEAR_LINE;
   CLEAR_BELOW_CURSOR;
-  printf("\n");
 
   return line;
 }

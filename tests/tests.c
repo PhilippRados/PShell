@@ -174,7 +174,25 @@ Test(findDisplayIndices, if_index_equals_fuzzy_height){
   cr_expect(result.second == 8);
 }
 
+Test(shift_prompt_fuzzy, shift_when_equal){
+  int result = shiftPromptIfOverlapTest(11,11);
 
+  logger(integer, &result);
+  cr_expect(result == 1);
+}
+
+Test(shift_prompt_fuzzy, dont_shift_when_cursor_higher){
+  int result = shiftPromptIfOverlapTest(10,11);
+
+  cr_expect(result == -1);
+}
+
+Test(shift_prompt_fuzzy, shift_when_cursor_lower){
+  int result = shiftPromptIfOverlapTest(14,10);
+
+  logger(integer, &result);
+  cr_expect(result == 5);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */

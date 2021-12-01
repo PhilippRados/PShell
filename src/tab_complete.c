@@ -14,15 +14,6 @@ int getLongestWordInArray(const string_array array){
   return longest;
 }
 
-void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size){
-  if (cursor_height_diff <= row_size || cursor_height_diff == 0){
-    cursor_pos->y = cursor_pos->y - (row_size - cursor_height_diff);
-    moveCursor(*cursor_pos);
-  } else {
-    moveCursor(*cursor_pos);
-  }
-}
-
 void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, int format_width){
   int j = 0;
 
@@ -81,11 +72,10 @@ string_array checkForCommandAutoComplete(const string_array command_line,const s
   return possible_autocomplete;
 }
 
-char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS){
+char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size){
   char c = TAB;
   int tab_index = -1;
   char answer;
-  coordinates terminal_size = getTerminalSize();
   string_array possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
   int format_width = getLongestWordInArray(possible_tabcomplete) + 2;
   int col_size = terminal_size.x / format_width;

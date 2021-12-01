@@ -133,6 +133,7 @@ void render(const char* line, const string_array command_history, const string_a
 }
 
 char* readLine(string_array PATH_BINS,char* directories,string_array* command_history, const string_array global_command_history){
+  const coordinates terminal_size = getTerminalSize();
   char c;
   char* line = calloc(BUFFER,sizeof(char));
   char* possible_autocomplete = calloc(BUFFER,sizeof(char));
@@ -147,7 +148,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   while((c = getch())){
 
     if (c == TAB && strlen(line) > 0){
-      if ((temp = tabLoop(line, &cursor_pos, PATH_BINS)) != '\n'){
+      if ((temp = tabLoop(line, &cursor_pos, PATH_BINS, terminal_size)) != '\n'){
         c = temp;
       } else {
         c = -1;
@@ -174,10 +175,15 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         if ((int)c == CONTROL_F){
 
           string_array concatenated_history_commands = concatenateArrays(global_command_history, *command_history);
-          line = popupFuzzyFinder(concatenated_history_commands, cursor_pos.y);
+          line = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos.y);
           i = strlen(line);
 
-          moveCursor(cursor_pos);
+          if ((terminal_size.y - cursor_pos.y) <= (terminal_size.y - (terminal_size.y * 0.85) - 2)){
+            cursor_pos.y = (terminal_size.y * 0.85) - 3;
+            moveCursor(cursor_pos);
+          } else {
+            moveCursor(cursor_pos);
+          }
         } else if (c != -1 && typedLetter(&line, c, i)){
           i++;
         }

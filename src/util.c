@@ -227,3 +227,22 @@ coordinates getCursorPos(){
   tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
   return cursor_pos;
 }
+
+void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size){
+  if (cursor_height_diff <= row_size || cursor_height_diff == 0){
+    cursor_pos->y = cursor_pos->y - (row_size - cursor_height_diff);
+    moveCursor(*cursor_pos);
+  } else {
+    moveCursor(*cursor_pos);
+  }
+}
+
+int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height){
+  if (current_cursor_height < fuzzy_popup_height) return -1;
+  int j = 0;
+
+  for (int i = fuzzy_popup_height; i <= current_cursor_height; i++){
+    j++;
+  }
+  return j;
+}
