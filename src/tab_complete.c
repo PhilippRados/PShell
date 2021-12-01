@@ -25,13 +25,11 @@ void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int ro
 
 void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, int format_width){
   int j = 0;
-  bool running = true;
 
-  while (running){
+  while (j < possible_tabcomplete.len){
     printf("\n");
     for (int x = 0; x < col_size; x++){
       if (j >= possible_tabcomplete.len){
-        running = false;
         break;
       }
 
