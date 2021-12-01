@@ -141,7 +141,16 @@ void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char*
   printf("\u2771 %s", line);
 }
 
-void drawFuzzyPopup(coordinates initial_cursor_pos, int terminal_width){
+void shiftPromptIfOverlap(int current_cursor_height, int fuzzy_cursor_height){
+  if (current_cursor_height <= fuzzy_cursor_height) return;
+
+  for (int i = fuzzy_cursor_height; i < current_cursor_height; i++){
+    printf("\n");
+  }
+}
+
+void drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos, int terminal_width){
+  shiftPromptIfOverlap(current_cursor_height, initial_cursor_pos.y - 3);
   moveCursor((coordinates){ initial_cursor_pos.x, initial_cursor_pos.y - 2});
   CLEAR_BELOW_CURSOR;
 
@@ -153,18 +162,18 @@ void drawFuzzyPopup(coordinates initial_cursor_pos, int terminal_width){
   printf("\u2771 ");
 }
 
-char* popupFuzzyFinder(const string_array all_time_command_history){
+char* popupFuzzyFinder(const string_array all_time_command_history, int current_cursor_height){
   char c;
   coordinates terminal_size = getTerminalSize();
   int index = 0;
   int i = 0;
   char* line = calloc(64, sizeof(char));
-  coordinates initial_cursor_pos = { .x = 2, .y = terminal_size.y * 0.85 };
-  int cursor_terminal_height_diff = terminal_size.y - initial_cursor_pos.y;
+  coordinates fuzzy_cursor_height = { .x = 2, .y = terminal_size.y * 0.85 };
+  int cursor_terminal_height_diff = terminal_size.y - fuzzy_cursor_height.y;
   string_array matching_commands;
   matching_commands.len = 0;
 
-  drawFuzzyPopup(initial_cursor_pos, terminal_size.x);
+  drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x);
 
   while ((c = getch())){
     CLEAR_LINE;
@@ -200,10 +209,10 @@ char* popupFuzzyFinder(const string_array all_time_command_history){
     
     matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
 
-    renderFuzzyFinder(initial_cursor_pos, terminal_size.x, line, index, matching_commands, cursor_terminal_height_diff);
+    renderFuzzyFinder(fuzzy_cursor_height, terminal_size.x, line, index, matching_commands, cursor_terminal_height_diff);
   }
 
-  moveCursor((coordinates){0, initial_cursor_pos.y - 2});
+  moveCursor((coordinates){0, fuzzy_cursor_height.y - 2});
   CLEAR_LINE;
   CLEAR_BELOW_CURSOR;
   printf("\n");

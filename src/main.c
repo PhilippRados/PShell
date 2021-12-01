@@ -14,43 +14,6 @@ int getch(){
   return ch;
 }
 
-coordinates getCursorPos(){
-  char buf[1];
-  char data[50];
-  int y,x;
-	char cmd[]="\033[6n";
-  coordinates cursor_pos = {.x = -1,.y = -1};
-  struct termios oldattr, newattr;
-
-  tcgetattr( STDIN_FILENO, &oldattr );
-  newattr = oldattr;
-  newattr.c_lflag &= ~( ICANON | ECHO );
-  newattr.c_cflag &= ~( CREAD );
-  tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
-
-  write(STDIN_FILENO,cmd,sizeof(cmd));
-  read(STDIN_FILENO,buf,1);
-
-  if (*buf == '\033'){
-    read(STDIN_FILENO,buf,1);
-    if (*buf == '['){
-      read(STDIN_FILENO,buf,1);
-      for (int i = 0;*buf != 'R';i++){
-        data[i] = *buf;
-        read(STDIN_FILENO,buf,1);
-      }
-      // check if string matches expected data
-      int valid = sscanf(data,"%d;%d",&y,&x);
-      if (valid == 2){
-        cursor_pos.x = x;
-        cursor_pos.y = y;
-      }
-    }
-	}
-  tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
-  return cursor_pos;
-}
-
 bool insertCharAtPos(char* line,int index,char c) {
   if (index >= 0 && index <= strlen(line)) {
     for (int i = strlen(line) - 1; i >= index;i--){
@@ -211,7 +174,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         if ((int)c == CONTROL_F){
 
           string_array concatenated_history_commands = concatenateArrays(global_command_history, *command_history);
-          line = popupFuzzyFinder(concatenated_history_commands);
+          line = popupFuzzyFinder(concatenated_history_commands, cursor_pos.y);
           i = strlen(line);
 
           moveCursor(cursor_pos);

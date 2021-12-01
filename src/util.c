@@ -190,3 +190,40 @@ integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff, int
 
   return result;
 }
+
+coordinates getCursorPos(){
+  char buf[1];
+  char data[50];
+  int y,x;
+	char cmd[]="\033[6n";
+  coordinates cursor_pos = {.x = -1,.y = -1};
+  struct termios oldattr, newattr;
+
+  tcgetattr( STDIN_FILENO, &oldattr );
+  newattr = oldattr;
+  newattr.c_lflag &= ~( ICANON | ECHO );
+  newattr.c_cflag &= ~( CREAD );
+  tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
+
+  write(STDIN_FILENO,cmd,sizeof(cmd));
+  read(STDIN_FILENO,buf,1);
+
+  if (*buf == '\033'){
+    read(STDIN_FILENO,buf,1);
+    if (*buf == '['){
+      read(STDIN_FILENO,buf,1);
+      for (int i = 0;*buf != 'R';i++){
+        data[i] = *buf;
+        read(STDIN_FILENO,buf,1);
+      }
+      // check if string matches expected data
+      int valid = sscanf(data,"%d;%d",&y,&x);
+      if (valid == 2){
+        cursor_pos.x = x;
+        cursor_pos.y = y;
+      }
+    }
+	}
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+  return cursor_pos;
+}
