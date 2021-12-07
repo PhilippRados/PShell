@@ -144,6 +144,8 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   bool autocomplete = false;
   char temp;
   string_array all_time_command_history = concatenateArrays(*command_history, global_command_history);
+  char* popup_result;
+  string_array concatenated_history_commands;
 
   while((c = getch())){
 
@@ -173,9 +175,11 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
       }
       default: {
         if ((int)c == CONTROL_F){
-
-          string_array concatenated_history_commands = concatenateArrays(global_command_history, *command_history);
-          line = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos.y);
+          concatenated_history_commands = concatenateArrays(global_command_history, *command_history);
+          popup_result = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos.y);
+          if (strcmp(popup_result, "") != 0){
+            line = popup_result;
+          }
           i = strlen(line);
 
           if (cursor_pos.y >= (terminal_size.y * 0.85) - 2){
