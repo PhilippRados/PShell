@@ -191,6 +191,22 @@ Test(shift_prompt_fuzzy, shift_when_cursor_lower){
 
   cr_expect(result == 5);
 }
+
+Test(getAppendingIndex, returns_3_if_second_word_is_len_3){
+  char line[64] = "make mak";
+  int result = getAppendingIndex(line);
+
+  logger(integer, &result);
+  cr_expect(result == 3);
+}
+
+Test(getAppendingIndex, still_works_with_only_space){
+  char line[64] = "make ";
+  int result = getAppendingIndex(line);
+
+  logger(integer, &result);
+  cr_expect(result == 0);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */

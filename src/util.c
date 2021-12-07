@@ -277,3 +277,13 @@ string_array getAllFilesInDir(string_array directory_array){
   all_path_bins.len = j;
   return all_path_bins;
 }
+
+int getAppendingIndex(char* line){
+  int j = 0;
+  for (int i = strlen(line) - 1; i > 0; i--){
+    if (line[i] == ' ') return j;
+    j++;
+  }
+  return -1;
+}
+

@@ -61,12 +61,17 @@ string_array filterBinaries(const char* line, const string_array PATH_BINS){
   return result;
 }
 
-string_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS){
-  string_array possible_autocomplete = {
-    .len = 0
+autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS){
+  autocomplete_array possible_autocomplete = {
+    .array.len = 0
   };
   if (command_line.len == 1){
-    possible_autocomplete = filterBinaries(command_line.values[0],PATH_BINS);
+    string_array filtered = filterBinaries(command_line.values[0],PATH_BINS);
+    possible_autocomplete = (autocomplete_array){
+      .tag = command,
+      .array.values = filtered.values,
+      .array.len = filtered.len
+    };
   } else if (command_line.len > 1){
     char cd[256];
     char* current_dir = getcwd(cd, sizeof(cd));
@@ -75,7 +80,12 @@ string_array checkForCommandAutoComplete(const string_array command_line,const s
       .values = &current_dir,
     };
 
-    possible_autocomplete = filterBinaries(command_line.values[1],getAllFilesInDir(current_dir_array));
+    string_array filtered = filterBinaries(command_line.values[1],getAllFilesInDir(current_dir_array));
+    possible_autocomplete = (autocomplete_array){
+      .tag = file_or_dir,
+      .array.values = filtered.values,
+      .array.len = filtered.len
+    };
   }
   
   return possible_autocomplete;
@@ -85,14 +95,14 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   char c = TAB;
   int tab_index = -1;
   char answer;
-  string_array possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
-  int format_width = getLongestWordInArray(possible_tabcomplete) + 2;
+  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
+  int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
   int col_size = terminal_size.x / format_width;
-  int row_size = ceil(possible_tabcomplete.len / (float)col_size);
+  int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
   int cursor_height_diff = terminal_size.y - cursor_pos->y;
 
-  if (possible_tabcomplete.len > 30){
-    printf("\nThe list of possible matches is %d. Do you want to print all of them? (y/n) ", possible_tabcomplete.len);
+  if (possible_tabcomplete.array.len > 30){
+    printf("\nThe list of possible matches is %d. Do you want to print all of them? (y/n) ", possible_tabcomplete.array.len);
     answer = getch();
 
     moveCursorIfShifted(cursor_pos, cursor_height_diff, 1);
@@ -105,16 +115,20 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
     cursor_height_diff = terminal_size.y - cursor_pos->y;
 
     if (c == TAB){
-      if (possible_tabcomplete.len == 1){
-        strcpy(line,possible_tabcomplete.values[0]);
+      if (possible_tabcomplete.array.len == 1){
+        if (possible_tabcomplete.tag == command){
+          strcpy(line,possible_tabcomplete.array.values[0]);
+        } else if (possible_tabcomplete.tag == file_or_dir){
+          strcat(line, &(possible_tabcomplete.array.values[0][getAppendingIndex(line)]));
+        }
         return 0;
       } else {
-        if (tab_index < possible_tabcomplete.len - 1){
+        if (tab_index < possible_tabcomplete.array.len - 1){
           tab_index += 1;
         } else {
           tab_index = 0;
         }
-        tabRender(possible_tabcomplete, tab_index, col_size, format_width);
+        tabRender(possible_tabcomplete.array, tab_index, col_size, format_width);
         moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
       }
     } else if (c == ESCAPE){
@@ -123,13 +137,17 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         if (tab_index > 0){
           tab_index--;
         } else {
-          tab_index = possible_tabcomplete.len - 1;
+          tab_index = possible_tabcomplete.array.len - 1;
         }
-        tabRender(possible_tabcomplete, tab_index, col_size, format_width);
+        tabRender(possible_tabcomplete.array, tab_index, col_size, format_width);
         moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
       }
     } else if (c == '\n'){
-      strcpy(line, possible_tabcomplete.values[tab_index]);
+      if (possible_tabcomplete.tag == command){
+        strcpy(line,possible_tabcomplete.array.values[tab_index]);
+      } else if (possible_tabcomplete.tag == file_or_dir){
+        strcat(line, &(possible_tabcomplete.array.values[tab_index][getAppendingIndex(line)]));
+      }
       return c;
 
     } else {

@@ -39,6 +39,11 @@ enum logger_type {
   character,
 };
 
+enum autocomplete_type{
+  command,
+  file_or_dir,
+};
+
 typedef struct coordinates {
   int x;
   int y;
@@ -48,6 +53,11 @@ typedef struct {
   int len;
   char** values;
 } string_array;
+
+typedef struct {
+  string_array array;
+  enum autocomplete_type tag;
+} autocomplete_array;
 
 typedef struct {
   int one;
@@ -79,3 +89,4 @@ coordinates getCursorPos();
 void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size);
 int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height);
 string_array getAllFilesInDir(string_array directory_array);
+int getAppendingIndex(char* line);
