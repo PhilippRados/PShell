@@ -278,37 +278,6 @@ bool arrCmp(string_array arr1, string_array arr2){
   return true;
 }
 
-string_array getAllPathBinaries(string_array PATH_ARR){
-  struct dirent* bin;
-  string_array all_path_bins; 
-  char** binaries = (char**)calloc(1024, sizeof(char*));
-  int j = 0;
-  int realloc_index = 1;
-
-  for (int i = 0; i < PATH_ARR.len; i++){
-    DIR* dr = opendir(PATH_ARR.values[i]);
-
-    while((bin = readdir(dr)) != NULL){
-      if (j >= (1024 * realloc_index)){
-        realloc_index++;
-        binaries = (char**)realloc(binaries,realloc_index * (1024 * (sizeof(char) * 24)));
-        if (binaries == NULL){
-          exit(0);
-        }
-      }
-      if (!(strcmp(bin->d_name,".") == 0) && !(strcmp(bin->d_name,"..") == 0)){
-        binaries[j] = (char*)calloc(strlen(bin->d_name) + 1,sizeof(char));
-        strcpy(binaries[j],bin->d_name);
-        j++;
-      }
-    }
-    closedir(dr);
-  }
-  all_path_bins.values = binaries;
-  all_path_bins.len = j;
-  return all_path_bins;
-}
-
 char* joinHistoryFilePath(char* home_dir, char* destination_file){
   char* home_dir_copied = calloc(strlen(home_dir) + strlen("/.psh_history") + 1, sizeof(char));
   strcpy(home_dir_copied, home_dir);
@@ -376,7 +345,7 @@ int main(int argc, char* argv[]) {
     .values = calloc(HISTORY_SIZE,sizeof(char*))
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),':');
-  string_array PATH_BINS = removeDuplicates(getAllPathBinaries(PATH_ARR));
+  string_array PATH_BINS = removeDuplicates(getAllFilesInDir(PATH_ARR));
   string_array global_command_history = getAllHistoryCommands();
 
   char* current_dir = getcwd(cd,sizeof(cd));

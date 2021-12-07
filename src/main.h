@@ -78,3 +78,4 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
 coordinates getCursorPos();
 void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size);
 int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height);
+string_array getAllFilesInDir(string_array directory_array);

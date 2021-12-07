@@ -246,3 +246,34 @@ int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height){
   }
   return j;
 }
+
+string_array getAllFilesInDir(string_array directory_array){
+  struct dirent* bin;
+  string_array all_path_bins; 
+  char** binaries = (char**)calloc(1024, sizeof(char*));
+  int j = 0;
+  int realloc_index = 1;
+
+  for (int i = 0; i < directory_array.len; i++){
+    DIR* dr = opendir(directory_array.values[i]);
+
+    while((bin = readdir(dr)) != NULL){
+      if (j >= (1024 * realloc_index)){
+        realloc_index++;
+        binaries = (char**)realloc(binaries,realloc_index * (1024 * (sizeof(char) * 24)));
+        if (binaries == NULL){
+          exit(0);
+        }
+      }
+      if (!(strcmp(bin->d_name,".") == 0) && !(strcmp(bin->d_name,"..") == 0)){
+        binaries[j] = (char*)calloc(strlen(bin->d_name) + 1,sizeof(char));
+        strcpy(binaries[j],bin->d_name);
+        j++;
+      }
+    }
+    closedir(dr);
+  }
+  all_path_bins.values = binaries;
+  all_path_bins.len = j;
+  return all_path_bins;
+}

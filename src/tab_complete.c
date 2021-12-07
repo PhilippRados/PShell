@@ -67,6 +67,15 @@ string_array checkForCommandAutoComplete(const string_array command_line,const s
   };
   if (command_line.len == 1){
     possible_autocomplete = filterBinaries(command_line.values[0],PATH_BINS);
+  } else if (command_line.len > 1){
+    char cd[256];
+    char* current_dir = getcwd(cd, sizeof(cd));
+    string_array current_dir_array = {
+      .len = 1,
+      .values = &current_dir,
+    };
+
+    possible_autocomplete = filterBinaries(command_line.values[1],getAllFilesInDir(current_dir_array));
   }
   
   return possible_autocomplete;
