@@ -178,7 +178,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
           line = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos.y);
           i = strlen(line);
 
-          if ((terminal_size.y - cursor_pos.y) <= (terminal_size.y - (terminal_size.y * 0.85) - 2)){
+          if (cursor_pos.y >= (terminal_size.y * 0.85) - 2){
             cursor_pos.y = (terminal_size.y * 0.85) - 3;
             moveCursor(cursor_pos);
           } else {

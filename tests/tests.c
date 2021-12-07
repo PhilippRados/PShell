@@ -177,7 +177,6 @@ Test(findDisplayIndices, if_index_equals_fuzzy_height){
 Test(shift_prompt_fuzzy, shift_when_equal){
   int result = shiftPromptIfOverlapTest(11,11);
 
-  logger(integer, &result);
   cr_expect(result == 1);
 }
 
@@ -190,7 +189,6 @@ Test(shift_prompt_fuzzy, dont_shift_when_cursor_higher){
 Test(shift_prompt_fuzzy, shift_when_cursor_lower){
   int result = shiftPromptIfOverlapTest(14,10);
 
-  logger(integer, &result);
   cr_expect(result == 5);
 }
 /* // End-to-end user-journey tests */
