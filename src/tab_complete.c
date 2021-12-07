@@ -98,6 +98,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
     if (c == TAB){
       if (possible_tabcomplete.len == 1){
         strcpy(line,possible_tabcomplete.values[0]);
+        return 0;
       } else {
         if (tab_index < possible_tabcomplete.len - 1){
           tab_index += 1;
