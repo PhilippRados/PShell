@@ -90,4 +90,3 @@ void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int ro
 int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height);
 string_array getAllFilesInDir(string_array directory_array);
 int getAppendingIndex(char* line, char delimeter);
-char* removeOverlappingChars(char* line1, char* line2);
