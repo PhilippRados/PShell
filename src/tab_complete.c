@@ -1,4 +1,5 @@
 #include "main.h"
+#include <sys/stat.h>
 
 int getLongestWordInArray(const string_array array){
   int longest = 0;
@@ -37,7 +38,7 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
   }
 }
 
-string_array filterBinaries(const char* line, const string_array PATH_BINS){
+string_array filterMatching(const char* line, const string_array PATH_BINS){
   int buf_size = 24;
   int realloc_index = 1;
   char** matching_binaries = calloc(buf_size,sizeof(char*));
@@ -61,26 +62,53 @@ string_array filterBinaries(const char* line, const string_array PATH_BINS){
   return result;
 }
 
+bool isFile(char* path){
+  struct stat path_stat;
+  stat(path, &path_stat);
+
+  return S_ISREG(path_stat.st_mode);
+}
+
 autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS){
   autocomplete_array possible_autocomplete = {
     .array.len = 0
   };
-  if (command_line.len == 1){
-    string_array filtered = filterBinaries(command_line.values[0],PATH_BINS);
+  if (command_line.len == 1){ // Command-completion
+    string_array filtered = filterMatching(command_line.values[0],PATH_BINS);
+
     possible_autocomplete = (autocomplete_array){
       .tag = command,
       .array.values = filtered.values,
       .array.len = filtered.len
     };
-  } else if (command_line.len > 1){
+  } else if (command_line.len > 1){ // File-completion
     char cd[256];
-    char* current_dir = getcwd(cd, sizeof(cd));
-    string_array current_dir_array = {
-      .len = 1,
-      .values = &current_dir,
-    };
+    char* current_dir = calloc(256, sizeof(char));
+    char* current_path = strcat(getcwd(cd, sizeof(cd)), "/");
 
-    string_array filtered = filterBinaries(command_line.values[1],getAllFilesInDir(current_dir_array));
+    current_dir = strcat(current_path, command_line.values[1]); // shouldnt be hardcoded in the future as file-comp. can happen anywhere
+    char* current_dir_sub = calloc(strlen(current_dir) + 256, sizeof(char));
+
+    char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]);
+    strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/') - 1);
+
+    string_array current_dir_array = { .len = 1, .values = &current_dir_sub, };
+      
+    char copy[256];
+    string_array filtered = filterMatching(removed_sub,getAllFilesInDir(current_dir_array));
+    for (int i = 0; i < filtered.len; i++){
+      strcat(current_dir_sub,"/");
+      char* temp = strcpy(copy, strcat(current_dir_sub,filtered.values[i]));
+
+      if (!isFile(temp)){ // Doesnt register directories bc strcat saves permanently
+        logger(string, "is directory\n");
+        filtered.values[i] = realloc(filtered.values[i], strlen(filtered.values[i]) + 2);
+        filtered.values[i][strlen(filtered.values[i]) + 1] = '\0';
+        filtered.values[i][strlen(filtered.values[i])] = '/';
+      }
+      memset(copy, 0,strlen(copy));
+      filtered.values[i] = &(filtered.values[i][strlen(removed_sub)]);
+    }
     possible_autocomplete = (autocomplete_array){
       .tag = file_or_dir,
       .array.values = filtered.values,
@@ -95,7 +123,8 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   char c = TAB;
   int tab_index = -1;
   char answer;
-  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitString(line,' '),PATH_BINS);
+  string_array splitted_line = splitString(line, ' ');
+  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitted_line, PATH_BINS);
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
   int col_size = terminal_size.x / format_width;
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
@@ -119,7 +148,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         if (possible_tabcomplete.tag == command){
           strcpy(line,possible_tabcomplete.array.values[0]);
         } else if (possible_tabcomplete.tag == file_or_dir){
-          strcat(line, &(possible_tabcomplete.array.values[0][getAppendingIndex(line)]));
+          strcat(line, possible_tabcomplete.array.values[0]);
         }
         return 0;
       } else {
@@ -146,7 +175,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
       if (possible_tabcomplete.tag == command){
         strcpy(line,possible_tabcomplete.array.values[tab_index]);
       } else if (possible_tabcomplete.tag == file_or_dir){
-        strcat(line, &(possible_tabcomplete.array.values[tab_index][getAppendingIndex(line)]));
+        strcat(line, possible_tabcomplete.array.values[tab_index]);
       }
       return c;
 

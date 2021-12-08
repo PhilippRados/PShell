@@ -248,40 +248,40 @@ int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height){
 }
 
 string_array getAllFilesInDir(string_array directory_array){
-  struct dirent* bin;
-  string_array all_path_bins; 
-  char** binaries = (char**)calloc(1024, sizeof(char*));
+  struct dirent* file;
+  string_array all_path_files; 
+  char** files = (char**)calloc(1024, sizeof(char*));
   int j = 0;
   int realloc_index = 1;
 
   for (int i = 0; i < directory_array.len; i++){
     DIR* dr = opendir(directory_array.values[i]);
 
-    while((bin = readdir(dr)) != NULL){
+    while((file = readdir(dr)) != NULL){
       if (j >= (1024 * realloc_index)){
         realloc_index++;
-        binaries = (char**)realloc(binaries,realloc_index * (1024 * (sizeof(char) * 24)));
-        if (binaries == NULL){
+        files = (char**)realloc(files,realloc_index * (1024 * (sizeof(char) * 24)));
+        if (files == NULL){
           exit(0);
         }
       }
-      if (!(strcmp(bin->d_name,".") == 0) && !(strcmp(bin->d_name,"..") == 0)){
-        binaries[j] = (char*)calloc(strlen(bin->d_name) + 1,sizeof(char));
-        strcpy(binaries[j],bin->d_name);
+      if (!(strcmp(file->d_name,".") == 0) && !(strcmp(file->d_name,"..") == 0)){
+        files[j] = (char*)calloc(strlen(file->d_name) + 1,sizeof(char));
+        strcpy(files[j],file->d_name);
         j++;
       }
     }
     closedir(dr);
   }
-  all_path_bins.values = binaries;
-  all_path_bins.len = j;
-  return all_path_bins;
+  all_path_files.values = files;
+  all_path_files.len = j;
+  return all_path_files;
 }
 
-int getAppendingIndex(char* line){
+int getAppendingIndex(char* line, char delimeter){
   int j = 0;
   for (int i = strlen(line) - 1; i > 0; i--){
-    if (line[i] == ' ') return j;
+    if (line[i] == delimeter) return j;
     j++;
   }
   return -1;
