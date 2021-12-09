@@ -104,6 +104,32 @@ bool inArray(char* value, string_array array){
   return false;
 }
 
+string_array removeDots(string_array array){
+  int j = 0;
+  bool remove_index;
+  char* not_allowed_dots[] = {".", "..", "./", "../"};
+  string_array no_dots_array;
+  no_dots_array.values = calloc(array.len, sizeof(char*));
+  no_dots_array.len = 0;
+
+  for (int i = 0; i < array.len; i++){
+    remove_index = false;
+    for (int k = 0; k < 4; k++){
+      if (strcmp(array.values[i], not_allowed_dots[k]) == 0) {
+        remove_index = true;
+      }
+    }
+    if (!remove_index){
+      no_dots_array.values[j] = calloc(strlen(array.values[i]) + 1, sizeof(char));
+      strcpy(no_dots_array.values[j], array.values[i]);
+      no_dots_array.len += 1;
+      j++;
+    }
+  }
+
+  return no_dots_array;
+}
+
 string_array removeDuplicates(string_array matching_commands){
   int j = 0;
   string_array no_dup_array;
@@ -265,11 +291,11 @@ string_array getAllFilesInDir(string_array directory_array){
           exit(0);
         }
       }
-      if (!(strcmp(file->d_name,".") == 0) && !(strcmp(file->d_name,"..") == 0)){
+      /* if (!(strcmp(file->d_name,".") == 0) && !(strcmp(file->d_name,"..") == 0)){ */
         files[j] = (char*)calloc(strlen(file->d_name) + 1,sizeof(char));
         strcpy(files[j],file->d_name);
         j++;
-      }
+      /* } */
     }
     closedir(dr);
   }

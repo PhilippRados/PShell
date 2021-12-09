@@ -196,7 +196,6 @@ Test(getAppendingIndex, returns_3_if_second_word_is_len_3){
   char line[64] = "make mak";
   int result = getAppendingIndex(line, ' ');
 
-  logger(integer, &result);
   cr_expect(result == 3);
 }
 
@@ -205,6 +204,49 @@ Test(getAppendingIndex, still_works_with_only_space){
   int result = getAppendingIndex(line, ' ');
 
   cr_expect(result == 0);
+}
+
+Test(removeDots, removes_string_when_has_dot){
+  char* one = "one";
+  char* two = "two";
+  char* three = "../";
+  char* four = "four";
+  char* addr_one[] = { one, two, three, four };
+
+  string_array arr1 = {
+    .len = 4,
+    .values = addr_one
+  };
+
+  string_array result = removeDots(arr1);
+  
+  for (int i = 0; i < result.len; i++){
+    logger(string, result.values[i]);
+    logger(string, "\n");
+  }
+  cr_expect(strcmp(result.values[0], "one") == 0);
+  cr_expect(strcmp(result.values[1], "two") == 0);
+  cr_expect(strcmp(result.values[2], "four") == 0);
+}
+
+Test(removeDots, array_stays_same_when_no_dot){
+  char* one = "one";
+  char* two = "two";
+  char* three = "three";
+  char* four = "four";
+  char* addr_one[] = { one, two, three, four };
+
+  string_array arr1 = {
+    .len = 4,
+    .values = addr_one
+  };
+
+  string_array result = removeDots(arr1);
+  
+  cr_expect(strcmp(result.values[0], "one") == 0);
+  cr_expect(strcmp(result.values[1], "two") == 0);
+  cr_expect(strcmp(result.values[2], "three") == 0);
+  cr_expect(strcmp(result.values[3], "four") == 0);
 }
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */

@@ -345,7 +345,7 @@ int main(int argc, char* argv[]) {
     .values = calloc(HISTORY_SIZE,sizeof(char*))
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),':');
-  string_array PATH_BINS = removeDuplicates(getAllFilesInDir(PATH_ARR));
+  string_array PATH_BINS = removeDuplicates(removeDots(getAllFilesInDir(PATH_ARR)));
   string_array global_command_history = getAllHistoryCommands();
 
   char* current_dir = getcwd(cd,sizeof(cd));
