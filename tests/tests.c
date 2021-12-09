@@ -220,10 +220,6 @@ Test(removeDots, removes_string_when_has_dot){
 
   string_array result = removeDots(arr1);
   
-  for (int i = 0; i < result.len; i++){
-    logger(string, result.values[i]);
-    logger(string, "\n");
-  }
   cr_expect(strcmp(result.values[0], "one") == 0);
   cr_expect(strcmp(result.values[1], "two") == 0);
   cr_expect(strcmp(result.values[2], "four") == 0);
