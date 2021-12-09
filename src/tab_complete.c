@@ -62,11 +62,11 @@ string_array filterMatching(const char* line, const string_array PATH_BINS){
   return result;
 }
 
-bool isFile(char* path){
-  struct stat path_stat;
-  stat(path, &path_stat);
+int isDirectory(const char *path) {
+   struct stat statbuf;
+   if (stat(path, &statbuf) != 0) return 0;
 
-  return S_ISREG(path_stat.st_mode);
+   return S_ISDIR(statbuf.st_mode);
 }
 
 autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS){
@@ -83,32 +83,37 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
     };
   } else if (command_line.len > 1){ // File-completion
     char cd[256];
-    char* current_dir = calloc(256, sizeof(char));
     char* current_path = strcat(getcwd(cd, sizeof(cd)), "/");
 
+    char* current_dir = calloc(256, sizeof(char));
     current_dir = strcat(current_path, command_line.values[1]); // shouldnt be hardcoded in the future as file-comp. can happen anywhere
-    char* current_dir_sub = calloc(strlen(current_dir) + 256, sizeof(char));
+    char* current_dir_sub = calloc(strlen(current_dir) + 1, sizeof(char));
 
     char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]);
     strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/') - 1);
+      
+    char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
 
     string_array current_dir_array = { .len = 1, .values = &current_dir_sub, };
-      
-    char copy[256];
     string_array filtered = filterMatching(removed_sub,getAllFilesInDir(current_dir_array));
     int* appending_index = calloc(filtered.len + 1, sizeof(int));
-    for (int i = 0; i < filtered.len; i++){
-      strcat(current_dir_sub,"/");
-      char* temp = strcpy(copy, strcat(current_dir_sub,filtered.values[i]));
 
-      if (!isFile(temp)){ // Doesnt register directories bc strcat saves permanently
-        logger(string, "is directory\n");
+    char* temp;
+    char copy[512];
+    strcat(current_dir_sub,"/");
+    for (int i = 0; i < filtered.len; i++){
+      strcpy(current_dir_sub_copy, current_dir_sub);
+
+      temp = strcpy(copy, strcat(current_dir_sub_copy,filtered.values[i]));
+      
+      if (isDirectory(temp)){ //only works once
         filtered.values[i] = realloc(filtered.values[i], strlen(filtered.values[i]) + 2);
         filtered.values[i][strlen(filtered.values[i]) + 1] = '\0';
         filtered.values[i][strlen(filtered.values[i])] = '/';
       }
       memset(copy, 0,strlen(copy));
-      filtered.values[i] = filtered.values[i];
+      memset(temp, 0,strlen(temp));
+      memset(current_dir_sub_copy, 0, strlen(current_dir_sub_copy));
       appending_index[i] = strlen(removed_sub);
       
     }
@@ -155,7 +160,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
           strcat(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index[0]]);
         }
         return 0;
-      } else {
+      } else if (possible_tabcomplete.array.len > 0){
         if (tab_index < possible_tabcomplete.array.len - 1){
           tab_index += 1;
         } else {
