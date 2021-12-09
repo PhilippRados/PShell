@@ -159,7 +159,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         } else if (possible_tabcomplete.tag == file_or_dir){
           strcat(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index[0]]);
         }
-        return 0;
+        return '\n';
       } else if (possible_tabcomplete.array.len > 0){
         if (tab_index < possible_tabcomplete.array.len - 1){
           tab_index += 1;
