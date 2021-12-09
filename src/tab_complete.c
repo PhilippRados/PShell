@@ -96,6 +96,7 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
       
     char copy[256];
     string_array filtered = filterMatching(removed_sub,getAllFilesInDir(current_dir_array));
+    int* appending_index = calloc(filtered.len + 1, sizeof(int));
     for (int i = 0; i < filtered.len; i++){
       strcat(current_dir_sub,"/");
       char* temp = strcpy(copy, strcat(current_dir_sub,filtered.values[i]));
@@ -107,13 +108,16 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
         filtered.values[i][strlen(filtered.values[i])] = '/';
       }
       memset(copy, 0,strlen(copy));
-      filtered.values[i] = &(filtered.values[i][strlen(removed_sub)]);
+      filtered.values[i] = filtered.values[i];
+      appending_index[i] = strlen(removed_sub);
+      
     }
     possible_autocomplete = (autocomplete_array){
       .tag = file_or_dir,
       .array.values = filtered.values,
-      .array.len = filtered.len
-    };
+      .array.len = filtered.len,
+      .appending_index = appending_index
+     };
   }
   
   return possible_autocomplete;
@@ -148,7 +152,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         if (possible_tabcomplete.tag == command){
           strcpy(line,possible_tabcomplete.array.values[0]);
         } else if (possible_tabcomplete.tag == file_or_dir){
-          strcat(line, possible_tabcomplete.array.values[0]);
+          strcat(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index[0]]);
         }
         return 0;
       } else {
@@ -175,7 +179,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
       if (possible_tabcomplete.tag == command){
         strcpy(line,possible_tabcomplete.array.values[tab_index]);
       } else if (possible_tabcomplete.tag == file_or_dir){
-        strcat(line, possible_tabcomplete.array.values[tab_index]);
+        strcat(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index[tab_index]]);
       }
       return c;
 
