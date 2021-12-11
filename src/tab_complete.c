@@ -85,17 +85,25 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
     char cd[256];
     char* current_path = strcat(getcwd(cd, sizeof(cd)), "/");
 
-    char* current_dir = calloc(256, sizeof(char));
+    char* current_dir;
     current_dir = strcat(current_path, command_line.values[1]); // shouldnt be hardcoded in the future as file-comp. can happen anywhere
-    char* current_dir_sub = calloc(strlen(current_dir) + 1, sizeof(char));
+    char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
 
     char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]);
     strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/') - 1);
       
     char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
 
-    string_array current_dir_array = { .len = 1, .values = &current_dir_sub, };
-    string_array filtered = filterMatching(removed_sub,getAllFilesInDir(current_dir_array));
+    char* temp_sub = calloc(strlen(current_dir_sub) + 1, sizeof(char));
+    strcpy(temp_sub, current_dir_sub);
+    //char** temp_sub_p = calloc(1, sizeof(char*));
+    //temp_sub_p[0] = temp_sub;
+    string_array current_dir_array = { .len = 1, .values = &temp_sub};
+    string_array all_files_in_dir = getAllFilesInDir(&current_dir_array);
+    string_array filtered = filterMatching(removed_sub,all_files_in_dir);
+    //free_string_array(&current_dir_array);
+    free_string_array(&all_files_in_dir);
+    free(temp_sub);
     int* appending_index = calloc(filtered.len + 1, sizeof(int));
 
     char* temp;
@@ -106,7 +114,7 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
 
       temp = strcpy(copy, strcat(current_dir_sub_copy,filtered.values[i]));
       
-      if (isDirectory(temp)){ //only works once
+      if (isDirectory(temp)){
         filtered.values[i] = realloc(filtered.values[i], strlen(filtered.values[i]) + 2);
         filtered.values[i][strlen(filtered.values[i]) + 1] = '\0';
         filtered.values[i][strlen(filtered.values[i])] = '/';
@@ -117,6 +125,9 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
       appending_index[i] = strlen(removed_sub);
       
     }
+    free(current_dir_sub_copy);
+    free(current_dir_sub);
+    //free(current_dir);
     possible_autocomplete = (autocomplete_array){
       .tag = file_or_dir,
       .array.values = filtered.values,
@@ -134,6 +145,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   char answer;
   string_array splitted_line = splitString(line, ' ');
   autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitted_line, PATH_BINS);
+  free_string_array(&splitted_line);
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
   int col_size = terminal_size.x / format_width;
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
@@ -159,6 +171,8 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         } else if (possible_tabcomplete.tag == file_or_dir){
           strcat(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index[0]]);
         }
+        free_string_array(&(possible_tabcomplete.array));
+        free(possible_tabcomplete.appending_index);
         return '\n';
       } else if (possible_tabcomplete.array.len > 0){
         if (tab_index < possible_tabcomplete.array.len - 1){
@@ -186,9 +200,13 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
       } else if (possible_tabcomplete.tag == file_or_dir){
         strcat(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index[tab_index]]);
       }
+      free_string_array(&(possible_tabcomplete.array));
+      free(possible_tabcomplete.appending_index);
       return c;
 
     } else {
+      free_string_array(&(possible_tabcomplete.array));
+      free(possible_tabcomplete.appending_index);
       return c;
     }
   } while ((c = getch()));

@@ -23,6 +23,7 @@ int levenshtein(const char *s1, char *s2, int s1_len) {
       lastdiag = olddiag;
     }
   }
+  free(s2_substring);
 
   return column[s1len];
 }
@@ -41,8 +42,10 @@ string_array filterHistory(const string_array concatenated, char* line){
         strcpy(possible_matches[matches_num], concatenated.values[i]);
         matches_num++;
       }         
+      free(values_no_whitespace);
     }
   }
+  free(line_no_whitespace);
   string_array result = {
     .values = possible_matches,
     .len = matches_num
@@ -170,6 +173,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history, const coordi
   int cursor_terminal_height_diff = terminal_size.y - fuzzy_cursor_height.y;
   string_array matching_commands;
   matching_commands.len = 0;
+  matching_commands.values = NULL;
 
   moveCursor(terminal_size); // moving Cursor to bottom so that newline character shifts line up
   drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x);
@@ -207,10 +211,13 @@ char* popupFuzzyFinder(const string_array all_time_command_history, const coordi
       }
     }
     
-    matching_commands = removeDuplicates(filterHistory(all_time_command_history, line));
+    string_array filtered_history = filterHistory(all_time_command_history, line);
+    free_string_array(&matching_commands);
+    matching_commands = removeDuplicates(&filtered_history);
 
     renderFuzzyFinder(fuzzy_cursor_height, terminal_size.x, line, index, matching_commands, cursor_terminal_height_diff);
   }
+  free_string_array(&matching_commands);
 
   moveCursor((coordinates){0, fuzzy_cursor_height.y - 2});
   CLEAR_LINE;
