@@ -126,6 +126,7 @@ void render(const char* line, const string_array command_history, const string_a
   for (int i = 1; i < command_line.len; i++){
     printf(" %s",command_line.values[i]);
   }
+  free_string_array(&command_line);
 
   if (autocomplete){
     printf("%s",&possible_autocomplete[strlen(line)]);
@@ -215,6 +216,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   }
   ENDLOOP:
   free(possible_autocomplete);
+  free_string_array(&all_time_command_history);
 
   printf("\n");
   return line;
@@ -296,6 +298,7 @@ string_array getAllHistoryCommands(){
   string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
   char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_read = fopen(file_path,"r");
+  free(file_path);
   char* buf = calloc(64, sizeof(char));
   int line_len;
   unsigned long buf_size;
@@ -318,6 +321,7 @@ string_array getAllHistoryCommands(){
   }
   result.len = i;
 
+  free(buf);
   fclose(file_to_read);
   return result;
 }
@@ -326,6 +330,7 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history){
   string_array history_commands = getAllHistoryCommands();
   char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_write = fopen(file_path, "a");
+  free(file_path);
 
   if (file_to_write == NULL){
     logger(string, "error\n");
@@ -339,6 +344,7 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history){
   }
 
   fclose(file_to_write);
+  free_string_array(&history_commands);
 }
 
 int main(int argc, char* argv[]) {
@@ -351,6 +357,7 @@ int main(int argc, char* argv[]) {
   }; 
   string_array PATH_ARR = splitString(getenv("PATH"),':');
   string_array all_files_in_dir = getAllFilesInDir(&PATH_ARR);
+  free_string_array(&PATH_ARR);
   string_array removed_dots = removeDots(&all_files_in_dir);
   string_array PATH_BINS = removeDuplicates(&removed_dots);
   string_array global_command_history = getAllHistoryCommands();
@@ -366,6 +373,7 @@ int main(int argc, char* argv[]) {
 
     line = readLine(PATH_BINS,last_two_dirs,&command_history, global_command_history);
     if(strcmp(line,"q") == 0){
+      free(line);
       break;
     }
     if (strlen(line) > 0){
@@ -394,13 +402,31 @@ int main(int argc, char* argv[]) {
           push(line,&command_history);
         }
       }
+      free_string_array(&splitted_line);
     }
     free(line);
   }
 
   writeSessionCommandsToGlobalHistoryFile(command_history);
   free_string_array(&command_history);
+  free_string_array(&PATH_BINS);
+  free(last_two_dirs);
+  //free_string_array(&global_command_history);
+  int chunk_size = (global_command_history.len / 512) + 1;
+  int j = 0;
+  logger(integer, &chunk_size);
+  for (int i = 0; i < chunk_size; i++){
+	for (int k = 0; k < 512; k++){
+		free(global_command_history.values[j]);
+		global_command_history.values[j] = NULL;
+		j++;
+	}
+  }
+  free(global_command_history.values);
+
+	  
   /* free(splitted_line.values); */
   /* free(line); */
   /* free(PATH_ARR.values); */
 }
+

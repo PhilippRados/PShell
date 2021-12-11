@@ -217,6 +217,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history, const coordi
 
     renderFuzzyFinder(fuzzy_cursor_height, terminal_size.x, line, index, matching_commands, cursor_terminal_height_diff);
   }
+  free_string_array(&matching_commands);
 
   moveCursor((coordinates){0, fuzzy_cursor_height.y - 2});
   CLEAR_LINE;

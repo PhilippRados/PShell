@@ -8,7 +8,7 @@ help:  ## Display this help
 
 .SILENT:
 shell: compile_main ## compile the shell
-	${CC} ${CFLAGS} src/bin/main.o src/bin/util.o src/bin/fuzzy_finder.o src/bin/tab_complete.o -o src/bin/pshell
+	${CC} ${CFLAGS} src/bin/main.o src/bin/util.o src/bin/fuzzy_finder.o src/bin/tab_complete.o -o src/bin/pshell -ldl -lm
 
 start_shell: src/bin/pshell ## start the shell after compilation
 	./src/bin/pshell

@@ -21,11 +21,13 @@ string_array splitString(const char* string_to_split,char delimeter){
 }
 
 void free_string_array(string_array* arr){
+  if (arr->values == NULL) return;
   for (int i = 0; i < arr->len; i++){
     free(arr->values[i]);
     arr->values[i] = NULL;
   }
   free(arr->values);
+  arr->values = NULL;
 }
 
 char* getLastTwoDirs(char* cwd){
@@ -309,7 +311,7 @@ string_array getAllFilesInDir(string_array* directory_array){
   all_path_files.values = files;
   all_path_files.len = j;
 
-  free_string_array(directory_array);
+  //free_string_array(directory_array);
   return all_path_files;
 }
 
@@ -321,4 +323,3 @@ int getAppendingIndex(char* line, char delimeter){
   }
   return -1;
 }
-
