@@ -87,15 +87,17 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
 
     char* current_dir = calloc(256, sizeof(char));
     current_dir = strcat(current_path, command_line.values[1]); // shouldnt be hardcoded in the future as file-comp. can happen anywhere
-    char* current_dir_sub = calloc(strlen(current_dir) + 1, sizeof(char));
+    char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
 
     char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]);
     strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/') - 1);
       
     char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
 
-    string_array current_dir_array = { .len = 1, .values = &current_dir_sub, };
-    string_array filtered = filterMatching(removed_sub,getAllFilesInDir(current_dir_array));
+    char* temp_sub = calloc(strlen(current_dir_sub) + 1, sizeof(char));
+    temp_sub = strcpy(temp_sub, current_dir_sub);
+    string_array current_dir_array = { .len = 1, .values = &temp_sub, };
+    string_array filtered = filterMatching(removed_sub,getAllFilesInDir(&current_dir_array));
     int* appending_index = calloc(filtered.len + 1, sizeof(int));
 
     char* temp;
@@ -159,6 +161,8 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         } else if (possible_tabcomplete.tag == file_or_dir){
           strcat(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index[0]]);
         }
+        free_string_array(&(possible_tabcomplete.array));
+        free(possible_tabcomplete.appending_index);
         return '\n';
       } else if (possible_tabcomplete.array.len > 0){
         if (tab_index < possible_tabcomplete.array.len - 1){
@@ -186,9 +190,13 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
       } else if (possible_tabcomplete.tag == file_or_dir){
         strcat(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index[tab_index]]);
       }
+      free_string_array(&(possible_tabcomplete.array));
+      free(possible_tabcomplete.appending_index);
       return c;
 
     } else {
+      free_string_array(&(possible_tabcomplete.array));
+      free(possible_tabcomplete.appending_index);
       return c;
     }
   } while ((c = getch()));

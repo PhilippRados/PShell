@@ -78,7 +78,7 @@ string_array concatenateArrays(const string_array one, const string_array two);
 void moveCursor(coordinates new_pos);
 char* popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,int current_cursor_height);
 coordinates getTerminalSize();
-string_array removeDuplicates(string_array matching_commands);
+string_array removeDuplicates(string_array* matching_commands);
 void backspaceLogic(char** line, int* i);
 char* removeCharAtPos(char* line,int x_pos);
 void logger(enum logger_type type,void* message);
@@ -89,6 +89,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
 coordinates getCursorPos();
 void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size);
 int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height);
-string_array getAllFilesInDir(string_array directory_array);
+string_array getAllFilesInDir(string_array* directory_array);
 int getAppendingIndex(char* line, char delimeter);
-string_array removeDots(string_array array);
+string_array removeDots(string_array* array);
+void free_string_array(string_array* arr);

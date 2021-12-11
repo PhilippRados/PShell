@@ -207,18 +207,22 @@ Test(getAppendingIndex, still_works_with_only_space){
 }
 
 Test(removeDots, removes_string_when_has_dot){
-  char* one = "one";
-  char* two = "two";
-  char* three = "../";
-  char* four = "four";
-  char* addr_one[] = { one, two, three, four };
+  char** addr_one = calloc(4, sizeof(char*));
+  addr_one[0] = calloc(strlen("one") + 1,1);
+  strcpy(addr_one[0],"one");
+  addr_one[1] = calloc(strlen("two") + 1,1);
+  strcpy(addr_one[1],"two");
+  addr_one[2] = calloc(strlen("../") + 1,1);
+  strcpy(addr_one[2],"../");
+  addr_one[3] = calloc(strlen("four") + 1,1);
+  strcpy(addr_one[3],"four");
 
   string_array arr1 = {
     .len = 4,
     .values = addr_one
   };
 
-  string_array result = removeDots(arr1);
+  string_array result = removeDots(&arr1);
   
   cr_expect(strcmp(result.values[0], "one") == 0);
   cr_expect(strcmp(result.values[1], "two") == 0);
@@ -226,23 +230,28 @@ Test(removeDots, removes_string_when_has_dot){
 }
 
 Test(removeDots, array_stays_same_when_no_dot){
-  char* one = "one";
-  char* two = "two";
-  char* three = "three";
-  char* four = "four";
-  char* addr_one[] = { one, two, three, four };
+  char** addr_one = calloc(4, sizeof(char*));
+  addr_one[0] = calloc(strlen("one") + 1,1);
+  strcpy(addr_one[0],"one");
+  addr_one[1] = calloc(strlen("two") + 1,1);
+  strcpy(addr_one[1],"two");
+  addr_one[2] = calloc(strlen("three") + 1,1);
+  strcpy(addr_one[2],"three");
+  addr_one[3] = calloc(strlen("four") + 1,1);
+  strcpy(addr_one[3],"four");
 
   string_array arr1 = {
     .len = 4,
     .values = addr_one
   };
 
-  string_array result = removeDots(arr1);
+  string_array result = removeDots(&arr1);
   
   cr_expect(strcmp(result.values[0], "one") == 0);
   cr_expect(strcmp(result.values[1], "two") == 0);
   cr_expect(strcmp(result.values[2], "three") == 0);
   cr_expect(strcmp(result.values[3], "four") == 0);
+  free_string_array(&result);
 }
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */

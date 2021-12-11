@@ -20,6 +20,14 @@ string_array splitString(const char* string_to_split,char delimeter){
   return result;
 }
 
+void free_string_array(string_array* arr){
+  for (int i = 0; i < arr->len; i++){
+    free(arr->values[i]);
+    arr->values[i] = NULL;
+  }
+  free(arr->values);
+}
+
 char* getLastTwoDirs(char* cwd){
   int i = 1;
   int last_slash_pos = 0;
@@ -104,46 +112,47 @@ bool inArray(char* value, string_array array){
   return false;
 }
 
-string_array removeDots(string_array array){
+string_array removeDots(string_array* array){
   int j = 0;
   bool remove_index;
   char* not_allowed_dots[] = {".", "..", "./", "../"};
   string_array no_dots_array;
-  no_dots_array.values = calloc(array.len, sizeof(char*));
+  no_dots_array.values = calloc(array->len, sizeof(char*));
   no_dots_array.len = 0;
 
-  for (int i = 0; i < array.len; i++){
+  for (int i = 0; i < array->len; i++){
     remove_index = false;
     for (int k = 0; k < 4; k++){
-      if (strcmp(array.values[i], not_allowed_dots[k]) == 0) {
+      if (strcmp(array->values[i], not_allowed_dots[k]) == 0) {
         remove_index = true;
       }
     }
     if (!remove_index){
-      no_dots_array.values[j] = calloc(strlen(array.values[i]) + 1, sizeof(char));
-      strcpy(no_dots_array.values[j], array.values[i]);
+      no_dots_array.values[j] = calloc(strlen(array->values[i]) + 1, sizeof(char));
+      strcpy(no_dots_array.values[j], array->values[i]);
       no_dots_array.len += 1;
       j++;
     }
   }
-
+  free_string_array(array);
   return no_dots_array;
 }
 
-string_array removeDuplicates(string_array matching_commands){
+string_array removeDuplicates(string_array* matching_commands){
   int j = 0;
   string_array no_dup_array;
-  no_dup_array.values = calloc(matching_commands.len, sizeof(char*));
+  no_dup_array.values = calloc(matching_commands->len, sizeof(char*));
   no_dup_array.len = 0;
 
-  for (int i = 0; i < matching_commands.len; i++){
-    if (!inArray(matching_commands.values[i], no_dup_array)){
-      no_dup_array.values[j] = calloc(strlen(matching_commands.values[i]) + 1, sizeof(char));
-      strcpy(no_dup_array.values[j], matching_commands.values[i]);
+  for (int i = 0; i < matching_commands->len; i++){
+    if (!inArray(matching_commands->values[i], no_dup_array)){
+      no_dup_array.values[j] = calloc(strlen(matching_commands->values[i]) + 1, sizeof(char));
+      strcpy(no_dup_array.values[j], matching_commands->values[i]);
       no_dup_array.len += 1;
       j++;
     }
   }
+  free_string_array(matching_commands);
 
   return no_dup_array;
 }
@@ -273,15 +282,15 @@ int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height){
   return j;
 }
 
-string_array getAllFilesInDir(string_array directory_array){
+string_array getAllFilesInDir(string_array* directory_array){
   struct dirent* file;
   string_array all_path_files; 
   char** files = (char**)calloc(1024, sizeof(char*));
   int j = 0;
   int realloc_index = 1;
 
-  for (int i = 0; i < directory_array.len; i++){
-    DIR* dr = opendir(directory_array.values[i]);
+  for (int i = 0; i < directory_array->len; i++){
+    DIR* dr = opendir(directory_array->values[i]);
 
     while((file = readdir(dr)) != NULL){
       if (j >= (1024 * realloc_index)){
@@ -291,16 +300,16 @@ string_array getAllFilesInDir(string_array directory_array){
           exit(0);
         }
       }
-      /* if (!(strcmp(file->d_name,".") == 0) && !(strcmp(file->d_name,"..") == 0)){ */
-        files[j] = (char*)calloc(strlen(file->d_name) + 1,sizeof(char));
-        strcpy(files[j],file->d_name);
-        j++;
-      /* } */
+      files[j] = (char*)calloc(strlen(file->d_name) + 1,sizeof(char));
+      strcpy(files[j],file->d_name);
+      j++;
     }
     closedir(dr);
   }
   all_path_files.values = files;
   all_path_files.len = j;
+
+  free_string_array(directory_array);
   return all_path_files;
 }
 
