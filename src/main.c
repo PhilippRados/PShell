@@ -181,9 +181,8 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
           popup_result = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos.y);
           if (strcmp(popup_result, "") != 0){
             strcpy(line, popup_result);
-            free(popup_result);
-            /* line = popup_result; */
           }
+          free(popup_result);
           free_string_array(ref);
           i = strlen(line);
 
