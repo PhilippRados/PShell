@@ -86,8 +86,7 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
   } else if (command_line.len > 1){ // File-completion
     char cd[256];
     char* current_path = strcat(getcwd(cd, sizeof(cd)), "/");
-    char* current_dir;
-    current_dir = strcat(current_path, command_line.values[1]);
+    char* current_dir = strcat(current_path, command_line.values[1]);
 
     char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
     char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
