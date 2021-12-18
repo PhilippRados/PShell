@@ -38,35 +38,37 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
   }
 }
 
-string_array filterMatching(const char* line, const string_array PATH_BINS){
-  int buf_size = 24;
-  int realloc_index = 1;
-  char** matching_binaries = calloc(buf_size,sizeof(char*));
-  string_array result;
-  int j = 0;
+int isDirectory(const char *path) {
+  struct stat statbuf;
+  if (stat(path, &statbuf) != 0) return 0;
 
-  for (int i = 0; i < PATH_BINS.len; i++){
-    if (strncmp(PATH_BINS.values[i],line,strlen(line)) == 0){
-      if (j >= (realloc_index * buf_size)){
-        realloc_index++;
-        matching_binaries = realloc(matching_binaries,realloc_index * buf_size * sizeof(char*));
-      }
-      matching_binaries[j] = calloc(strlen(PATH_BINS.values[i]) + 1,sizeof(char));
-      strcpy(matching_binaries[j],PATH_BINS.values[i]);
-      j++;
-    }
-  }
-  result.values = matching_binaries;
-  result.len = j;
-
-  return result;
+  return S_ISDIR(statbuf.st_mode);
 }
 
-int isDirectory(const char *path) {
-   struct stat statbuf;
-   if (stat(path, &statbuf) != 0) return 0;
+void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub, int* appending_index){
+    char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
+    char* temp;
+    char copy[512];
+    strcat(current_dir_sub,"/");
 
-   return S_ISDIR(statbuf.st_mode);
+    for (int i = 0; i < filtered->len; i++){
+      strcpy(current_dir_sub_copy, current_dir_sub);
+
+      temp = strcpy(copy, strcat(current_dir_sub_copy,filtered->values[i]));
+      
+      if (isDirectory(temp)){
+        filtered->values[i] = realloc(filtered->values[i], strlen(filtered->values[i]) + 2);
+        filtered->values[i][strlen(filtered->values[i]) + 1] = '\0';
+        filtered->values[i][strlen(filtered->values[i])] = '/';
+      }
+      memset(copy, 0,strlen(copy));
+      memset(temp, 0,strlen(temp));
+      memset(current_dir_sub_copy, 0, strlen(current_dir_sub_copy));
+      appending_index[i] = strlen(removed_sub);
+      
+    }
+    free(current_dir_sub_copy);
+    free(current_dir_sub);
 }
 
 autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS){
@@ -84,50 +86,18 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
   } else if (command_line.len > 1){ // File-completion
     char cd[256];
     char* current_path = strcat(getcwd(cd, sizeof(cd)), "/");
-
     char* current_dir;
-    current_dir = strcat(current_path, command_line.values[1]); // shouldnt be hardcoded in the future as file-comp. can happen anywhere
+    current_dir = strcat(current_path, command_line.values[1]);
+
     char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
+    char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
+    strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/') - 1); // documents/coding
 
-    char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]);
-    strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/') - 1);
-      
-    char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
+    string_array filtered = getAllMatchingFiles(current_dir_sub, removed_sub); // c_excercises, c_experiments
 
-    char* temp_sub = calloc(strlen(current_dir_sub) + 1, sizeof(char));
-    strcpy(temp_sub, current_dir_sub);
-    //char** temp_sub_p = calloc(1, sizeof(char*));
-    //temp_sub_p[0] = temp_sub;
-    string_array current_dir_array = { .len = 1, .values = &temp_sub};
-    string_array all_files_in_dir = getAllFilesInDir(&current_dir_array);
-    string_array filtered = filterMatching(removed_sub,all_files_in_dir);
-    //free_string_array(&current_dir_array);
-    free_string_array(&all_files_in_dir);
-    free(temp_sub);
     int* appending_index = calloc(filtered.len + 1, sizeof(int));
+    fileDirArray(&filtered, current_dir_sub, removed_sub, appending_index); // directories get / appended and appending_index is set
 
-    char* temp;
-    char copy[512];
-    strcat(current_dir_sub,"/");
-    for (int i = 0; i < filtered.len; i++){
-      strcpy(current_dir_sub_copy, current_dir_sub);
-
-      temp = strcpy(copy, strcat(current_dir_sub_copy,filtered.values[i]));
-      
-      if (isDirectory(temp)){
-        filtered.values[i] = realloc(filtered.values[i], strlen(filtered.values[i]) + 2);
-        filtered.values[i][strlen(filtered.values[i]) + 1] = '\0';
-        filtered.values[i][strlen(filtered.values[i])] = '/';
-      }
-      memset(copy, 0,strlen(copy));
-      memset(temp, 0,strlen(temp));
-      memset(current_dir_sub_copy, 0, strlen(current_dir_sub_copy));
-      appending_index[i] = strlen(removed_sub);
-      
-    }
-    free(current_dir_sub_copy);
-    free(current_dir_sub);
-    //free(current_dir);
     possible_autocomplete = (autocomplete_array){
       .tag = file_or_dir,
       .array.values = filtered.values,

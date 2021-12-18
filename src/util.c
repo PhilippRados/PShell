@@ -323,3 +323,41 @@ int getAppendingIndex(char* line, char delimeter){
   }
   return -1;
 }
+
+string_array filterMatching(const char* line, const string_array PATH_BINS){
+  int buf_size = 24;
+  int realloc_index = 1;
+  char** matching_binaries = calloc(buf_size,sizeof(char*));
+  string_array result;
+  int j = 0;
+
+  for (int i = 0; i < PATH_BINS.len; i++){
+    if (strncmp(PATH_BINS.values[i],line,strlen(line)) == 0){
+      if (j >= (realloc_index * buf_size)){
+        realloc_index++;
+        matching_binaries = realloc(matching_binaries,realloc_index * buf_size * sizeof(char*));
+      }
+      matching_binaries[j] = calloc(strlen(PATH_BINS.values[i]) + 1,sizeof(char));
+      strcpy(matching_binaries[j],PATH_BINS.values[i]);
+      j++;
+    }
+  }
+  result.values = matching_binaries;
+  result.len = j;
+
+  return result;
+}
+
+string_array getAllMatchingFiles(char* current_dir_sub, char* removed_sub){
+  char* temp_sub = calloc(strlen(current_dir_sub) + 1, sizeof(char));
+  strcpy(temp_sub, current_dir_sub);
+
+  string_array current_dir_array = { .len = 1, .values = &temp_sub};
+  string_array all_files_in_dir = getAllFilesInDir(&current_dir_array);
+  string_array filtered = filterMatching(removed_sub,all_files_in_dir);
+
+  free_string_array(&all_files_in_dir);
+  free(temp_sub);
+
+  return filtered;
+}

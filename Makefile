@@ -28,8 +28,7 @@ compile_main:
 	${CC} ${CFLAGS} -c src/tab_complete.c -o ./src/bin/tab_complete.o
 
 compile_and_run: shell start_shell
-	make shell
-	make start_shell
+	make shell && ./src/bin/pshell
 
 clean: ## cleans up all binary and object files
 	rm -f -R *.o ./tests/bin/* ./src/bin/*

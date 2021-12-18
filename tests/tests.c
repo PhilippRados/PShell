@@ -253,6 +253,19 @@ Test(removeDots, array_stays_same_when_no_dot){
   cr_expect(strcmp(result.values[3], "four") == 0);
   free_string_array(&result);
 }
+
+Test(getAllMatchingFiles, should_match_only_one_file){
+  char* current_dir_sub = "/Users/philipprados/documents/coding/c/pshell";
+  char* removed_sub = "Ma";
+
+  string_array result = getAllMatchingFiles(current_dir_sub, removed_sub);
+
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.values[0], "Makefile") == 0);
+
+  free_string_array(&result);
+}
+
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */

@@ -93,3 +93,5 @@ string_array getAllFilesInDir(string_array* directory_array);
 int getAppendingIndex(char* line, char delimeter);
 string_array removeDots(string_array* array);
 void free_string_array(string_array* arr);
+string_array getAllMatchingFiles(char* current_dir_sub, char* removed_sub);
+string_array filterMatching(const char* line, const string_array PATH_BINS);
