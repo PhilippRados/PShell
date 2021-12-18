@@ -266,6 +266,36 @@ Test(getAllMatchingFiles, should_match_only_one_file){
   free_string_array(&result);
 }
 
+Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
+  char* one = "one";
+  char* two = "tw";
+  char* addr_one[] = { one, two };
+
+  string_array arr1 = {
+    .len = 2,
+    .values = addr_one
+  };
+
+
+  char* result = getCurrentWordFromLineIndex(arr1, 6);
+  cr_expect(strcmp(result, "tw") == 0);
+}
+
+Test(getCurrentWordFromCursorPos, cursor_in_middle_of_line){
+  char* one = "one";
+  char* two = "two";
+  char* three = "three";
+  char* addr_one[] = { one, two, three };
+
+  string_array arr1 = {
+    .len = 3,
+    .values = addr_one
+  };
+
+
+  char* result = getCurrentWordFromLineIndex(arr1, 3);
+  cr_expect(strcmp(result, "one") == 0);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */

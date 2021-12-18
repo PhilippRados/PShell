@@ -361,3 +361,19 @@ string_array getAllMatchingFiles(char* current_dir_sub, char* removed_sub){
 
   return filtered;
 }
+
+char* getCurrentWordFromLineIndex(string_array command_line, int line_index){
+  int current_pos = 0;
+  char* result;
+  for (int i = 0; i < command_line.len; i++){
+    if (line_index >= current_pos && line_index <= (current_pos + strlen(command_line.values[i]))){
+      result = calloc(strlen(command_line.values[i]) + 1, sizeof(char));
+      strcpy(result, command_line.values[i]);
+      break;
+    }
+    current_pos += strlen(command_line.values[i]) + 1;
+  }
+
+  return result;
+}
+

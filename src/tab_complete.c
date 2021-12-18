@@ -71,7 +71,7 @@ void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_s
     free(current_dir_sub);
 }
 
-autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS){
+autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS, int line_index){
   autocomplete_array possible_autocomplete = {
     .array.len = 0
   };
@@ -86,7 +86,9 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
   } else if (command_line.len > 1){ // File-completion
     char cd[256];
     char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
-    char* current_dir = strcat(current_path, command_line.values[1]); // documents/coding/c_e
+    char* current_word = getCurrentWordFromLineIndex(command_line, line_index);
+    char* current_dir = strcat(current_path, current_word); // documents/coding/c_e
+    free(current_word);
 
     char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
     char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
@@ -108,12 +110,12 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
   return possible_autocomplete;
 }
 
-char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size){
+char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size, int line_index){
   char c = TAB;
   int tab_index = -1;
   char answer;
   string_array splitted_line = splitString(line, ' ');
-  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitted_line, PATH_BINS);
+  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitted_line, PATH_BINS, line_index);
   free_string_array(&splitted_line);
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
   int col_size = terminal_size.x / format_width;
