@@ -193,7 +193,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history, const coordi
       index = 0;
     } else if (c == ESCAPE){
       if (getch() == ESCAPE){
-        line = "";
+        strcpy(line, "");
         break;
       }
       int value = getch();
