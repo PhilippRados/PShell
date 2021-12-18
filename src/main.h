@@ -56,7 +56,7 @@ typedef struct {
 
 typedef struct {
   string_array array;
-  int* appending_index;
+  int appending_index;
   enum autocomplete_type tag;
 } autocomplete_array;
 
@@ -96,3 +96,5 @@ void free_string_array(string_array* arr);
 string_array getAllMatchingFiles(char* current_dir_sub, char* removed_sub);
 string_array filterMatching(const char* line, const string_array PATH_BINS);
 char* getCurrentWordFromLineIndex(string_array command_line, int cursor_x);
+char* insertStringAtPos(char* line, char* insert_string, int position);
+bool insertCharAtPos(char* line,int index,char c);

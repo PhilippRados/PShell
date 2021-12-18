@@ -296,6 +296,37 @@ Test(getCurrentWordFromCursorPos, cursor_in_middle_of_line){
   char* result = getCurrentWordFromLineIndex(arr1, 3);
   cr_expect(strcmp(result, "one") == 0);
 }
+
+Test(insertCharAtPos, see_if_string_reference_changes){
+  char line[24] = "uwe tested";
+
+  insertCharAtPos(line, 3, 'i');
+  cr_expect(strcmp(line, "uwei tested") == 0);
+}
+
+Test(insertStringAtPos, insert_string_in_middle){
+  char* line = calloc(24, sizeof(char));
+  strcpy(line,"testing the waters");
+  char* insert_string = "cold ";
+
+  insertStringAtPos(line, insert_string, 12);
+
+  cr_expect(strcmp(line, "testing the cold waters") == 0);
+
+  free(line);
+}
+
+Test(insertStringAtPos, insert_string_at_end){
+  char* line = calloc(24, sizeof(char));
+  strcpy(line,"testing the waters");
+  char* insert_string = " here";
+
+  insertStringAtPos(line, insert_string, 18);
+  logger(string, line);
+  cr_expect(strcmp(line, "testing the waters here") == 0);
+
+  free(line);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */

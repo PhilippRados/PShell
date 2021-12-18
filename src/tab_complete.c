@@ -45,7 +45,7 @@ int isDirectory(const char *path) {
   return S_ISDIR(statbuf.st_mode);
 }
 
-void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub, int* appending_index){
+void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub){
     char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
     char* temp;
     char copy[512];
@@ -64,31 +64,40 @@ void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_s
       memset(copy, 0,strlen(copy));
       memset(temp, 0,strlen(temp));
       memset(current_dir_sub_copy, 0, strlen(current_dir_sub_copy));
-      appending_index[i] = strlen(removed_sub);
       
     }
     free(current_dir_sub_copy);
     free(current_dir_sub);
 }
 
-autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS, int line_index){
+int getCurrentWordPosInLine(string_array command_line, char* word){
+  for (int i = 0; i < command_line.len; i++){
+    if (strcmp(command_line.values[i], word) == 0){
+      return i;
+    }
+  }
+  
+  return -1;
+}
+
+autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS, char* current_word){
   autocomplete_array possible_autocomplete = {
     .array.len = 0
   };
-  if (command_line.len == 1){ // Command-completion
-    string_array filtered = filterMatching(command_line.values[0],PATH_BINS);
+
+  if (getCurrentWordPosInLine(command_line, current_word) == 0){
+    string_array filtered = filterMatching(current_word,PATH_BINS);
 
     possible_autocomplete = (autocomplete_array){
       .tag = command,
       .array.values = filtered.values,
-      .array.len = filtered.len
+      .array.len = filtered.len,
+      .appending_index = strlen(current_word)
     };
-  } else if (command_line.len > 1){ // File-completion
+  } else {
     char cd[256];
     char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
-    char* current_word = getCurrentWordFromLineIndex(command_line, line_index);
     char* current_dir = strcat(current_path, current_word); // documents/coding/c_e
-    free(current_word);
 
     char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
     char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
@@ -96,14 +105,13 @@ autocomplete_array checkForCommandAutoComplete(const string_array command_line,c
 
     string_array filtered = getAllMatchingFiles(current_dir_sub, removed_sub); // c_excercises, c_experiments
 
-    int* appending_index = calloc(filtered.len + 1, sizeof(int));
-    fileDirArray(&filtered, current_dir_sub, removed_sub, appending_index); // directories get / appended and appending_index is set
+    fileDirArray(&filtered, current_dir_sub, removed_sub); // directories get / appended
 
     possible_autocomplete = (autocomplete_array){
       .tag = file_or_dir,
       .array.values = filtered.values,
       .array.len = filtered.len,
-      .appending_index = appending_index
+      .appending_index = strlen(removed_sub)
      };
   }
   
@@ -115,8 +123,10 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   int tab_index = -1;
   char answer;
   string_array splitted_line = splitString(line, ' ');
-  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitted_line, PATH_BINS, line_index);
+  char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
+  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitted_line, PATH_BINS, current_word);
   free_string_array(&splitted_line);
+  free(current_word);
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
   int col_size = terminal_size.x / format_width;
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
@@ -128,6 +138,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
 
     moveCursorIfShifted(cursor_pos, cursor_height_diff, 1);
     if (answer != 'y'){
+      free_string_array(&(possible_tabcomplete.array));
       return '\n';
     }
   }
@@ -137,13 +148,8 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
 
     if (c == TAB){
       if (possible_tabcomplete.array.len == 1){
-        if (possible_tabcomplete.tag == command){
-          strcpy(line,possible_tabcomplete.array.values[0]);
-        } else if (possible_tabcomplete.tag == file_or_dir){
-          strcat(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index[0]]);
-        }
+        insertStringAtPos(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],line_index);
         free_string_array(&(possible_tabcomplete.array));
-        free(possible_tabcomplete.appending_index);
         return '\n';
       } else if (possible_tabcomplete.array.len > 0){
         if (tab_index < possible_tabcomplete.array.len - 1){
@@ -166,18 +172,12 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
       }
     } else if (c == '\n'){
-      if (possible_tabcomplete.tag == command){
-        strcpy(line,possible_tabcomplete.array.values[tab_index]);
-      } else if (possible_tabcomplete.tag == file_or_dir){
-        strcat(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index[tab_index]]);
-      }
+      insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index], line_index);
       free_string_array(&(possible_tabcomplete.array));
-      free(possible_tabcomplete.appending_index);
       return c;
 
     } else {
       free_string_array(&(possible_tabcomplete.array));
-      free(possible_tabcomplete.appending_index);
       return c;
     }
   } while ((c = getch()));

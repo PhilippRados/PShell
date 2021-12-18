@@ -14,18 +14,6 @@ int getch(){
   return ch;
 }
 
-bool insertCharAtPos(char* line,int index,char c) {
-  if (index >= 0 && index <= strlen(line)) {
-    for (int i = strlen(line) - 1; i >= index;i--){
-      line[i + 1] = line[i];
-    }
-    line[index] = c;
-  } else {
-    return false;
-  }
-  return true;
-}
-
 bool isInPath(char* line, string_array PATH_BINS){
   for (int i = 0; i < PATH_BINS.len;i++){
     if (strcmp(PATH_BINS.values[i],line) == 0){

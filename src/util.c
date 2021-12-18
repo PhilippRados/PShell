@@ -377,3 +377,26 @@ char* getCurrentWordFromLineIndex(string_array command_line, int line_index){
   return result;
 }
 
+bool insertCharAtPos(char* line,int index,char c) {
+  if (index >= 0 && index <= strlen(line)) {
+    for (int i = strlen(line) - 1; i >= index;i--){
+      line[i + 1] = line[i];
+    }
+    line[index] = c;
+  } else {
+    return false;
+  }
+  return true;
+}
+
+char* insertStringAtPos(char* line, char* insert_string, int position){
+  insertCharAtPos(line, position, '%');
+  insertCharAtPos(line, position + 1, 's');
+
+  char* new_line = calloc(strlen(line) + strlen(insert_string) + 1, sizeof(char));
+  sprintf(new_line, line, insert_string);
+  strcpy(line, new_line);
+  free(new_line);
+
+  return new_line;
+}
