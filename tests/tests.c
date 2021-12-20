@@ -321,8 +321,7 @@ Test(insertStringAtPos, insert_string_at_end){
   strcpy(line,"testing the waters");
   char* insert_string = " here";
 
-  insertStringAtPos(line, insert_string, 18);
-  logger(string, line);
+  insertStringAtPos(line, insert_string, strlen(line));
   cr_expect(strcmp(line, "testing the waters here") == 0);
 
   free(line);

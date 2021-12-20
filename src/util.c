@@ -389,7 +389,8 @@ bool insertCharAtPos(char* line,int index,char c) {
   return true;
 }
 
-char* insertStringAtPos(char* line, char* insert_string, int position){
+void insertStringAtPos(char* line, char* insert_string, int position){
+  if (strcmp(insert_string, "") == 0) return;
   insertCharAtPos(line, position, '%');
   insertCharAtPos(line, position + 1, 's');
 
@@ -397,6 +398,4 @@ char* insertStringAtPos(char* line, char* insert_string, int position){
   sprintf(new_line, line, insert_string);
   strcpy(line, new_line);
   free(new_line);
-
-  return new_line;
 }
