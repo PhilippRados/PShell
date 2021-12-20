@@ -80,12 +80,12 @@ int getCurrentWordPosInLine(string_array command_line, char* word){
   return -1;
 }
 
-autocomplete_array checkForCommandAutoComplete(const string_array command_line,const string_array PATH_BINS, char* current_word){
+autocomplete_array checkForCommandAutoComplete(char* current_word, int current_word_pos_in_line,const string_array PATH_BINS){
   autocomplete_array possible_autocomplete = {
     .array.len = 0
   };
 
-  if (getCurrentWordPosInLine(command_line, current_word) == 0){
+  if (current_word_pos_in_line == 0){
     string_array filtered = filterMatching(current_word,PATH_BINS);
 
     possible_autocomplete = (autocomplete_array){
@@ -124,7 +124,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   char answer;
   string_array splitted_line = splitString(line, ' ');
   char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
-  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(splitted_line, PATH_BINS, current_word);
+  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(current_word,getCurrentWordPosInLine(splitted_line, current_word), PATH_BINS);
   free_string_array(&splitted_line);
   free(current_word);
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
