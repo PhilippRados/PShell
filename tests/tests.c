@@ -268,7 +268,7 @@ Test(getAllMatchingFiles, should_match_only_one_file){
 
 Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
   char* one = "one";
-  char* two = "tw";
+  char* two = "two";
   char* addr_one[] = { one, two };
 
   string_array arr1 = {
@@ -281,7 +281,7 @@ Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
   cr_expect(strcmp(result, "tw") == 0);
 }
 
-Test(getCurrentWordFromCursorPos, cursor_in_middle_of_line){
+Test(getCurrentWordFromLineIndex, cursor_in_middle_of_line){
   char* one = "one";
   char* two = "two";
   char* three = "three";
@@ -325,6 +325,19 @@ Test(insertStringAtPos, insert_string_at_end){
   cr_expect(strcmp(line, "testing the waters here") == 0);
 
   free(line);
+}
+
+Test(removeSlice,remove_end_if_cursor_middle){
+  char* word = calloc(52, sizeof(char));
+  strcpy(word , "testing if Makefile works");
+  int start = 15;
+  /* int end = start + 5; */
+
+  removeSlice(&word, start);
+
+  logger(string, word);
+  cr_expect(strcmp(word, "testing if Mak works") == 0);
+  free(word);
 }
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */

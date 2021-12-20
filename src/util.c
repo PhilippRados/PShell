@@ -367,8 +367,9 @@ char* getCurrentWordFromLineIndex(string_array command_line, int line_index){
   char* result;
   for (int i = 0; i < command_line.len; i++){
     if (line_index >= current_pos && line_index <= (current_pos + strlen(command_line.values[i]))){
+      int index_in_word = line_index - current_pos;
       result = calloc(strlen(command_line.values[i]) + 1, sizeof(char));
-      strcpy(result, command_line.values[i]);
+      strncpy(result, command_line.values[i], index_in_word);
       break;
     }
     current_pos += strlen(command_line.values[i]) + 1;
@@ -398,4 +399,11 @@ void insertStringAtPos(char* line, char* insert_string, int position){
   sprintf(new_line, line, insert_string);
   strcpy(line, new_line);
   free(new_line);
+}
+
+void removeSlice(char** line, int start){
+  for (int i = start; (*line)[start] != '\0' && (*line)[start] != ' '; i++){
+    *line = removeCharAtPos(*line, start);
+  }
+  *line = removeCharAtPos(*line, start);
 }

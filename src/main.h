@@ -98,3 +98,4 @@ string_array filterMatching(const char* line, const string_array PATH_BINS);
 char* getCurrentWordFromLineIndex(string_array command_line, int cursor_x);
 void insertStringAtPos(char* line, char* insert_string, int position);
 bool insertCharAtPos(char* line,int index,char c);
+void removeSlice(char** line, int start);

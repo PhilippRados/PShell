@@ -72,7 +72,7 @@ void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_s
 
 int getCurrentWordPosInLine(string_array command_line, char* word){
   for (int i = 0; i < command_line.len; i++){
-    if (strcmp(command_line.values[i], word) == 0){
+    if (strncmp(command_line.values[i], word, strlen(word)) == 0){
       return i;
     }
   }
@@ -148,10 +148,11 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
 
     if (c == TAB){
       if (possible_tabcomplete.array.len == 1){
+        removeSlice(&line, line_index + 1);
         insertStringAtPos(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],line_index);
         free_string_array(&(possible_tabcomplete.array));
         return '\n';
-      } else if (possible_tabcomplete.array.len > 0){
+      } else if (possible_tabcomplete.array.len > 1){
         if (tab_index < possible_tabcomplete.array.len - 1){
           tab_index += 1;
         } else {
@@ -172,6 +173,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
       }
     } else if (c == '\n'){
+      removeSlice(&line, line_index + 1);
       insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index], line_index);
       free_string_array(&(possible_tabcomplete.array));
       return c;
