@@ -266,7 +266,7 @@ Test(getAllMatchingFiles, should_match_only_one_file){
   free_string_array(&result);
 }
 
-Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
+Test(getCurrentWordFromLineIndex, cursor_in_middle_of_word){
   char* one = "one";
   char* two = "two";
   char* addr_one[] = { one, two };
@@ -281,7 +281,7 @@ Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
   cr_expect(strcmp(result, "tw") == 0);
 }
 
-Test(getCurrentWordFromLineIndex, cursor_in_middle_of_line){
+Test(getCurrentWordFromLineIndex, cursor_at_beginning_of_line){
   char* one = "one";
   char* two = "two";
   char* three = "three";
@@ -295,6 +295,21 @@ Test(getCurrentWordFromLineIndex, cursor_in_middle_of_line){
 
   char* result = getCurrentWordFromLineIndex(arr1, 3);
   cr_expect(strcmp(result, "one") == 0);
+}
+
+Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = { one, two };
+
+  string_array arr1 = {
+    .len = 2,
+    .values = addr_one
+  };
+
+
+  char* result = getCurrentWordFromLineIndex(arr1, 6);
+  cr_expect(strcmp(result, "tw") == 0);
 }
 
 Test(insertCharAtPos, see_if_string_reference_changes){

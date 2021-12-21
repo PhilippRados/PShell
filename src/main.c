@@ -58,7 +58,7 @@ void downArrowPress(int* history_index, char** line, const string_array* command
 
 bool typedLetter(char** line, const char c, const int i){
   bool cursor_moved = false;
-  if ((strlen(*line) == 0 && (c == 32 || c == TAB)) || c == TAB){
+  if (strlen(*line) == 0 && (c == 32 || c == TAB)){
     return false;
   }
 
@@ -149,7 +149,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   string_array concatenated_history_commands;
 
   while((c = getch())){
-    if (c == TAB && strlen(line) > 0 && line[i - 1] != ' '){
+    if (c == TAB && strlen(line) > 0){
       if ((temp = tabLoop(line, &cursor_pos, PATH_BINS, terminal_size, i)) != '\n'){
         c = temp;
       } else {
