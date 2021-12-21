@@ -415,3 +415,9 @@ void removeSlice(char** line, int start){
     *line = removeCharAtPos(*line, start + 1);
   }
 }
+
+void stringToLower(char* string){
+  for (int i = 0; i < strlen(string); i++){
+    string[i] = tolower(string[i]);
+  }
+}

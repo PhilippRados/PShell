@@ -100,3 +100,4 @@ void insertStringAtPos(char* line, char* insert_string, int position);
 bool insertCharAtPos(char* line,int index,char c);
 void removeSlice(char** line, int start);
 int getWordEndIndex(char* line, int start);
+void stringToLower(char* string);

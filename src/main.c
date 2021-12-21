@@ -15,12 +15,24 @@ int getch(){
 }
 
 bool isInPath(char* line, string_array PATH_BINS){
+  bool result = false;
+  char* line_copy = calloc(strlen(line) + 1, sizeof(char));
+  strcpy(line_copy, line);
+  stringToLower(line_copy);
+
+  char* bin_copy;
   for (int i = 0; i < PATH_BINS.len;i++){
-    if (strcmp(PATH_BINS.values[i],line) == 0){
-      return true;
+    bin_copy = calloc(strlen(PATH_BINS.values[i]) + 1, sizeof(char));
+    strcpy(bin_copy,PATH_BINS.values[i]);
+    stringToLower(bin_copy);
+
+    if (strcmp(bin_copy, line_copy) == 0){
+      result = true;
     }
+    free(bin_copy);
   }
-  return false;
+  free(line_copy);
+  return result;
 }
 
 

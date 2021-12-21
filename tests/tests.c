@@ -360,6 +360,16 @@ Test(removeSlice,remove_nothing_cursor_end_of_current_word){
   cr_expect(strcmp(word, "testing if Makefile works") == 0);
   free(word);
 }
+
+Test(stringToLower, converting_string_lowercase_in_place){
+  char* string = calloc(strlen("halle") + 1, sizeof(char));
+  strcpy(string, "HaLLe");
+
+  stringToLower(string);
+
+  cr_expect(strcmp(string, "halle") == 0);
+  free(string);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */
