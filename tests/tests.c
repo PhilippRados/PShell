@@ -327,6 +327,18 @@ Test(insertStringAtPos, insert_string_at_end){
   free(line);
 }
 
+Test(getWordEndIndex,index_in_middle_of_word){
+  char* word = calloc(52, sizeof(char));
+  strcpy(word , "testing Makefile works");
+  int start = 9;
+
+  int result = getWordEndIndex(word, start);
+
+  logger(integer, &result);
+  cr_expect(result == 16);
+  free(word);
+}
+
 Test(removeSlice,remove_end_if_cursor_middle){
   char* word = calloc(52, sizeof(char));
   strcpy(word , "testing if Makefile works");

@@ -401,9 +401,17 @@ void insertStringAtPos(char* line, char* insert_string, int position){
   free(new_line);
 }
 
+int getWordEndIndex(char* line, int start){
+  int line_end = start;
+  for (;line[start] != '\0' && line[start] != ' '; start++) line_end++;
+
+  return line_end;
+}
+
 // 0-indexed
 void removeSlice(char** line, int start){
-  while ((*line)[start] != '\0' && (*line)[start] != ' '){
+  int end = getWordEndIndex(*line, start);
+  for (int i = start; i < end; i++) {
     *line = removeCharAtPos(*line, start + 1);
   }
 }

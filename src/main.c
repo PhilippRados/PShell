@@ -143,8 +143,8 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
         c = temp;
       } else {
         c = -1;
+        i = getWordEndIndex(line, i);
       }
-      i = strlen(line);
     }
     switch (c){
       case ('\n'):{
