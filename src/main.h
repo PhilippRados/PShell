@@ -44,6 +44,13 @@ enum autocomplete_type{
   file_or_dir,
 };
 
+enum color_decorations{
+  standard = 0,
+  bold = 1,
+  underline = 4,
+  reversed = 7
+};
+
 typedef struct coordinates {
   int x;
   int y;
@@ -73,7 +80,7 @@ void printPrompt(const char* dir,color color);
 int arrowHit();
 long getFileSizeAtIndex(FILE* file,int index);
 char* expectedAndReceived(char*,char*);
-void printColor(const char* string,color color);
+void printColor(const char* string,color color, enum color_decorations color_decorations);
 string_array concatenateArrays(const string_array one, const string_array two);
 void moveCursor(coordinates new_pos);
 char* popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,int current_cursor_height);

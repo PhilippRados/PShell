@@ -122,7 +122,7 @@ bool filterHistoryForMatchingAutoComplete(const string_array concatenated, const
 void render(const char* line, const string_array command_history, const string_array PATH_BINS, const bool autocomplete, const char* possible_autocomplete){
   string_array command_line = splitString(line,' ');
 
-  isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN) : printColor(command_line.values[0],RED);
+  isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN, standard) : printColor(command_line.values[0],RED, bold);
   for (int i = 1; i < command_line.len; i++){
     printf(" %s",command_line.values[i]);
   }
@@ -220,10 +220,10 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
   return line;
 }
 
-void printColor(const char* string,color color){
+void printColor(const char* string,color color, enum color_decorations color_decorations){
   char command[13];
 
-	sprintf(command, "%c[%d;%d;%dm", 0x1B, color.attr, color.fg, color.bg);
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, color_decorations, color.fg, color.bg);
 	printf("%s", command);
   printf("%s",string);
 
@@ -232,9 +232,9 @@ void printColor(const char* string,color color){
 }
 
 void printPrompt(const char* dir,color color){
-  printColor(dir,color);
+  printColor(dir,color, bold);
   printf(" ");
-  printColor("\u2771 ", GREEN);
+  printColor("\u2771 ", GREEN, standard);
 }
 
 void pipeOutputToFile(char* filename){

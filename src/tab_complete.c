@@ -25,13 +25,18 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
         break;
       }
 
+      int diff_len = strlen(possible_tabcomplete.values[j]) - format_width;
       if (tab_index == j){
-        int diff_len = strlen(possible_tabcomplete.values[j]) - format_width;
 
-        printColor(possible_tabcomplete.values[j],GREEN);
+        printColor(possible_tabcomplete.values[j],GREEN, reversed);
         printf("%-*s",diff_len,"");
       } else { 
-        printf("%-*s",format_width,possible_tabcomplete.values[j]);
+        if (possible_tabcomplete.values[j][strlen(possible_tabcomplete.values[j]) - 1] == '/'){
+          printColor(possible_tabcomplete.values[j], CYAN, bold);
+          printf("%-*s",diff_len,"");
+        } else {
+          printf("%-*s",format_width,possible_tabcomplete.values[j]);
+        }
       }
       j++;
     }

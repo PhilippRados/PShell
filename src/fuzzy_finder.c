@@ -120,7 +120,7 @@ void renderMatches(string_array matching_commands, coordinates initial_cursor_po
     moveCursor(drawing_pos);
 
     if (j == index){
-      printColor(matching_commands.values[j],HIGHLIGHT);
+      printColor(matching_commands.values[j], GREEN, reversed);
     } else {
       printf("%s", matching_commands.values[j]);
     }
