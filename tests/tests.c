@@ -330,13 +330,22 @@ Test(insertStringAtPos, insert_string_at_end){
 Test(removeSlice,remove_end_if_cursor_middle){
   char* word = calloc(52, sizeof(char));
   strcpy(word , "testing if Makefile works");
-  int start = 15;
-  /* int end = start + 5; */
+  int start = 14;
 
   removeSlice(&word, start);
 
-  logger(string, word);
   cr_expect(strcmp(word, "testing if Mak works") == 0);
+  free(word);
+}
+
+Test(removeSlice,remove_nothing_cursor_end_of_current_word){
+  char* word = calloc(52, sizeof(char));
+  strcpy(word , "testing if Makefile works");
+  int start = 19;
+
+  removeSlice(&word, start);
+
+  cr_expect(strcmp(word, "testing if Makefile works") == 0);
   free(word);
 }
 /* // End-to-end user-journey tests */

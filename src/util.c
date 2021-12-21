@@ -401,9 +401,9 @@ void insertStringAtPos(char* line, char* insert_string, int position){
   free(new_line);
 }
 
+// 0-indexed
 void removeSlice(char** line, int start){
-  for (int i = start; (*line)[start] != '\0' && (*line)[start] != ' '; i++){
-    *line = removeCharAtPos(*line, start);
+  while ((*line)[start] != '\0' && (*line)[start] != ' '){
+    *line = removeCharAtPos(*line, start + 1);
   }
-  *line = removeCharAtPos(*line, start);
 }

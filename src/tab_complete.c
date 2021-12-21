@@ -143,16 +143,17 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
     }
   }
   do {
-    CLEAR_BELOW_CURSOR;
     cursor_height_diff = terminal_size.y - cursor_pos->y;
 
     if (c == TAB){
       if (possible_tabcomplete.array.len == 1){
-        removeSlice(&line, line_index + 1);
+        removeSlice(&line, line_index);
         insertStringAtPos(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],line_index);
         free_string_array(&(possible_tabcomplete.array));
         return '\n';
       } else if (possible_tabcomplete.array.len > 1){
+        moveCursor((coordinates){1000, cursor_pos->y}); // have to move cursor to end of line to not cut off in middle
+        CLEAR_BELOW_CURSOR;
         if (tab_index < possible_tabcomplete.array.len - 1){
           tab_index += 1;
         } else {
@@ -169,11 +170,13 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
         } else {
           tab_index = possible_tabcomplete.array.len - 1;
         }
+        moveCursor((coordinates){1000, cursor_pos->y});
+        CLEAR_BELOW_CURSOR;
         tabRender(possible_tabcomplete.array, tab_index, col_size, format_width);
         moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
       }
     } else if (c == '\n'){
-      removeSlice(&line, line_index + 1);
+      removeSlice(&line, line_index);
       insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index], line_index);
       free_string_array(&(possible_tabcomplete.array));
       return c;
