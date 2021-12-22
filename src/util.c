@@ -324,7 +324,15 @@ int getAppendingIndex(char* line, char delimeter){
   return -1;
 }
 
-string_array filterMatching(const char* line, const string_array PATH_BINS){
+int getAppendingIndexAbsolute(char* line, char delimeter){
+  int j = 0;
+  for (int i = strlen(line) - 1; i >= 0; i--){
+    if (line[i] == delimeter) return j;
+    j++;
+  }
+  return -1;
+}
+string_array filterMatching(char* line, const string_array PATH_BINS){
   int buf_size = 24;
   int realloc_index = 1;
   char** matching_binaries = calloc(buf_size,sizeof(char*));

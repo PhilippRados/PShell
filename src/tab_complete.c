@@ -100,13 +100,27 @@ autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_w
       .appending_index = strlen(current_word)
     };
   } else {
+    char* current_dir;
     char cd[256];
-    char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
-    char* current_dir = strcat(current_path, current_word); // documents/coding/c_e
-
-    char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
-    char* removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
+    char* removed_sub;
+    char* current_dir_sub;
+    if (current_word[0] != '/'){
+      char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
+      current_dir = strcat(current_path, current_word); // documents/coding/c_e
+      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
+      current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
     strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/') - 1); // documents/coding
+    } else { // absolute paths
+      current_dir = current_word;
+      if (strlen(current_dir) == 1){
+        removed_sub = "";
+      } else {
+        removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndexAbsolute(current_dir,'/')]); // c_e
+      }
+    current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
+    strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndexAbsolute(current_dir, '/')); // documents/coding
+    }
+
 
     string_array filtered = getAllMatchingFiles(current_dir_sub, removed_sub); // c_excercises, c_experiments
 
