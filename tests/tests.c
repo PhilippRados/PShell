@@ -206,13 +206,6 @@ Test(getAppendingIndex, still_works_with_only_space){
   cr_expect(result == 0);
 }
 
-Test(getAppendingIndex, absolute_paths){
-  char line[64] = "/us";
-  int result = getAppendingIndexAbsolute(line, '/');
-
-  cr_expect(result == 2);
-}
-
 Test(removeDots, removes_string_when_has_dot){
   char** addr_one = calloc(4, sizeof(char*));
   addr_one[0] = calloc(strlen("one") + 1,1);
