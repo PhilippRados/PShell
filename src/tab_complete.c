@@ -162,7 +162,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
   int cursor_height_diff = terminal_size.y - cursor_pos->y;
 
-  if (possible_tabcomplete.array.len > 30){
+  if (row_size > 10){
     printf("\nThe list of possible matches is %d lines. Do you want to print all of them? (y/n) ", row_size);
     answer = getch();
 
