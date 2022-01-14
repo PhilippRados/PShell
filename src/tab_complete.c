@@ -103,16 +103,31 @@ autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_w
     char* current_dir;
     char cd[256];
     char* removed_sub;
-    if (current_word[0] != '/'){
-      char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
-      current_dir = strcat(current_path, current_word); // documents/coding/c_e
-      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
-    } else { // absolute paths
-      current_dir = current_word;
-      if (strlen(current_dir) == 1){
-        removed_sub = "";
-      } else {
+    switch (current_word[0]){
+      case '/':{
+        current_dir = current_word;
+        if (strlen(current_dir) == 1){
+          removed_sub = "";
+        } else {
+          removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
+        }
+        break;
+      }
+      case '~':{
+        char* home_path = getenv("HOME"); // Users/username
+        char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
+        strcpy(home_path_copy, home_path);
+
+        char* current_path = strcat(home_path_copy, "/"); // Users/username/
+        current_dir = strcat(current_path, &(current_word[1])); //Users/username/documents
+        removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // documents
+        break;
+      }
+      default: {
+        char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
+        current_dir = strcat(current_path, current_word); // documents/coding/c_e
         removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
+        break;
       }
     }
 

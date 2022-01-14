@@ -244,7 +244,24 @@ void pipeOutputToFile(char* filename){
   close(file);
 }
 
+void replaceAliases(string_array* splitted_line){
+  for (int i = 0; i < splitted_line->len; i++){
+    for (int j = 0; j < strlen(splitted_line->values[i]); j++){
+      if (splitted_line->values[i][j] == '~'){
+        char* home_path = getenv("HOME");
+        char* prior_line = calloc(strlen(splitted_line->values[i]) + 1, sizeof(char));
+        strcpy(prior_line, splitted_line->values[i]);
+        removeCharAtPos(prior_line, j + 1);
+        splitted_line->values[i] = realloc(splitted_line->values[i], strlen(home_path) + strlen(splitted_line->values[i]) + 10);
+        strcpy(splitted_line->values[i], prior_line);
+        insertStringAtPos(splitted_line->values[i],home_path, j);
+      }
+    }
+  }
+}
+
 int runChildProcess(string_array splitted_line) {
+  replaceAliases(&splitted_line);
   pid_t pid = fork();
 
   if (pid == 0){
@@ -281,15 +298,6 @@ bool arrCmp(string_array arr1, string_array arr2){
     }
   }
   return true;
-}
-
-char* joinHistoryFilePath(char* home_dir, char* destination_file){
-  char* home_dir_copied = calloc(strlen(home_dir) + strlen("/.psh_history") + 1, sizeof(char));
-  strcpy(home_dir_copied, home_dir);
-
-  char* file_path = strcat(home_dir_copied, "/.psh_history");
-
-  return file_path;
 }
 
 string_array getAllHistoryCommands(){

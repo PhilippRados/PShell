@@ -379,11 +379,13 @@ char* getCurrentWordFromLineIndex(string_array command_line, int line_index){
 }
 
 bool insertCharAtPos(char* line,int index,char c) {
+  int len = strlen(line);
   if (index >= 0 && index <= strlen(line)) {
     for (int i = strlen(line) - 1; i >= index;i--){
       line[i + 1] = line[i];
     }
     line[index] = c;
+    line[len + 1] = '\0';
   } else {
     return false;
   }
@@ -421,3 +423,13 @@ void stringToLower(char* string){
     string[i] = tolower(string[i]);
   }
 }
+
+char* joinHistoryFilePath(char* home_dir, char* destination_file){
+  char* home_dir_copied = calloc(strlen(home_dir) + strlen(destination_file) + 1, sizeof(char));
+  strcpy(home_dir_copied, home_dir);
+
+  char* file_path = strcat(home_dir_copied, destination_file);
+
+  return file_path;
+}
+

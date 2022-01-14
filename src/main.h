@@ -108,3 +108,4 @@ bool insertCharAtPos(char* line,int index,char c);
 void removeSlice(char** line, int start);
 int getWordEndIndex(char* line, int start);
 void stringToLower(char* string);
+char* joinHistoryFilePath(char* home_dir, char* destination_file);

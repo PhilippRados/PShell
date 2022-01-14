@@ -349,7 +349,6 @@ Test(getWordEndIndex,index_in_middle_of_word){
 
   int result = getWordEndIndex(word, start);
 
-  logger(integer, &result);
   cr_expect(result == 16);
   free(word);
 }
