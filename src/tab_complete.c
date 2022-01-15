@@ -1,5 +1,4 @@
 #include "main.h"
-#include <sys/stat.h>
 
 int getLongestWordInArray(const string_array array){
   int longest = 0;
@@ -41,13 +40,6 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
       j++;
     }
   }
-}
-
-int isDirectory(const char *path) {
-  struct stat statbuf;
-  if (stat(path, &statbuf) != 0) return 0;
-
-  return S_ISDIR(statbuf.st_mode);
 }
 
 void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub){

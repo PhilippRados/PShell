@@ -13,6 +13,7 @@
 #include <sys/ioctl.h>
 #include "colors.h"
 #include <math.h>
+#include <sys/stat.h>
 
 #define BACKSPACE 127
 #define CONTROL_F 6
@@ -109,3 +110,4 @@ void removeSlice(char** line, int start);
 int getWordEndIndex(char* line, int start);
 void stringToLower(char* string);
 char* joinHistoryFilePath(char* home_dir, char* destination_file);
+int isDirectory(const char *path);
