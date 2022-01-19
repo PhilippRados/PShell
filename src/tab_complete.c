@@ -140,10 +140,23 @@ autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_w
   return possible_autocomplete;
 }
 
+bool tooManyMatches(coordinates* cursor_pos,int row_size, int cursor_height_diff){
+  char answer;
+  if (row_size > 10){
+    printf("\nThe list of possible matches is %d lines. Do you want to print all of them? (y/n) ", row_size);
+    answer = getch();
+
+    moveCursorIfShifted(cursor_pos, cursor_height_diff, 1);
+    if (answer != 'y'){
+      return true;
+    }
+  }
+  return false;
+}
+
 char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size, int line_index){
   char c = TAB;
   int tab_index = -1;
-  char answer;
   string_array splitted_line = splitString(line, ' ');
   char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
   autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(current_word,splitted_line.values[0],line_index, PATH_BINS);
@@ -154,15 +167,9 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
   int cursor_height_diff = terminal_size.y - cursor_pos->y;
 
-  if (row_size > 10){
-    printf("\nThe list of possible matches is %d lines. Do you want to print all of them? (y/n) ", row_size);
-    answer = getch();
-
-    moveCursorIfShifted(cursor_pos, cursor_height_diff, 1);
-    if (answer != 'y'){
-      free_string_array(&(possible_tabcomplete.array));
-      return '\n';
-    }
+  if (tooManyMatches(cursor_pos, row_size, cursor_height_diff)){
+    free_string_array(&(possible_tabcomplete.array));
+    return '\n';
   }
   do {
     cursor_height_diff = terminal_size.y - cursor_pos->y;
