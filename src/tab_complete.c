@@ -163,67 +163,111 @@ bool tooManyMatches(coordinates* cursor_pos,int row_size, int cursor_height_diff
   return false;
 }
 
+bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index, char* line, int line_index){
+  if (possible_tabcomplete.array.len == 1){
+    removeSlice(&line, line_index);
+    insertStringAtPos(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],line_index);
+
+    return true;
+  } else if (possible_tabcomplete.array.len > 1){
+    if (*tab_index < possible_tabcomplete.array.len - 1){
+      *tab_index += 1;
+    } else {
+      *tab_index = 0;
+    }
+  }
+  return false;
+}
+
+void shiftTabPress(autocomplete_array possible_tabcomplete, int* tab_index){
+  getch();
+  if (getch() == 'Z'){ // Shift-Tab
+    if (*tab_index > 0){
+      *tab_index -= 1;
+    } else {
+      *tab_index = possible_tabcomplete.array.len - 1;
+    }
+  }
+}
+
+void enterPress(autocomplete_array possible_tabcomplete,char* line, int line_index, int tab_index){
+  removeSlice(&line, line_index);
+  insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index],line_index);
+}
+
+bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* line, 
+                      int line_index, int* tab_index){
+  bool loop = true;
+  if (*c == TAB){
+    if (tabPress(possible_tabcomplete, tab_index, line, line_index)){
+      *c = '\n';
+      loop =  false;
+    }
+
+  } else if (*c == ESCAPE){
+    shiftTabPress(possible_tabcomplete, tab_index);
+
+  } else if (*c == '\n'){
+    enterPress(possible_tabcomplete, line, line_index, *tab_index);
+    loop = false;
+
+  } else {
+    loop = false;
+  }
+
+  return loop;
+}
+
+void renderCompletion(autocomplete_array possible_tabcomplete, char c, int tab_index, render_objects* render_data){
+  logger(integer, &tab_index);
+  render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y;
+
+  moveCursor((coordinates){1000, render_data->cursor_pos->y}); // have to move cursor to end of line to not cut off in middle
+  CLEAR_BELOW_CURSOR;
+  tabRender(possible_tabcomplete.array, tab_index, render_data->col_size, render_data->format_width);
+  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size);
+}
+
+render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_array possible_tabcomplete,
+                                      coordinates* cursor_pos){
+  int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
+  int col_size = terminal_size.x / format_width;
+  int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
+  int cursor_height_diff = terminal_size.y - cursor_pos->y;
+
+  return (render_objects){
+    .format_width = format_width,
+    .col_size = col_size,
+    .row_size = row_size,
+    .cursor_height_diff = cursor_height_diff,
+    .cursor_pos = cursor_pos,
+    .terminal_size = terminal_size,
+  };
+}
+
 char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size, int line_index){
-  char c = TAB;
+  char* c = calloc(1, sizeof(char));
+  *c = TAB;
   int tab_index = -1;
   string_array splitted_line = splitString(line, ' ');
   char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
   autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(current_word,splitted_line.values[0],line_index, PATH_BINS);
   free_string_array(&splitted_line);
   free(current_word);
-  int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
-  int col_size = terminal_size.x / format_width;
-  int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
-  int cursor_height_diff = terminal_size.y - cursor_pos->y;
+  render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
+  bool loop = true;
 
-  if (tooManyMatches(cursor_pos, row_size, cursor_height_diff)){
+  if (tooManyMatches(cursor_pos, render_data.row_size, render_data.cursor_height_diff)){
     free_string_array(&(possible_tabcomplete.array));
     return '\n';
   }
   do {
-    cursor_height_diff = terminal_size.y - cursor_pos->y;
-
-    if (c == TAB){
-      if (possible_tabcomplete.array.len == 1){
-        removeSlice(&line, line_index);
-        insertStringAtPos(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],line_index);
-        free_string_array(&(possible_tabcomplete.array));
-        return '\n';
-      } else if (possible_tabcomplete.array.len > 1){
-        moveCursor((coordinates){1000, cursor_pos->y}); // have to move cursor to end of line to not cut off in middle
-        CLEAR_BELOW_CURSOR;
-        if (tab_index < possible_tabcomplete.array.len - 1){
-          tab_index += 1;
-        } else {
-          tab_index = 0;
-        }
-        tabRender(possible_tabcomplete.array, tab_index, col_size, format_width);
-        moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
-      }
-    } else if (c == ESCAPE){
-      getch();
-      if (getch() == 'Z'){ // Shift-Tab
-        if (tab_index > 0){
-          tab_index--;
-        } else {
-          tab_index = possible_tabcomplete.array.len - 1;
-        }
-        moveCursor((coordinates){1000, cursor_pos->y});
-        CLEAR_BELOW_CURSOR;
-        tabRender(possible_tabcomplete.array, tab_index, col_size, format_width);
-        moveCursorIfShifted(cursor_pos, cursor_height_diff, row_size);
-      }
-    } else if (c == '\n'){
-      removeSlice(&line, line_index);
-      insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index], line_index);
-      free_string_array(&(possible_tabcomplete.array));
-      return c;
-
-    } else {
-      free_string_array(&(possible_tabcomplete.array));
-      return c;
+    if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index, &tab_index))){
+      renderCompletion(possible_tabcomplete, *c, tab_index, &render_data);
     }
-  } while ((c = getch()));
 
-  return 0;
+  } while (loop && (*c = getch()));
+  free_string_array(&(possible_tabcomplete.array));
+
+  return *c;
 }

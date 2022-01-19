@@ -78,6 +78,15 @@ typedef struct {
   char* current_dir;
 } file_string_tuple;
 
+typedef struct {
+  int format_width;
+  int col_size;
+  int row_size;
+  int cursor_height_diff;
+  coordinates* cursor_pos;
+  coordinates terminal_size;
+} render_objects;
+
 string_array splitString(const char*,char);
 char* getLastTwoDirs(char*);
 int isBuiltIn(char*);
