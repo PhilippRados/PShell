@@ -124,7 +124,7 @@ void render(const char* line, const string_array command_history, const string_a
 
   isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN, standard) : printColor(command_line.values[0],RED, bold);
   for (int i = 1; i < command_line.len; i++){
-    if (isDirectory(command_line.values[i])){
+    if (isDirectory(command_line.values[i]) || isFile(command_line.values[i])){
       printf(" ");
       printColor(command_line.values[i],WHITE, underline);
     } else {

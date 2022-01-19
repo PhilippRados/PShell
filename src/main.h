@@ -111,3 +111,4 @@ int getWordEndIndex(char* line, int start);
 void stringToLower(char* string);
 char* joinHistoryFilePath(char* home_dir, char* destination_file);
 int isDirectory(const char *path);
+int isFile(const char *path);

@@ -1,4 +1,5 @@
 #include "main.h"
+#include <unistd.h>
 
 string_array splitString(const char* string_to_split,char delimeter){
   int start = 0;
@@ -438,4 +439,9 @@ int isDirectory(const char *path) {
   if (stat(path, &statbuf) != 0) return 0;
 
   return S_ISDIR(statbuf.st_mode);
+}
+
+int isFile(const char *path) {
+  struct stat statbuf;
+  return (stat(path, &statbuf) == 0);
 }

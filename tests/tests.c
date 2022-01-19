@@ -384,6 +384,16 @@ Test(stringToLower, converting_string_lowercase_in_place){
   cr_expect(strcmp(string, "halle") == 0);
   free(string);
 }
+
+Test(isFile, check_if_existing_file_is_true){
+  int result = isFile(".gitignore");
+  cr_expect(result == true);
+}
+
+Test(isFile, check_if_not_existing_file_is_false){
+  int result = isFile("not_existant");
+  cr_expect(result == false);
+}
 /* // End-to-end user-journey tests */
 /* Test(User_journey,typing_ls){ */
 /*   FILE* file = fopen("/Users/philipprados/documents/coding/c/pshell/user_test.txt","r"); */
