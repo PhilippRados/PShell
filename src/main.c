@@ -119,7 +119,7 @@ bool filterHistoryForMatchingAutoComplete(const string_array concatenated, const
   return false;
 }
 
-void underlineIfValidFile(string_array command_line){
+void underlineIfValidPath(string_array command_line){
   for (int i = 1; i < command_line.len; i++){
     if (isDirectory(command_line.values[i]) || isFile(command_line.values[i])){
       printf(" ");
@@ -135,7 +135,7 @@ void render(const char* line, const string_array command_history, const string_a
   string_array command_line = splitString(line,' ');
 
   isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN, standard) : printColor(command_line.values[0],RED, bold);
-  underlineIfValidFile(command_line);
+  underlineIfValidPath(command_line);
 
   if (autocomplete){
     printf("%s",&possible_autocomplete[strlen(line)]);
