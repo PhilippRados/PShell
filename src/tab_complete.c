@@ -219,7 +219,6 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
 }
 
 void renderCompletion(autocomplete_array possible_tabcomplete, char c, int tab_index, render_objects* render_data){
-  logger(integer, &tab_index);
   render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y;
 
   moveCursor((coordinates){1000, render_data->cursor_pos->y}); // have to move cursor to end of line to not cut off in middle
