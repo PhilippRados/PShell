@@ -128,7 +128,6 @@ void underlineIfValidPath(string_array command_line){
       printf(" %s",command_line.values[i]);
     }
   }
-  free_string_array(&command_line);
 }
 
 void render(const char* line, const string_array command_history, const string_array PATH_BINS, const bool autocomplete, const char* possible_autocomplete){
@@ -136,6 +135,7 @@ void render(const char* line, const string_array command_history, const string_a
 
   isInPath(command_line.values[0],PATH_BINS) ? printColor(command_line.values[0],GREEN, standard) : printColor(command_line.values[0],RED, bold);
   underlineIfValidPath(command_line);
+  free_string_array(&command_line);
 
   if (autocomplete){
     printf("%s",&possible_autocomplete[strlen(line)]);
