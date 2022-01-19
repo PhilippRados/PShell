@@ -73,6 +73,11 @@ typedef struct {
   int second;
 } integer_tuple;
 
+typedef struct {
+  char* removed_sub;
+  char* current_dir;
+} file_string_tuple;
+
 string_array splitString(const char*,char);
 char* getLastTwoDirs(char*);
 int isBuiltIn(char*);

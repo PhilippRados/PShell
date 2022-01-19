@@ -77,12 +77,49 @@ int getCurrentWordPosInLine(string_array command_line, char* word){
   return -1;
 }
 
+file_string_tuple getFileStrings(char* current_word, char* current_path){
+  char* current_dir;
+  char* removed_sub;
+
+  switch (current_word[0]){
+    case '/':{
+      current_dir = current_word;
+      if (strlen(current_dir) == 1){
+        removed_sub = "";
+      } else {
+        removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
+      }
+      break;
+    }
+    case '~':{
+      char* home_path = getenv("HOME"); // Users/username
+      char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
+      strcpy(home_path_copy, home_path);
+
+      char* current_path = strcat(home_path_copy, "/"); // Users/username/
+      current_dir = strcat(current_path, &(current_word[1])); //Users/username/documents
+      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // documents
+      break;
+    }
+    default: {
+      current_dir = strcat(current_path, current_word); // documents/coding/c_e
+      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
+      break;
+    }
+  }
+
+  return (file_string_tuple){
+    .removed_sub = removed_sub,
+    .current_dir = current_dir
+  };
+}
+
 autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_word, int line_index,const string_array PATH_BINS){
   autocomplete_array possible_autocomplete = {
     .array.len = 0
   };
 
-  if (strlen(first_word) >= line_index){
+  if (strlen(first_word) >= line_index){ // autocomplete for commands
     string_array filtered = filterMatching(current_word,PATH_BINS);
 
     possible_autocomplete = (autocomplete_array){
@@ -91,49 +128,22 @@ autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_w
       .array.len = filtered.len,
       .appending_index = strlen(current_word)
     };
-  } else {
-    char* current_dir;
+  } else { // autocomplete for files
     char cd[256];
-    char* removed_sub;
-    switch (current_word[0]){
-      case '/':{
-        current_dir = current_word;
-        if (strlen(current_dir) == 1){
-          removed_sub = "";
-        } else {
-          removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
-        }
-        break;
-      }
-      case '~':{
-        char* home_path = getenv("HOME"); // Users/username
-        char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
-        strcpy(home_path_copy, home_path);
+    char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
+    file_string_tuple file_strings = getFileStrings(current_word, current_path);
 
-        char* current_path = strcat(home_path_copy, "/"); // Users/username/
-        current_dir = strcat(current_path, &(current_word[1])); //Users/username/documents
-        removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // documents
-        break;
-      }
-      default: {
-        char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
-        current_dir = strcat(current_path, current_word); // documents/coding/c_e
-        removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,'/')]); // c_e
-        break;
-      }
-    }
+    char* current_dir_sub = calloc(strlen(file_strings.current_dir) + 2, sizeof(char));
+    strncpy(current_dir_sub, file_strings.current_dir, strlen(file_strings.current_dir) - getAppendingIndex(file_strings.current_dir, '/')); // documents/coding
+    string_array filtered = getAllMatchingFiles(current_dir_sub, file_strings.removed_sub); // c_excercises, c_experiments
 
-    char* current_dir_sub = calloc(strlen(current_dir) + 2, sizeof(char));
-    strncpy(current_dir_sub, current_dir, strlen(current_dir) - getAppendingIndex(current_dir, '/')); // documents/coding
-    string_array filtered = getAllMatchingFiles(current_dir_sub, removed_sub); // c_excercises, c_experiments
-
-    fileDirArray(&filtered, current_dir_sub, removed_sub); // directories get / appended
+    fileDirArray(&filtered, current_dir_sub, file_strings.removed_sub); // directories get / appended
 
     possible_autocomplete = (autocomplete_array){
       .tag = file_or_dir,
       .array.values = filtered.values,
       .array.len = filtered.len,
-      .appending_index = strlen(removed_sub)
+      .appending_index = strlen(file_strings.removed_sub)
      };
   }
   
