@@ -130,8 +130,7 @@ autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_w
     };
   } else { // autocomplete for files
     char cd[256];
-    char* current_path = strcat(getcwd(cd, sizeof(cd)), "/"); // documents/coding/
-    file_string_tuple file_strings = getFileStrings(current_word, current_path);
+    file_string_tuple file_strings = getFileStrings(current_word, strcat(getcwd(cd, sizeof(cd)), "/"));
 
     char* current_dir_sub = calloc(strlen(file_strings.current_dir) + 2, sizeof(char));
     strncpy(current_dir_sub, file_strings.current_dir, strlen(file_strings.current_dir) - getAppendingIndex(file_strings.current_dir, '/')); // documents/coding
