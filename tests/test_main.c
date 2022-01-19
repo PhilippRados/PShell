@@ -134,78 +134,6 @@ Test(removing_whitespace, removing_multiple_whitespaces){
   free(result);
 }
 
-Test(findDisplayIndices, if_matching_commands_less_than_fuzzy_height){
-  int matching_commands_len = 3;
-  int cursor_height = 7;
-  int index = 2;
-
-  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
-  cr_expect(result.one == 0);
-  cr_expect(result.second == 3);
-}
-
-Test(findDisplayIndices, if_matching_commands_more_than_fuzzy_height_but_index_less){
-  int matching_commands_len = 30;
-  int cursor_height = 7;
-  int index = 2;
-
-  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
-  cr_expect(result.one == 0);
-  cr_expect(result.second == 7);
-}
-
-Test(findDisplayIndices, if_matching_commands_and_index_more_than_fuzzy_height){
-  int matching_commands_len = 30;
-  int cursor_height = 7;
-  int index = 12;
-
-  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
-  cr_expect(result.one == 6);
-  cr_expect(result.second == 13);
-}
-
-Test(findDisplayIndices, if_index_equals_fuzzy_height){
-  int matching_commands_len = 10;
-  int cursor_height = 7;
-  int index = 7;
-
-  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
-  cr_expect(result.one == 1);
-  cr_expect(result.second == 8);
-}
-
-Test(shift_prompt_fuzzy, shift_when_equal){
-  int result = shiftPromptIfOverlapTest(11,11);
-
-  cr_expect(result == 1);
-}
-
-Test(shift_prompt_fuzzy, dont_shift_when_cursor_higher){
-  int result = shiftPromptIfOverlapTest(10,11);
-
-  cr_expect(result == -1);
-}
-
-Test(shift_prompt_fuzzy, shift_when_cursor_lower){
-  int result = shiftPromptIfOverlapTest(14,10);
-
-  cr_expect(result == 5);
-}
-
-Test(getAppendingIndex, returns_3_if_second_word_is_len_3){
-  char line[64] = "make mak";
-  int result = getAppendingIndex(line, ' ');
-
-  cr_expect(result == 3);
-}
-
-Test(getAppendingIndex, still_works_with_only_space){
-  char line[64] = "make ";
-  int result = getAppendingIndex(line, ' ');
-
-  cr_expect(result == 0);
-}
-
 Test(removeDots, removes_string_when_has_dot){
   char** addr_one = calloc(4, sizeof(char*));
   addr_one[0] = calloc(strlen("one") + 1,1);
@@ -266,59 +194,6 @@ Test(getAllMatchingFiles, should_match_only_one_file){
   free_string_array(&result);
 }
 
-Test(getCurrentWordFromLineIndex, cursor_in_middle_of_word){
-  char* one = "one";
-  char* two = "two";
-  char* addr_one[] = { one, two };
-
-  string_array arr1 = {
-    .len = 2,
-    .values = addr_one
-  };
-
-
-  char* result = getCurrentWordFromLineIndex(arr1, 6);
-  cr_expect(strcmp(result, "tw") == 0);
-}
-
-Test(getCurrentWordFromLineIndex, cursor_at_beginning_of_line){
-  char* one = "one";
-  char* two = "two";
-  char* three = "three";
-  char* addr_one[] = { one, two, three };
-
-  string_array arr1 = {
-    .len = 3,
-    .values = addr_one
-  };
-
-
-  char* result = getCurrentWordFromLineIndex(arr1, 3);
-  cr_expect(strcmp(result, "one") == 0);
-}
-
-Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
-  char* one = "one";
-  char* two = "two";
-  char* addr_one[] = { one, two };
-
-  string_array arr1 = {
-    .len = 2,
-    .values = addr_one
-  };
-
-
-  char* result = getCurrentWordFromLineIndex(arr1, 6);
-  cr_expect(strcmp(result, "tw") == 0);
-}
-
-Test(insertCharAtPos, see_if_string_reference_changes){
-  char line[24] = "uwe tested";
-
-  insertCharAtPos(line, 3, 'i');
-  cr_expect(strcmp(line, "uwei tested") == 0);
-}
-
 Test(insertStringAtPos, insert_string_in_middle){
   char* line = calloc(24, sizeof(char));
   strcpy(line,"testing the waters");
@@ -350,28 +225,6 @@ Test(getWordEndIndex,index_in_middle_of_word){
   int result = getWordEndIndex(word, start);
 
   cr_expect(result == 16);
-  free(word);
-}
-
-Test(removeSlice,remove_end_if_cursor_middle){
-  char* word = calloc(52, sizeof(char));
-  strcpy(word , "testing if Makefile works");
-  int start = 14;
-
-  removeSlice(&word, start);
-
-  cr_expect(strcmp(word, "testing if Mak works") == 0);
-  free(word);
-}
-
-Test(removeSlice,remove_nothing_cursor_end_of_current_word){
-  char* word = calloc(52, sizeof(char));
-  strcpy(word , "testing if Makefile works");
-  int start = 19;
-
-  removeSlice(&word, start);
-
-  cr_expect(strcmp(word, "testing if Makefile works") == 0);
   free(word);
 }
 

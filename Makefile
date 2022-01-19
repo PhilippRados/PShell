@@ -14,12 +14,14 @@ start_shell: src/bin/pshell ## start the shell after compilation
 	./src/bin/pshell
 
 run_tests: compile_tests compile_main ## Run tests
-	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ./tests/bin/tests.o src/bin/util.o -L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0
+	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ./tests/bin/test_main.o ./tests/bin/test_fuzzyfind.o ./tests/bin/test_tab_completion.o src/bin/util.o -L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0
 	./tests/bin/compiled_tests -l
 	./tests/bin/compiled_tests
 
 compile_tests:
-	${CC} ${CFLAGS} -c ./tests/tests.c -o ./tests/bin/tests.o
+	${CC} ${CFLAGS} -c ./tests/test_main.c -o ./tests/bin/test_main.o
+	${CC} ${CFLAGS} -c ./tests/test_fuzzyfind.c -o ./tests/bin/test_fuzzyfind.o
+	${CC} ${CFLAGS} -c ./tests/test_tab_completion.c -o ./tests/bin/test_tab_completion.o
 
 compile_main:
 	${CC} ${CFLAGS} -c src/util.c -o ./src/bin/util.o
