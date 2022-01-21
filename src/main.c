@@ -147,7 +147,7 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
 
   while((c = getch())){
     if (c == TAB && strlen(line) > 0){
-      if ((temp = tabLoop(line, &cursor_pos, PATH_BINS, terminal_size, i)) != '\n'){
+      if ((temp = tabLoop(line, &cursor_pos, PATH_BINS, terminal_size, i)) != 0){
         c = temp;
       } else {
         c = -1;

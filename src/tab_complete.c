@@ -225,6 +225,8 @@ void shiftTabPress(autocomplete_array possible_tabcomplete, int* tab_index){
 }
 
 void enterPress(autocomplete_array possible_tabcomplete,char* line, int line_index, int tab_index){
+  if (possible_tabcomplete.array.len <= 0) return;
+
   removeSlice(&line, line_index);
   insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index],line_index);
 }
@@ -234,7 +236,7 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
   bool loop = true;
   if (*c == TAB){
     if (tabPress(possible_tabcomplete, tab_index, line, line_index)){
-      *c = '\n';
+      *c = 0;
       loop =  false;
     }
 
@@ -243,6 +245,7 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
 
   } else if (*c == '\n'){
     enterPress(possible_tabcomplete, line, line_index, *tab_index);
+    *c = 0;
     loop = false;
 
   } else {
@@ -292,7 +295,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
 
   if (tooManyMatches(cursor_pos, render_data.row_size, render_data.cursor_height_diff)){
     free_string_array(&(possible_tabcomplete.array));
-    return '\n';
+    return 0;
   }
   do {
     if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index, &tab_index))){
