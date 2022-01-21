@@ -1,6 +1,5 @@
 #include "../include/criterion.h"
-#include "../src/main.h"
-#include <stdio.h>
+#include "../src/tab_complete.h"
 
 Test(getAppendingIndex, returns_3_if_second_word_is_len_3){
   char line[64] = "make mak";
@@ -62,13 +61,6 @@ Test(getCurrentWordFromLineIndex, cursor_at_end_of_line){
   cr_expect(strcmp(result, "tw") == 0);
 }
 
-Test(insertCharAtPos, see_if_string_reference_changes){
-  char line[24] = "uwe tested";
-
-  insertCharAtPos(line, 3, 'i');
-  cr_expect(strcmp(line, "uwei tested") == 0);
-}
-
 Test(removeSlice,remove_end_if_cursor_middle){
   char* word = calloc(52, sizeof(char));
   strcpy(word , "testing if Makefile works");
@@ -89,5 +81,29 @@ Test(removeSlice,remove_nothing_cursor_end_of_current_word){
 
   cr_expect(strcmp(word, "testing if Makefile works") == 0);
   free(word);
+}
+
+Test(getAllMatchingFiles, should_match_only_one_file){
+  char* current_dir_sub = "/Users/philipprados/documents/coding/c/pshell";
+  char* removed_sub = "Ma";
+
+  string_array result = getAllMatchingFiles(current_dir_sub, removed_sub);
+
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.values[0], "Makefile") == 0);
+
+  free_string_array(&result);
+}
+
+Test(insertStringAtPos, insert_string_in_middle){
+  char* line = calloc(24, sizeof(char));
+  strcpy(line,"testing the waters");
+  char* insert_string = "cold ";
+
+  insertStringAtPos(line, insert_string, 12);
+
+  cr_expect(strcmp(line, "testing the cold waters") == 0);
+
+  free(line);
 }
 

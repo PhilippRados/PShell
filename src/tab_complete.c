@@ -1,4 +1,4 @@
-#include "main.h"
+#include "tab_complete.h"
 
 int getLongestWordInArray(const string_array array){
   int longest = 0;
@@ -41,6 +41,40 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
     }
   }
 }
+
+int getAppendingIndex(char* line, char delimeter){
+  int j = 0;
+  for (int i = strlen(line) - 1; i >= 0; i--){
+    if (line[i] == delimeter) return j;
+    j++;
+  }
+  return -1;
+}
+
+char* getCurrentWordFromLineIndex(string_array command_line, int line_index){
+  int current_pos = 0;
+  char* result;
+  for (int i = 0; i < command_line.len; i++){
+    if (line_index >= current_pos && line_index <= (current_pos + strlen(command_line.values[i]))){
+      int index_in_word = line_index - current_pos;
+      result = calloc(strlen(command_line.values[i]) + 1, sizeof(char));
+      strncpy(result, command_line.values[i], index_in_word);
+      break;
+    }
+    current_pos += strlen(command_line.values[i]) + 1;
+  }
+
+  return result;
+}
+
+// 0-indexed
+void removeSlice(char** line, int start){
+  int end = getWordEndIndex(*line, start);
+  for (int i = start; i < end; i++) {
+    *line = removeCharAtPos(*line, start + 1);
+  }
+}
+
 
 void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub){
     char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));

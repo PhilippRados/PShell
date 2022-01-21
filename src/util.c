@@ -1,5 +1,28 @@
-#include "main.h"
-#include <unistd.h>
+#include "util.h"
+
+int getch(){
+  struct termios oldattr, newattr;
+  int ch;
+  tcgetattr( STDIN_FILENO, &oldattr );
+  newattr = oldattr;
+  newattr.c_lflag &= ~( ICANON | ECHO );
+  tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
+  ch = getchar();
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+  return ch;
+}
+
+void printColor(const char* string,color color, enum color_decorations color_decorations){
+  char command[13];
+
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, color_decorations, color.fg, color.bg);
+	printf("%s", command);
+  printf("%s",string);
+
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
+	printf("%s", command);
+}
+
 
 string_array splitString(const char* string_to_split,char delimeter){
   int start = 0;
@@ -46,29 +69,6 @@ char* getLastTwoDirs(char* cwd){
   strncpy(last_two_dirs,&cwd[second_to_last_slash],i - second_to_last_slash);
 
   return last_two_dirs;
-}
-
-long getFileSizeAtIndex(FILE* file,int index){
-  char c;
-  int i = 0;
-  int line_num = 1;
-
-  while ((c = getc(file)) != EOF){
-    if (c == '\n'){
-      line_num++;
-    }
-    if (line_num == index){
-      break;
-    }  
-    i++;
-  }
-  return i + 1;
-}
-
-char* expectedAndReceived(char* expected, char* received){
-  char* result = (char*)malloc(sizeof(char) * 100);
-  sscanf(result,"\n\tExpected: %s\n\tReceived%s\n",expected,received);
-  return result;
 }
 
 string_array concatenateArrays(const string_array one, const string_array two){
@@ -198,37 +198,6 @@ void logger(enum logger_type type,void* message){
   fclose(logfile);
 }
 
-char* removeWhitespace(char* s1){
-  char* stripped = calloc(strlen(s1) + 1, sizeof(char));
-  int j = 0;
-
-  for (int i = 0; i < strlen(s1); i++){
-    if (s1[i] != ' '){
-      stripped[j] = s1[i];
-      j++;
-    }
-  }
-
-  return stripped;
-}
-
-integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff, int index){
-  int start = 0;
-  int end = (matching_commands_len < cursor_diff) ? matching_commands_len : cursor_diff;
-  
-  if (index >= cursor_diff){
-    start = index - cursor_diff + 1;
-    end = index + 1;
-  }
-
-  integer_tuple result = {
-    .one = start,
-    .second = end,
-  };
-
-  return result;
-}
-
 coordinates getCursorPos(){
   char buf[1];
   char data[50];
@@ -275,16 +244,6 @@ void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int ro
   }
 }
 
-int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height){
-  if (current_cursor_height < fuzzy_popup_height) return -1;
-  int j = 0;
-
-  for (int i = fuzzy_popup_height; i <= current_cursor_height; i++){
-    j++;
-  }
-  return j;
-}
-
 string_array getAllFilesInDir(string_array* directory_array){
   struct dirent* file;
   string_array all_path_files; 
@@ -314,15 +273,6 @@ string_array getAllFilesInDir(string_array* directory_array){
 
   //free_string_array(directory_array);
   return all_path_files;
-}
-
-int getAppendingIndex(char* line, char delimeter){
-  int j = 0;
-  for (int i = strlen(line) - 1; i >= 0; i--){
-    if (line[i] == delimeter) return j;
-    j++;
-  }
-  return -1;
 }
 
 string_array filterMatching(char* line, const string_array PATH_BINS){
@@ -363,22 +313,6 @@ string_array getAllMatchingFiles(char* current_dir_sub, char* removed_sub){
   return filtered;
 }
 
-char* getCurrentWordFromLineIndex(string_array command_line, int line_index){
-  int current_pos = 0;
-  char* result;
-  for (int i = 0; i < command_line.len; i++){
-    if (line_index >= current_pos && line_index <= (current_pos + strlen(command_line.values[i]))){
-      int index_in_word = line_index - current_pos;
-      result = calloc(strlen(command_line.values[i]) + 1, sizeof(char));
-      strncpy(result, command_line.values[i], index_in_word);
-      break;
-    }
-    current_pos += strlen(command_line.values[i]) + 1;
-  }
-
-  return result;
-}
-
 bool insertCharAtPos(char* line,int index,char c) {
   int len = strlen(line);
   if (index >= 0 && index <= strlen(line)) {
@@ -409,14 +343,6 @@ int getWordEndIndex(char* line, int start){
   for (;line[start] != '\0' && line[start] != ' '; start++) line_end++;
 
   return line_end;
-}
-
-// 0-indexed
-void removeSlice(char** line, int start){
-  int end = getWordEndIndex(*line, start);
-  for (int i = start; i < end; i++) {
-    *line = removeCharAtPos(*line, start + 1);
-  }
 }
 
 void stringToLower(char* string){

@@ -1,6 +1,5 @@
 #include "../include/criterion.h"
-#include "../src/main.h"
-#include <stdio.h>
+#include "../src/fuzzy_finder.h"
 
 Test(findDisplayIndices, if_matching_commands_less_than_fuzzy_height){
   int matching_commands_len = 3;
@@ -58,5 +57,41 @@ Test(shift_prompt_fuzzy, shift_when_cursor_lower){
   int result = shiftPromptIfOverlapTest(14,10);
 
   cr_expect(result == 5);
+}
+
+Test(removing_whitespace, initial_string_didnt_change){
+  char* s1 = calloc(12, sizeof(char));
+  strcpy(s1,"test ing");
+
+  char* result = calloc(12,sizeof(char));
+  result = removeWhitespace(s1);
+
+  cr_expect(strcmp(s1, "test ing") == 0);
+  free(s1);
+  free(result);
+}
+
+Test(removing_whitespace, removing_single_whitespace){
+  char* s1 = calloc(12, sizeof(char));
+  strcpy(s1, "test ing");
+
+  char* result = calloc(12,sizeof(char));
+  result = removeWhitespace(s1);
+
+  cr_expect(strcmp(result, "testing") == 0);
+  free(s1);
+  free(result);
+}
+
+Test(removing_whitespace, removing_multiple_whitespaces){
+  char* s1 = calloc(12, sizeof(char));
+  strcpy(s1,"test    ing");
+
+  char* result = calloc(12,sizeof(char));
+  result = removeWhitespace(s1);
+
+  cr_expect(strcmp(result, "testing") == 0);
+  free(s1);
+  free(result);
 }
 

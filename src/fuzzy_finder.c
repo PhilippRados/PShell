@@ -1,4 +1,4 @@
-#include "main.h"
+#include "fuzzy_finder.h"
 
 #define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 
@@ -28,6 +28,20 @@ int levenshtein(const char *s1, char *s2, int s1_len) {
   return column[s1len];
 }
 
+char* removeWhitespace(char* s1){
+  char* stripped = calloc(strlen(s1) + 1, sizeof(char));
+  int j = 0;
+
+  for (int i = 0; i < strlen(s1); i++){
+    if (s1[i] != ' '){
+      stripped[j] = s1[i];
+      j++;
+    }
+  }
+
+  return stripped;
+}
+
 string_array filterHistory(const string_array concatenated, char* line){
   char** possible_matches = calloc(512, sizeof(char*));
   int matches_num = 0;
@@ -53,6 +67,35 @@ string_array filterHistory(const string_array concatenated, char* line){
 
   return result;
 }
+
+integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff, int index){
+  int start = 0;
+  int end = (matching_commands_len < cursor_diff) ? matching_commands_len : cursor_diff;
+  
+  if (index >= cursor_diff){
+    start = index - cursor_diff + 1;
+    end = index + 1;
+  }
+
+  integer_tuple result = {
+    .one = start,
+    .second = end,
+  };
+
+  return result;
+}
+
+int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height){
+  if (current_cursor_height < fuzzy_popup_height) return -1;
+  int j = 0;
+
+  for (int i = fuzzy_popup_height; i <= current_cursor_height; i++){
+    j++;
+  }
+  return j;
+}
+
+
 
 void drawPopupBox(const coordinates terminal_size, const int width, const int height){
   CLEAR_SCREEN

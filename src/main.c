@@ -1,18 +1,6 @@
-#include "main.h"
+#include "util.h"
 
 const int BUFFER = 256;
-
-int getch(){
-  struct termios oldattr, newattr;
-  int ch;
-  tcgetattr( STDIN_FILENO, &oldattr );
-  newattr = oldattr;
-  newattr.c_lflag &= ~( ICANON | ECHO );
-  tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
-  ch = getchar();
-  tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
-  return ch;
-}
 
 bool isInPath(char* line, string_array PATH_BINS){
   bool result = false;
@@ -227,17 +215,6 @@ char* readLine(string_array PATH_BINS,char* directories,string_array* command_hi
 
   printf("\n");
   return line;
-}
-
-void printColor(const char* string,color color, enum color_decorations color_decorations){
-  char command[13];
-
-	sprintf(command, "%c[%d;%d;%dm", 0x1B, color_decorations, color.fg, color.bg);
-	printf("%s", command);
-  printf("%s",string);
-
-	sprintf(command, "%c[%d;%d;%dm", 0x1B, 0, 37, 10);
-	printf("%s", command);
 }
 
 void printPrompt(const char* dir,color color){
