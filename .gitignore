@@ -4,3 +4,4 @@ log.txt
 user_test.txt
 debug.txt
 .psh_history
+.clang-format

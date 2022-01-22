@@ -1,9 +1,4 @@
-enum cursor_direction {
-  cursor_up,
-  cursor_down,
-  cursor_left,
-  cursor_right
-};
+enum cursor_direction { cursor_up, cursor_down, cursor_left, cursor_right };
 
 enum logger_type {
   integer,
@@ -11,17 +6,12 @@ enum logger_type {
   character,
 };
 
-enum autocomplete_type{
+enum autocomplete_type {
   command,
   file_or_dir,
 };
 
-enum color_decorations{
-  standard = 0,
-  bold = 1,
-  underline = 4,
-  reversed = 7
-};
+enum color_decorations { standard = 0, bold = 1, underline = 4, reversed = 7 };
 
 typedef struct coordinates {
   int x;
