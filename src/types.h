@@ -36,7 +36,6 @@ typedef struct {
 typedef struct {
   string_array array;
   int appending_index;
-  enum autocomplete_type tag;
 } autocomplete_array;
 
 typedef struct {

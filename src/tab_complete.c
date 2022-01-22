@@ -157,7 +157,6 @@ autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_w
     string_array filtered = filterMatching(current_word,PATH_BINS);
 
     possible_autocomplete = (autocomplete_array){
-      .tag = command,
       .array.values = filtered.values,
       .array.len = filtered.len,
       .appending_index = strlen(current_word)
@@ -173,7 +172,6 @@ autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_w
     fileDirArray(&filtered, current_dir_sub, file_strings.removed_sub); // directories get / appended
 
     possible_autocomplete = (autocomplete_array){
-      .tag = file_or_dir,
       .array.values = filtered.values,
       .array.len = filtered.len,
       .appending_index = strlen(file_strings.removed_sub)

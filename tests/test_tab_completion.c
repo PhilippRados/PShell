@@ -107,3 +107,185 @@ Test(insertStringAtPos, insert_string_in_middle){
   free(line);
 }
 
+Test(updateCompletion, exit_out_if_random_letter_press){
+  autocomplete_array possible_tab_complete;
+  char* c = calloc(1,sizeof(char));
+  *c = 'l';
+  char* line;
+  int line_index;
+  int* tab_index;
+
+  bool result = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(result == false);
+  free(c);
+}
+
+Test(updateCompletion, test_tabpress_when_single_command_match){
+  char* one = "testing";
+  char* addr_one[] = { one };
+
+  string_array arr1 = {
+    .len = 1,
+    .values = addr_one
+  };
+  autocomplete_array possible_tab_complete = {
+    .array = arr1,
+    .appending_index = 3
+  };
+  char* c = calloc(1,sizeof(char));
+  *c = TAB;
+  char* line = calloc(10,sizeof(char));
+  strcpy(line, "tesuwe");
+  int line_index = 3;
+  int* tab_index = calloc(1, sizeof(int*));
+  *tab_index = -1;
+
+  bool result = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(result == false);
+  logger(string, line);
+  cr_expect(strcmp(line,"testing") == 0);
+  cr_expect(*c == 0);
+
+
+  free(tab_index);
+  free(line);
+  free(c);
+}
+
+Test(updateCompletion, resets_tabindex_when_no_more_matches){
+  char* two = "tree";
+  char* three = "trey";
+  char* addr_one[] = {  two, three };
+
+  string_array arr1 = {
+    .len = 2,
+    .values = addr_one
+  };
+  autocomplete_array possible_tab_complete = {
+    .array = arr1,
+    .appending_index = 2
+  };
+  char* c = calloc(1,sizeof(char));
+  *c = TAB;
+  char* line = calloc(10,sizeof(char));
+  strcpy(line, "tre");
+  int line_index = strlen(line);
+  int* tab_index = calloc(1, sizeof(int*));
+  *tab_index = -1;
+
+  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(result1 == true);
+  cr_expect(strcmp(line,"tre") == 0);
+  cr_expect(*c == TAB);
+  cr_expect(*tab_index == 0);
+
+  bool result2 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(*tab_index == 1);
+  bool result3 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(*tab_index == 0);
+
+
+  free(tab_index);
+  free(line);
+  free(c);
+}
+
+Test(updateCompletion, copies_current_tabindex_on_enter){
+  char* two = "tree";
+  char* three = "trey";
+  char* addr_one[] = { two, three };
+
+  string_array arr1 = {
+    .len = 2,
+    .values = addr_one
+  };
+  autocomplete_array possible_tab_complete = {
+    .array = arr1,
+    .appending_index = 3
+  };
+  char* c = calloc(1,sizeof(char));
+  *c = '\n';
+  char* line = calloc(10,sizeof(char));
+  strcpy(line, "tre");
+  int line_index = strlen(line);
+  int* tab_index = calloc(1, sizeof(int*));
+  *tab_index = 1;
+
+  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(result1 == false);
+  cr_expect(strcmp(line,"trey") == 0);
+  cr_expect(*c == 0);
+  cr_expect(*tab_index == 1);
+
+
+  free(tab_index);
+  free(line);
+  free(c);
+}
+
+Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs){
+  char* two = "tree";
+  char* three = "trey";
+  char* addr_one[] = { two, three };
+
+  string_array arr1 = {
+    .len = 2,
+    .values = addr_one
+  };
+  autocomplete_array possible_tab_complete = {
+    .array = arr1,
+    .appending_index = 2
+  };
+
+  char* c = calloc(1,sizeof(char));
+  *c = '\n';
+  char* line = calloc(32,sizeof(char));
+  strcpy(line, "ls test/dir/why/tr");
+  int line_index = strlen(line);
+  int* tab_index = calloc(1, sizeof(int*));
+  *tab_index = 0;
+
+  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(result1 == false);
+  cr_expect(strcmp(line,"ls test/dir/why/tree") == 0);
+  cr_expect(*c == 0);
+  cr_expect(*tab_index == 0);
+
+
+  free(tab_index);
+  free(line);
+  free(c);
+}
+
+Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs_when_cursor_middle){
+  char* two = "tree";
+  char* addr_one[] = { two };
+
+  string_array arr1 = {
+    .len = 1,
+    .values = addr_one
+  };
+  autocomplete_array possible_tab_complete = {
+    .array = arr1,
+    .appending_index = 0
+  };
+
+  char* c = calloc(1,sizeof(char));
+  *c = TAB;
+  char* line = calloc(32,sizeof(char));
+  strcpy(line, "ls test/dir/why/tr");
+  int line_index = strlen("ls test/dir/");
+  int* tab_index = calloc(1, sizeof(int*));
+  *tab_index = -1;
+
+  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  cr_expect(result1 == false);
+  cr_expect(strcmp(line,"ls test/dir/tree") == 0);
+  cr_expect(*c == 0);
+  cr_expect(*tab_index == -1);
+
+
+  free(tab_index);
+  free(line);
+  free(c);
+}
