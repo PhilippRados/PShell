@@ -388,3 +388,14 @@ int isFile(const char* path) {
   struct stat statbuf;
   return (stat(path, &statbuf) == 0);
 }
+
+string_array copyStringArray(string_array arr) {
+  string_array copy = {.len = arr.len,
+                       .values = calloc(arr.len, sizeof(char*))};
+  for (int i = 0; i < arr.len; i++) {
+    copy.values[i] = calloc(strlen(arr.values[i]) + 1, sizeof(char));
+    strcpy(copy.values[i], arr.values[i]);
+  }
+
+  return copy;
+}

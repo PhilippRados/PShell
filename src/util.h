@@ -52,6 +52,7 @@ void free_string_array(string_array* arr);
 void insertStringAtPos(char* line, char* insert_string, int position);
 int getWordEndIndex(char* line, int start);
 int isDirectory(const char* path);
+string_array copyStringArray(string_array arr);
 
 // ======= main.c functions ========
 
@@ -66,5 +67,6 @@ bool insertCharAtPos(char* line, int index, char c);
 void stringToLower(char* string);
 char* joinHistoryFilePath(char* home_dir, char* destination_file);
 int isFile(const char* path);
+void replaceAliases(string_array* splitted_line);
 
 #endif // !UTIL_H

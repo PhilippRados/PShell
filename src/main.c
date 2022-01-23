@@ -113,31 +113,17 @@ bool filterHistoryForMatchingAutoComplete(const string_array concatenated,
 }
 
 void underlineIfValidPath(string_array command_line) {
+  string_array copy = copyStringArray(command_line);
+  replaceAliases(&copy);
   for (int i = 1; i < command_line.len; i++) {
-    if (command_line.values[i][0] == '~') {
-      char* home_path = getenv("HOME"); // Users/username
-      char* copy = calloc(
-          strlen(command_line.values[i]) + strlen(home_path) + 2, sizeof(char));
-      strcpy(copy, command_line.values[i]);
-
-      removeCharAtPos(copy, 1);
-      insertStringAtPos(copy, home_path, 0);
-
-      if (isDirectory(copy) || isFile(copy)) {
-        printf(" ");
-        printColor(command_line.values[i], WHITE, underline);
-      } else {
-        printf(" %s", command_line.values[i]);
-      }
-      free(copy);
-    } else if (isDirectory(command_line.values[i]) ||
-               isFile(command_line.values[i])) {
+    if (isDirectory(copy.values[i]) || isFile(copy.values[i])) {
       printf(" ");
       printColor(command_line.values[i], WHITE, underline);
     } else {
       printf(" %s", command_line.values[i]);
     }
   }
+  free_string_array(&copy);
 }
 
 void render(const char* line, const string_array command_history,
