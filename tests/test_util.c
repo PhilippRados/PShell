@@ -45,6 +45,31 @@ Test(insertStringAtPos, insert_string_at_end) {
   free(line);
 }
 
+Test(insertStringAtPos, insert_string_in_middle) {
+  char* line = calloc(24, sizeof(char));
+  strcpy(line, "testing the waters");
+  char* insert_string = "cold ";
+
+  insertStringAtPos(line, insert_string, 12);
+
+  cr_expect(strcmp(line, "testing the cold waters") == 0);
+
+  free(line);
+}
+
+Test(insertStringAtPos, insert_string_at_start) {
+  char* line = calloc(24, sizeof(char));
+  strcpy(line, "~/testing");
+  char* insert_string = "/Users";
+
+  removeCharAtPos(line, 1);
+  insertStringAtPos(line, insert_string, 0);
+
+  cr_expect(strcmp(line, "/Users/testing") == 0);
+
+  free(line);
+}
+
 Test(getWordEndIndex, index_in_middle_of_word) {
   char* word = calloc(52, sizeof(char));
   strcpy(word, "testing Makefile works");

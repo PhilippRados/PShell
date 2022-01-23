@@ -26,7 +26,7 @@ start_shell: src/bin/pshell ## Start the shell after compilation
 
 run_tests: $(TEST_OBJECTS) $(OBJECTS) ## Run all tests
 	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ./tests/bin/test_fuzzyfind.o \
-		./tests/bin/test_tab_completion.o ./tests/bin/test_util.o ./tests/bin/test_main.o src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o  \
+		./tests/bin/test_tab_complete.o ./tests/bin/test_util.o ./tests/bin/test_main.o src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o  \
 		-L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0
 	./tests/bin/compiled_tests -l
 	./tests/bin/compiled_tests

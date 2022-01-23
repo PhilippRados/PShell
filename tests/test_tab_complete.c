@@ -83,18 +83,6 @@ Test(getAllMatchingFiles, should_match_only_one_file) {
   free_string_array(&result);
 }
 
-Test(insertStringAtPos, insert_string_in_middle) {
-  char* line = calloc(24, sizeof(char));
-  strcpy(line, "testing the waters");
-  char* insert_string = "cold ";
-
-  insertStringAtPos(line, insert_string, 12);
-
-  cr_expect(strcmp(line, "testing the cold waters") == 0);
-
-  free(line);
-}
-
 Test(updateCompletion, exit_out_if_random_letter_press) {
   autocomplete_array possible_tab_complete;
   char* c = calloc(1, sizeof(char));
