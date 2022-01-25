@@ -3,8 +3,7 @@
 
 // Unit Tests
 Test(Parsing_directory, get_last_two_dirs) {
-  char* last_two_dirs =
-      getLastTwoDirs("/Users/philipprados/Documents/coding/c/pshell");
+  char* last_two_dirs = getLastTwoDirs("/Users/philipprados/Documents/coding/c/pshell");
 
   cr_expect(strcmp(last_two_dirs, "c/pshell") == 0);
 }

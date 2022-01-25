@@ -14,8 +14,7 @@ int getLongestWordInArray(const string_array array) {
   return longest;
 }
 
-void tabRender(string_array possible_tabcomplete, int tab_index, int col_size,
-               int format_width) {
+void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, int format_width) {
   int j = 0;
 
   while (j < possible_tabcomplete.len) {
@@ -31,8 +30,7 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size,
         printColor(possible_tabcomplete.values[j], GREEN, reversed);
         printf("%-*s", diff_len, "");
       } else {
-        if (possible_tabcomplete
-                .values[j][strlen(possible_tabcomplete.values[j]) - 1] == '/') {
+        if (possible_tabcomplete.values[j][strlen(possible_tabcomplete.values[j]) - 1] == '/') {
           printColor(possible_tabcomplete.values[j], CYAN, bold);
           printf("%-*s", diff_len, "");
         } else {
@@ -58,8 +56,7 @@ char* getCurrentWordFromLineIndex(string_array command_line, int line_index) {
   int current_pos = 0;
   char* result;
   for (int i = 0; i < command_line.len; i++) {
-    if (line_index >= current_pos &&
-        line_index <= (current_pos + strlen(command_line.values[i]))) {
+    if (line_index >= current_pos && line_index <= (current_pos + strlen(command_line.values[i]))) {
       int index_in_word = line_index - current_pos;
       result = calloc(strlen(command_line.values[i]) + 1, sizeof(char));
       strncpy(result, command_line.values[i], index_in_word);
@@ -79,10 +76,8 @@ void removeSlice(char** line, int start) {
   }
 }
 
-void fileDirArray(string_array* filtered, char* current_dir_sub,
-                  char* removed_sub) {
-  char* current_dir_sub_copy =
-      calloc(strlen(current_dir_sub) + 256, sizeof(char));
+void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub) {
+  char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
   char* temp;
   char copy[512];
   strcat(current_dir_sub, "/");
@@ -93,8 +88,7 @@ void fileDirArray(string_array* filtered, char* current_dir_sub,
     temp = strcpy(copy, strcat(current_dir_sub_copy, filtered->values[i]));
 
     if (isDirectory(temp)) {
-      filtered->values[i] =
-          realloc(filtered->values[i], strlen(filtered->values[i]) + 2);
+      filtered->values[i] = realloc(filtered->values[i], strlen(filtered->values[i]) + 2);
       filtered->values[i][strlen(filtered->values[i]) + 1] = '\0';
       filtered->values[i][strlen(filtered->values[i])] = '/';
     }
@@ -126,81 +120,73 @@ file_string_tuple getFileStrings(char* current_word, char* current_path) {
     if (strlen(current_dir) == 1) {
       removed_sub = "";
     } else {
-      removed_sub = &(current_dir[strlen(current_dir) -
-                                  getAppendingIndex(current_dir, '/')]); // c_e
+      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
+                                                                          '/')]); // c_e
     }
     break;
   }
   case '~': {
     char* home_path = getenv("HOME"); // Users/username
-    char* home_path_copy =
-        calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
+    char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
     strcpy(home_path_copy, home_path);
 
     char* current_path = strcat(home_path_copy, "/"); // Users/username/
-    current_dir =
-        strcat(current_path, &(current_word[1])); // Users/username/documents
-    removed_sub =
-        &(current_dir[strlen(current_dir) -
-                      getAppendingIndex(current_dir, '/')]); // documents
+    current_dir = strcat(current_path,
+                         &(current_word[1])); // Users/username/documents
+    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
+                                                                        '/')]); // documents
     break;
   }
   default: {
-    current_dir = strcat(current_path, current_word); // documents/coding/c_e
-    removed_sub = &(current_dir[strlen(current_dir) -
-                                getAppendingIndex(current_dir, '/')]); // c_e
+    current_dir = strcat(current_path,
+                         current_word); // documents/coding/c_e
+    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
+                                                                        '/')]); // c_e
     break;
   }
   }
 
-  return (file_string_tuple){.removed_sub = removed_sub,
-                             .current_dir = current_dir};
+  return (file_string_tuple){.removed_sub = removed_sub, .current_dir = current_dir};
 }
 
-autocomplete_array checkForCommandAutoComplete(char* current_word,
-                                               char* first_word, int line_index,
+autocomplete_array checkForCommandAutoComplete(char* current_word, char* first_word, int line_index,
                                                const string_array PATH_BINS) {
   autocomplete_array possible_autocomplete = {.array.len = 0};
 
   if (strlen(first_word) >= line_index) { // autocomplete for commands
     string_array filtered = filterMatching(current_word, PATH_BINS);
 
-    possible_autocomplete =
-        (autocomplete_array){.array.values = filtered.values,
-                             .array.len = filtered.len,
-                             .appending_index = strlen(current_word)};
+    possible_autocomplete = (autocomplete_array){
+        .array.values = filtered.values, .array.len = filtered.len, .appending_index = strlen(current_word)};
   } else { // autocomplete for files
     char cd[256];
-    file_string_tuple file_strings =
-        getFileStrings(current_word, strcat(getcwd(cd, sizeof(cd)), "/"));
+    file_string_tuple file_strings = getFileStrings(current_word, strcat(getcwd(cd, sizeof(cd)), "/"));
 
-    char* current_dir_sub =
-        calloc(strlen(file_strings.current_dir) + 2, sizeof(char));
+    char* current_dir_sub = calloc(strlen(file_strings.current_dir) + 2, sizeof(char));
     strncpy(current_dir_sub, file_strings.current_dir,
-            strlen(file_strings.current_dir) -
-                getAppendingIndex(file_strings.current_dir,
-                                  '/')); // documents/coding
-    string_array filtered = getAllMatchingFiles(
-        current_dir_sub,
-        file_strings.removed_sub); // c_excercises, c_experiments
+            strlen(file_strings.current_dir) - getAppendingIndex(file_strings.current_dir,
+                                                                 '/')); // documents/coding
+    string_array filtered = getAllMatchingFiles(current_dir_sub,
+                                                file_strings.removed_sub); // c_excercises,
+                                                                           // c_experiments
 
     fileDirArray(&filtered, current_dir_sub,
-                 file_strings.removed_sub); // directories get / appended
+                 file_strings.removed_sub); // directories get /
+                                            // appended
 
-    possible_autocomplete = (autocomplete_array){
-        .array.values = filtered.values,
-        .array.len = filtered.len,
-        .appending_index = strlen(file_strings.removed_sub)};
+    possible_autocomplete = (autocomplete_array){.array.values = filtered.values,
+                                                 .array.len = filtered.len,
+                                                 .appending_index = strlen(file_strings.removed_sub)};
   }
 
   return possible_autocomplete;
 }
 
-bool tooManyMatches(coordinates* cursor_pos, int row_size,
-                    int cursor_height_diff) {
+bool tooManyMatches(coordinates* cursor_pos, int row_size, int cursor_height_diff) {
   char answer;
   if (row_size > 10) {
-    printf("\nThe list of possible matches is %d lines. Do you want to print "
+    printf("\nThe list of possible matches is %d "
+           "lines. Do you want to print "
            "all of them? (y/n) ",
            row_size);
     answer = getch();
@@ -213,13 +199,10 @@ bool tooManyMatches(coordinates* cursor_pos, int row_size,
   return false;
 }
 
-bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index,
-              char* line, int line_index) {
+bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index, char* line, int line_index) {
   if (possible_tabcomplete.array.len == 1) {
     removeSlice(&line, line_index);
-    insertStringAtPos(line,
-                      &(possible_tabcomplete.array
-                            .values[0])[possible_tabcomplete.appending_index],
+    insertStringAtPos(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],
                       line_index);
 
     return true;
@@ -244,18 +227,14 @@ void shiftTabPress(autocomplete_array possible_tabcomplete, int* tab_index) {
   }
 }
 
-void enterPress(autocomplete_array possible_tabcomplete, char* line,
-                int line_index, int tab_index) {
+void enterPress(autocomplete_array possible_tabcomplete, char* line, int line_index, int tab_index) {
   removeSlice(&line, line_index);
-  insertStringAtPos(
-      line,
-      &(possible_tabcomplete.array
-            .values[tab_index])[possible_tabcomplete.appending_index],
-      line_index);
+  insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index],
+                    line_index);
 }
 
-bool updateCompletion(autocomplete_array possible_tabcomplete, char* c,
-                      char* line, int line_index, int* tab_index) {
+bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* line, int line_index,
+                      int* tab_index) {
   bool loop = true;
   if (*c == TAB) {
     if (tabPress(possible_tabcomplete, tab_index, line, line_index)) {
@@ -278,23 +257,18 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c,
   return loop;
 }
 
-void renderCompletion(autocomplete_array possible_tabcomplete, char c,
-                      int tab_index, render_objects* render_data) {
-  render_data->cursor_height_diff =
-      render_data->terminal_size.y - render_data->cursor_pos->y;
+void renderCompletion(autocomplete_array possible_tabcomplete, char c, int tab_index,
+                      render_objects* render_data) {
+  render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y;
 
-  moveCursor((coordinates){
-      1000, render_data->cursor_pos->y}); // have to move cursor to end of line
-                                          // to not cut off in middle
+  moveCursor((coordinates){1000, render_data->cursor_pos->y}); // have to move cursor to end of
+                                                               // line to not cut off in middle
   CLEAR_BELOW_CURSOR;
-  tabRender(possible_tabcomplete.array, tab_index, render_data->col_size,
-            render_data->format_width);
-  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff,
-                      render_data->row_size);
+  tabRender(possible_tabcomplete.array, tab_index, render_data->col_size, render_data->format_width);
+  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size);
 }
 
-render_objects initializeRenderObjects(coordinates terminal_size,
-                                       autocomplete_array possible_tabcomplete,
+render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_array possible_tabcomplete,
                                        coordinates* cursor_pos) {
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
   int col_size = terminal_size.x / format_width;
@@ -311,30 +285,27 @@ render_objects initializeRenderObjects(coordinates terminal_size,
   };
 }
 
-char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS,
-             const coordinates terminal_size, int line_index) {
+char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size,
+             int line_index) {
   char* c = calloc(1, sizeof(char));
   *c = TAB;
   int tab_index = -1;
   string_array splitted_line = splitString(line, ' ');
   char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
-  autocomplete_array possible_tabcomplete = checkForCommandAutoComplete(
-      current_word, splitted_line.values[0], line_index, PATH_BINS);
+  autocomplete_array possible_tabcomplete =
+      checkForCommandAutoComplete(current_word, splitted_line.values[0], line_index, PATH_BINS);
   free_string_array(&splitted_line);
   free(current_word);
-  render_objects render_data =
-      initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
+  render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
   bool loop = true;
 
   if (possible_tabcomplete.array.len <= 0 ||
-      tooManyMatches(cursor_pos, render_data.row_size,
-                     render_data.cursor_height_diff)) {
+      tooManyMatches(cursor_pos, render_data.row_size, render_data.cursor_height_diff)) {
     free_string_array(&(possible_tabcomplete.array));
     return 0;
   }
   do {
-    if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index,
-                                 &tab_index))) {
+    if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index, &tab_index))) {
       renderCompletion(possible_tabcomplete, *c, tab_index, &render_data);
     }
 

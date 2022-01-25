@@ -23,21 +23,19 @@ bool isInPath(char* line, string_array PATH_BINS) {
   return result;
 }
 
-void upArrowPress(int* history_index, char** line,
-                  const string_array* command_history) {
-  if (*history_index < command_history->len) {
+void upArrowPress(int* history_index, char** line, const string_array command_history) {
+  if (*history_index < command_history.len) {
     *history_index += 1;
     memset(*line, 0, strlen(*line));
-    strcpy(*line, command_history->values[*history_index - 1]);
+    strcpy(*line, command_history.values[*history_index - 1]);
   };
 }
 
-void downArrowPress(int* history_index, char** line,
-                    const string_array* command_history) {
+void downArrowPress(int* history_index, char** line, const string_array command_history) {
   if (*history_index > 1) {
     *history_index -= 1;
     memset(*line, 0, strlen(*line));
-    strcpy(*line, command_history->values[*history_index - 1]);
+    strcpy(*line, command_history.values[*history_index - 1]);
 
   } else if (*history_index > 0) {
     *history_index -= 1;
@@ -63,9 +61,8 @@ bool typedLetter(char** line, const char c, const int i) {
   return cursor_moved;
 }
 
-void arrowPress(char** line, int* i, int* history_index,
-                const bool autocomplete, const char* possible_autocomplete,
-                const string_array* command_history, const char value) {
+void arrowPress(char** line, int* i, int* history_index, const bool autocomplete,
+                const char* possible_autocomplete, const string_array command_history, const char value) {
   switch (value) {
   case 'A':
     upArrowPress(history_index, line, command_history);
@@ -80,7 +77,7 @@ void arrowPress(char** line, int* i, int* history_index,
     break;
 
   case 'C': { // right-arrow
-    if (autocomplete && strcmp(*line, possible_autocomplete) != 0) {
+    if (autocomplete && strncmp(*line, possible_autocomplete, strlen(*line)) == 0) {
       memset(*line, 0, strlen(*line));
       strcpy(*line, possible_autocomplete);
       *i = strlen(*line);
@@ -97,13 +94,16 @@ void arrowPress(char** line, int* i, int* history_index,
   }
 }
 
-bool filterHistoryForMatchingAutoComplete(const string_array concatenated,
-                                          const char* line,
+bool filterHistoryForMatchingAutoComplete(const string_array concatenated, char* line,
                                           char* possible_autocomplete) {
 
   for (int i = 0; i < concatenated.len; i++) {
-    if (strncmp(line, concatenated.values[i], strlen(line)) == 0) {
+    if (strlen(line) > 0 && (strncmp(line, concatenated.values[i], strlen(line)) == 0)) {
       strcpy(possible_autocomplete, concatenated.values[i]);
+      logger(string, line);
+      logger(string, "\n");
+      logger(string, possible_autocomplete);
+      logger(string, "\n");
 
       return true;
     }
@@ -126,113 +126,117 @@ void underlineIfValidPath(string_array command_line) {
   free_string_array(&copy);
 }
 
-void render(const char* line, const string_array command_history,
-            const string_array PATH_BINS, const bool autocomplete,
-            const char* possible_autocomplete) {
-  string_array command_line = splitString(line, ' ');
+void render(const char* line, const string_array command_history, const string_array PATH_BINS,
+            const bool autocomplete, const char* possible_autocomplete, char* directories) {
+  CLEAR_LINE;
+  CLEAR_BELOW_CURSOR;
+  printf("\r");
+  printPrompt(directories, CYAN);
 
-  isInPath(command_line.values[0], PATH_BINS)
-      ? printColor(command_line.values[0], GREEN, standard)
-      : printColor(command_line.values[0], RED, bold);
-  underlineIfValidPath(command_line);
-  free_string_array(&command_line);
+  if (strlen(line) > 0) {
+    string_array command_line = splitString(line, ' ');
 
-  if (autocomplete) {
-    printf("%s", &possible_autocomplete[strlen(line)]);
+    isInPath(command_line.values[0], PATH_BINS) ? printColor(command_line.values[0], GREEN, standard)
+                                                : printColor(command_line.values[0], RED, bold);
+    underlineIfValidPath(command_line);
+    free_string_array(&command_line);
+
+    if (autocomplete) {
+      printf("%s", &possible_autocomplete[strlen(line)]);
+    }
   }
 }
 
-char* readLine(string_array PATH_BINS, char* directories,
-               string_array* command_history,
-               const string_array global_command_history) {
-  const coordinates terminal_size = getTerminalSize();
-  char c;
-  char* line = calloc(BUFFER, sizeof(char));
-  char* possible_autocomplete = calloc(BUFFER, sizeof(char));
-  int i = 0;
-  int history_index = 0;
-  coordinates cursor_pos = getCursorPos();
-  int prompt_len = strlen(directories) + 4;
-  bool autocomplete = false;
+void tab(char* line, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size, int* i, char* c) {
+  if (strlen(line) <= 0)
+    return;
+
   char temp;
-  string_array all_time_command_history =
-      concatenateArrays(*command_history, global_command_history);
-  char* popup_result;
-  string_array concatenated_history_commands;
+  if ((temp = tabLoop(line, cursor_pos, PATH_BINS, terminal_size, *i)) != 0) {
+    *c = temp;
+  } else {
+    *c = -1;
+    *i = getWordEndIndex(line, *i);
+  }
+}
 
-  while ((c = getch())) {
-    if (c == TAB && strlen(line) > 0) {
-      if ((temp = tabLoop(line, &cursor_pos, PATH_BINS, terminal_size, i)) !=
-          0) {
-        c = temp;
-      } else {
-        c = -1;
-        i = getWordEndIndex(line, i);
-      }
-    }
-    switch (c) {
-    case ('\n'): {
-      goto ENDLOOP;
-      break;
-    }
-    case (BACKSPACE): {
-      backspaceLogic(&line, &i);
+void ctrlFPress(string_array global_command_history, coordinates terminal_size, coordinates cursor_pos, char* line,
+                string_array command_history, int* i) {
+  // string_array* ref = concatenated_history_commands;
+  string_array concatenated_history_commands = concatenateArrays(global_command_history, command_history);
+  char* popup_result = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos.y);
+  if (strcmp(popup_result, "") != 0) {
+    strcpy(line, popup_result);
+  }
+  free(popup_result);
+  // free_string_array(ref);
+  *i = strlen(line);
 
-      break;
-    }
-    case (ESCAPE): {
-      getch();
-      int value = getch();
-      arrowPress(&line, &i, &history_index, autocomplete, possible_autocomplete,
-                 command_history, value);
-      break;
-    }
-    default: {
-      if ((int)c == CONTROL_F) {
-        string_array* ref = &concatenated_history_commands;
-        concatenated_history_commands =
-            concatenateArrays(global_command_history, *command_history);
-        popup_result = popupFuzzyFinder(concatenated_history_commands,
-                                        terminal_size, cursor_pos.y);
-        if (strcmp(popup_result, "") != 0) {
-          strcpy(line, popup_result);
-        }
-        free(popup_result);
-        free_string_array(ref);
-        i = strlen(line);
-
-        if (cursor_pos.y >= (terminal_size.y * 0.85) - 2) {
-          cursor_pos.y = (terminal_size.y * 0.85) - 3;
-          moveCursor(cursor_pos);
-        } else {
-          moveCursor(cursor_pos);
-        }
-      } else if (c != -1 && typedLetter(&line, c, i)) {
-        i++;
-      }
-      break;
-    }
-    }
-
-    cursor_pos.x = i + prompt_len;
-    autocomplete = filterHistoryForMatchingAutoComplete(
-        all_time_command_history, line, possible_autocomplete);
-
-    CLEAR_LINE;
-    CLEAR_BELOW_CURSOR;
-    printf("\r");
-    printPrompt(directories, CYAN);
-
-    if (strlen(line) > 0) {
-      render(line, *command_history, PATH_BINS, autocomplete,
-             possible_autocomplete);
-    }
-
+  if (cursor_pos.y >= (terminal_size.y * 0.85) - 2) {
+    cursor_pos.y = (terminal_size.y * 0.85) - 3;
+    moveCursor(cursor_pos);
+  } else {
     moveCursor(cursor_pos);
   }
-ENDLOOP:
+}
+
+bool update(char* c, char** line, int* i, coordinates* cursor_pos, int prompt_len, coordinates terminal_size,
+            string_array command_history, bool* autocomplete, int* history_index,
+            string_array global_command_history, char* possible_autocomplete,
+            string_array all_time_command_history, string_array PATH_BINS) {
+  bool loop = true;
+  if (*c == TAB) {
+    tab(*line, cursor_pos, PATH_BINS, terminal_size, i, c);
+  }
+  if (*c == BACKSPACE) {
+    backspaceLogic(line, i);
+  } else if (*c == ESCAPE) {
+    getch();
+    int value = getch();
+    arrowPress(line, i, history_index, autocomplete, possible_autocomplete, command_history, value);
+  } else if (*c == '\n') {
+    return false;
+  } else if ((int)*c == CONTROL_F) {
+    ctrlFPress(global_command_history, terminal_size, *cursor_pos, *line, command_history, i);
+  } else if (*c != -1 && typedLetter(line, *c, *i)) {
+    (*i)++;
+  }
+  cursor_pos->x = *i + prompt_len;
+  *autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, *line, possible_autocomplete);
+
+  return loop;
+}
+
+char* readLine(string_array PATH_BINS, char* directories, string_array* command_history,
+               const string_array global_command_history) {
+  const coordinates terminal_size = getTerminalSize();
+  char* c = calloc(1, sizeof(char));
+  char* line = calloc(BUFFER, sizeof(char));
+  char* possible_autocomplete = calloc(BUFFER, sizeof(char));
+  int* i = calloc(1, sizeof(int));
+  *i = 0;
+  int history_index = 0;
+  coordinates* cursor_pos = calloc(1, sizeof(coordinates));
+  *cursor_pos = getCursorPos();
+  int prompt_len = strlen(directories) + 4;
+  bool* autocomplete = calloc(1, sizeof(bool));
+  *autocomplete = false;
+  string_array all_time_command_history = concatenateArrays(*command_history, global_command_history);
+  int loop = true;
+
+  while (loop && (*c = getch())) {
+    loop =
+        update(c, &line, i, cursor_pos, prompt_len, terminal_size, *command_history, autocomplete, &history_index,
+               global_command_history, possible_autocomplete, all_time_command_history, PATH_BINS);
+    render(line, *command_history, PATH_BINS, autocomplete, possible_autocomplete, directories);
+    moveCursor(*cursor_pos);
+  }
   free(possible_autocomplete);
   free_string_array(&all_time_command_history);
+  free(autocomplete);
+  free(cursor_pos);
+  free(i);
+  free(c);
 
   printf("\n");
   return line;
@@ -256,13 +260,11 @@ void replaceAliases(string_array* splitted_line) {
     for (int j = 0; j < strlen(splitted_line->values[i]); j++) {
       if (splitted_line->values[i][j] == '~') {
         char* home_path = getenv("HOME");
-        char* prior_line =
-            calloc(strlen(splitted_line->values[i]) + 1, sizeof(char));
+        char* prior_line = calloc(strlen(splitted_line->values[i]) + 1, sizeof(char));
         strcpy(prior_line, splitted_line->values[i]);
         removeCharAtPos(prior_line, j + 1);
         splitted_line->values[i] =
-            realloc(splitted_line->values[i],
-                    strlen(home_path) + strlen(splitted_line->values[i]) + 10);
+            realloc(splitted_line->values[i], strlen(home_path) + strlen(splitted_line->values[i]) + 10);
         strcpy(splitted_line->values[i], prior_line);
         insertStringAtPos(splitted_line->values[i], home_path, j);
       }
@@ -293,8 +295,7 @@ void push(char* line, string_array* command_history) {
       }
     }
   }
-  (command_history->len <= HISTORY_SIZE) ? command_history->len++
-                                         : command_history->len;
+  (command_history->len <= HISTORY_SIZE) ? command_history->len++ : command_history->len;
   command_history->values[0] = calloc(strlen(line) + 1, sizeof(char));
   strcpy(command_history->values[0], line);
 }
@@ -329,8 +330,7 @@ string_array getAllHistoryCommands() {
   while ((line_len = getline(&buf, &buf_size, file_to_read)) != -1) {
     if (i >= (realloc_index * 512)) {
       realloc_index++;
-      result.values =
-          realloc(result.values, realloc_index * 512 * sizeof(char*));
+      result.values = realloc(result.values, realloc_index * 512 * sizeof(char*));
     }
 
     result.values[i] = calloc(strlen(buf), sizeof(char));
@@ -369,8 +369,7 @@ int main(int argc, char* argv[]) {
   char* line;
   string_array splitted_line;
   char cd[512];
-  string_array command_history = {
-      .len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
+  string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
   string_array PATH_ARR = splitString(getenv("PATH"), ':');
   string_array all_files_in_dir = getAllFilesInDir(&PATH_ARR);
   free_string_array(&PATH_ARR);
@@ -387,8 +386,7 @@ int main(int argc, char* argv[]) {
     printf("\n");
     printPrompt(last_two_dirs, CYAN);
 
-    line = readLine(PATH_BINS, last_two_dirs, &command_history,
-                    global_command_history);
+    line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history);
     if (strcmp(line, "q") == 0) {
       free(line);
       break;
@@ -401,8 +399,7 @@ int main(int argc, char* argv[]) {
         free(last_two_dirs);
         last_two_dirs = getLastTwoDirs(current_dir);
 
-        if (command_history.len == 0 ||
-            strcmp(command_history.values[0], line) != 0) {
+        if (command_history.len == 0 || strcmp(command_history.values[0], line) != 0) {
           push(line, &command_history);
         }
         free_string_array(&splitted_line);
@@ -416,8 +413,7 @@ int main(int argc, char* argv[]) {
           exit(EXIT_FAILURE);
         }
 
-        if (command_history.len == 0 ||
-            strcmp(command_history.values[0], line) != 0) {
+        if (command_history.len == 0 || strcmp(command_history.values[0], line) != 0) {
           push(line, &command_history);
         }
       }
