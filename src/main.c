@@ -100,6 +100,7 @@ bool filterHistoryForMatchingAutoComplete(const string_array concatenated, char*
   for (int i = 0; i < concatenated.len; i++) {
     if (strlen(line) > 0 && (strncmp(line, concatenated.values[i], strlen(line)) == 0)) {
       strcpy(possible_autocomplete, concatenated.values[i]);
+      logger(string, "filter:");
       logger(string, line);
       logger(string, "\n");
       logger(string, possible_autocomplete);
@@ -193,7 +194,7 @@ bool update(char* c, char** line, int* i, coordinates* cursor_pos, int prompt_le
   } else if (*c == ESCAPE) {
     getch();
     int value = getch();
-    arrowPress(line, i, history_index, autocomplete, possible_autocomplete, command_history, value);
+    arrowPress(line, i, history_index, *autocomplete, possible_autocomplete, command_history, value);
   } else if (*c == '\n') {
     return false;
   } else if ((int)*c == CONTROL_F) {
@@ -202,7 +203,13 @@ bool update(char* c, char** line, int* i, coordinates* cursor_pos, int prompt_le
     (*i)++;
   }
   cursor_pos->x = *i + prompt_len;
+  logger(string, "not filter:");
+  logger(string, *line);
+  logger(string, "\n");
   *autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, *line, possible_autocomplete);
+  if (*autocomplete) {
+    logger(string, "true\n");
+  }
 
   return loop;
 }
@@ -228,7 +235,7 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
     loop =
         update(c, &line, i, cursor_pos, prompt_len, terminal_size, *command_history, autocomplete, &history_index,
                global_command_history, possible_autocomplete, all_time_command_history, PATH_BINS);
-    render(line, *command_history, PATH_BINS, autocomplete, possible_autocomplete, directories);
+    render(line, *command_history, PATH_BINS, *autocomplete, possible_autocomplete, directories);
     moveCursor(*cursor_pos);
   }
   free(possible_autocomplete);

@@ -34,19 +34,17 @@ enum { HISTORY_SIZE = 512 };
 
 string_array splitString(const char*, char);
 int getch();
-void printColor(const char* string, color color,
-                enum color_decorations color_decorations);
+void printColor(const char* string, color color, enum color_decorations color_decorations);
 void moveCursor(coordinates new_pos);
-char* popupFuzzyFinder(const string_array all_time_command_history,
-                       const coordinates terminal_size,
+char* popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,
                        int current_cursor_height);
 coordinates getTerminalSize();
 string_array removeDuplicates(string_array* matching_commands);
 void backspaceLogic(char** line, int* i);
 char* removeCharAtPos(char* line, int x_pos);
 void logger(enum logger_type type, void* message);
-char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS,
-             const coordinates terminal_size, int line_index);
+char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size,
+             int line_index);
 coordinates getCursorPos();
 void free_string_array(string_array* arr);
 void insertStringAtPos(char* line, char* insert_string, int position);
