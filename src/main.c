@@ -100,11 +100,6 @@ bool filterHistoryForMatchingAutoComplete(const string_array concatenated, char*
   for (int i = 0; i < concatenated.len; i++) {
     if (strlen(line) > 0 && (strncmp(line, concatenated.values[i], strlen(line)) == 0)) {
       strcpy(possible_autocomplete, concatenated.values[i]);
-      logger(string, "filter:");
-      logger(string, line);
-      logger(string, "\n");
-      logger(string, possible_autocomplete);
-      logger(string, "\n");
 
       return true;
     }
@@ -203,13 +198,7 @@ bool update(char* c, char** line, int* i, coordinates* cursor_pos, int prompt_le
     (*i)++;
   }
   cursor_pos->x = *i + prompt_len;
-  logger(string, "not filter:");
-  logger(string, *line);
-  logger(string, "\n");
   *autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, *line, possible_autocomplete);
-  if (*autocomplete) {
-    logger(string, "true\n");
-  }
 
   return loop;
 }
