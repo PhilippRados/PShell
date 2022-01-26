@@ -156,23 +156,24 @@ void tab(char* line, coordinates* cursor_pos, string_array PATH_BINS, coordinate
   }
 }
 
-void ctrlFPress(string_array global_command_history, coordinates terminal_size, coordinates cursor_pos, char* line,
-                string_array command_history, int* i) {
-  // string_array* ref = concatenated_history_commands;
+void ctrlFPress(string_array global_command_history, coordinates terminal_size, coordinates* cursor_pos,
+                char* line, string_array command_history, int* i) {
   string_array concatenated_history_commands = concatenateArrays(global_command_history, command_history);
-  char* popup_result = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos.y);
+  char* popup_result = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos->y);
   if (strcmp(popup_result, "") != 0) {
     strcpy(line, popup_result);
   }
+  free_string_array(&concatenated_history_commands);
   free(popup_result);
-  // free_string_array(ref);
   *i = strlen(line);
 
-  if (cursor_pos.y >= (terminal_size.y * 0.85) - 2) {
-    cursor_pos.y = (terminal_size.y * 0.85) - 3;
-    moveCursor(cursor_pos);
+  if (cursor_pos->y >= (terminal_size.y * 0.85) - 2) {
+    logger(string, "new cursor pos: ");
+    cursor_pos->y = (terminal_size.y * 0.85) - 3;
+    logger(integer, &(cursor_pos->y));
+    moveCursor(*cursor_pos);
   } else {
-    moveCursor(cursor_pos);
+    moveCursor(*cursor_pos);
   }
 }
 
@@ -193,7 +194,7 @@ bool update(char* c, char** line, int* i, coordinates* cursor_pos, int prompt_le
   } else if (*c == '\n') {
     return false;
   } else if ((int)*c == CONTROL_F) {
-    ctrlFPress(global_command_history, terminal_size, *cursor_pos, *line, command_history, i);
+    ctrlFPress(global_command_history, terminal_size, cursor_pos, *line, command_history, i);
   } else if (*c != -1 && typedLetter(line, *c, *i)) {
     (*i)++;
   }
@@ -226,6 +227,8 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
                global_command_history, possible_autocomplete, all_time_command_history, PATH_BINS);
     render(line, *command_history, PATH_BINS, *autocomplete, possible_autocomplete, directories);
     moveCursor(*cursor_pos);
+    logger(string, "loop cursor_pos:");
+    logger(integer, &(cursor_pos->y));
   }
   free(possible_autocomplete);
   free_string_array(&all_time_command_history);

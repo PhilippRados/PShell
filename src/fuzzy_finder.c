@@ -1,7 +1,6 @@
 #include "fuzzy_finder.h"
 
-#define MIN3(a, b, c)                                                          \
-  ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
+#define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 
 int levenshtein(const char* s1, char* s2, int s1_len) {
   char* s2_substring = calloc(strlen(s1) + 1, sizeof(char));
@@ -20,8 +19,7 @@ int levenshtein(const char* s1, char* s2, int s1_len) {
     column[0] = x;
     for (y = 1, lastdiag = x - 1; y <= s1len; y++) {
       olddiag = column[y];
-      column[y] = MIN3(column[y] + 1, column[y - 1] + 1,
-                       lastdiag + (s1[y - 1] == s2_substring[x - 1] ? 0 : 1));
+      column[y] = MIN3(column[y] + 1, column[y - 1] + 1, lastdiag + (s1[y - 1] == s2_substring[x - 1] ? 0 : 1));
       lastdiag = olddiag;
     }
   }
@@ -53,10 +51,8 @@ string_array filterHistory(const string_array concatenated, char* line) {
     for (int i = 0; i < concatenated.len; i++) {
       char* values_no_whitespace = removeWhitespace(concatenated.values[i]);
 
-      if (levenshtein(line_no_whitespace, values_no_whitespace,
-                      strlen(line_no_whitespace)) < 2) {
-        possible_matches[matches_num] =
-            calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
+      if (levenshtein(line_no_whitespace, values_no_whitespace, strlen(line_no_whitespace)) < 2) {
+        possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
         strcpy(possible_matches[matches_num], concatenated.values[i]);
         matches_num++;
       }
@@ -69,11 +65,9 @@ string_array filterHistory(const string_array concatenated, char* line) {
   return result;
 }
 
-integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff,
-                                 int index) {
+integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff, int index) {
   int start = 0;
-  int end = (matching_commands_len < cursor_diff) ? matching_commands_len
-                                                  : cursor_diff;
+  int end = (matching_commands_len < cursor_diff) ? matching_commands_len : cursor_diff;
 
   if (index >= cursor_diff) {
     start = index - cursor_diff + 1;
@@ -88,8 +82,7 @@ integer_tuple findDisplayIndices(int matching_commands_len, int cursor_diff,
   return result;
 }
 
-int shiftPromptIfOverlapTest(int current_cursor_height,
-                             int fuzzy_popup_height) {
+int shiftPromptIfOverlapTest(int current_cursor_height, int fuzzy_popup_height) {
   if (current_cursor_height < fuzzy_popup_height)
     return -1;
   int j = 0;
@@ -100,8 +93,7 @@ int shiftPromptIfOverlapTest(int current_cursor_height,
   return j;
 }
 
-void drawPopupBox(const coordinates terminal_size, const int width,
-                  const int height) {
+void drawPopupBox(const coordinates terminal_size, const int width, const int height) {
   CLEAR_SCREEN
 
   for (int row = 0; row < terminal_size.y; row++) {
@@ -137,13 +129,11 @@ void drawPopupBox(const coordinates terminal_size, const int width,
       printf("\n");
     }
   }
-  coordinates bottom_box_pos = {.x = (width / 2) + 3,
-                                .y = terminal_size.y - (height / 2)};
+  coordinates bottom_box_pos = {.x = (width / 2) + 3, .y = terminal_size.y - (height / 2)};
   moveCursor(bottom_box_pos);
 }
 
-void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width,
-                      int box_height) {
+void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width, int box_height) {
   for (int rows = initial_cursor_pos.x + 2; rows < box_width; rows++) {
     for (int cols = initial_cursor_pos.y; cols < box_height; cols++) {
       coordinates cursor = {.x = rows, .y = cols};
@@ -155,8 +145,7 @@ void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width,
   moveCursor(initial_cursor_pos);
 }
 
-void renderMatches(string_array matching_commands,
-                   coordinates initial_cursor_pos, int index,
+void renderMatches(string_array matching_commands, coordinates initial_cursor_pos, int index,
                    integer_tuple start_end) {
   int i = 0;
 
@@ -176,16 +165,14 @@ void renderMatches(string_array matching_commands,
   }
 }
 
-void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width,
-                       char* line, int index, string_array matching_commands,
-                       int cursor_terminal_height_diff) {
+void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char* line, int index,
+                       string_array matching_commands, int cursor_terminal_height_diff) {
   coordinates end_of_line = {
       .x = initial_cursor_pos.x + (terminal_width - 10),
       .y = initial_cursor_pos.y,
   };
 
-  integer_tuple display_ranges = findDisplayIndices(
-      matching_commands.len, cursor_terminal_height_diff, index);
+  integer_tuple display_ranges = findDisplayIndices(matching_commands.len, cursor_terminal_height_diff, index);
   renderMatches(matching_commands, initial_cursor_pos, index, display_ranges);
 
   moveCursor(end_of_line);
@@ -204,8 +191,7 @@ void shiftPromptIfOverlap(int current_cursor_height, int fuzzy_popup_height) {
   }
 }
 
-void drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos,
-                    int terminal_width) {
+void drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos, int terminal_width) {
   shiftPromptIfOverlap(current_cursor_height, initial_cursor_pos.y - 2);
   moveCursor((coordinates){initial_cursor_pos.x, initial_cursor_pos.y - 2});
 
@@ -217,65 +203,75 @@ void drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos,
   printf("\u2771 ");
 }
 
-char* popupFuzzyFinder(const string_array all_time_command_history,
-                       const coordinates terminal_size,
+bool updateFuzzyfinder(char* line, char c, string_array matching_commands, int* index, int* i) {
+  bool loop = true;
+  if (c == '\n') {
+    if (matching_commands.len > 0) {
+      memset(line, 0, strlen(line));
+      strcpy(line, matching_commands.values[*index]);
+    }
+    loop = false;
+  } else if (c == BACKSPACE) {
+    backspaceLogic(&line, i);
+    index = 0;
+  } else if (c == ESCAPE) {
+    if (getch() == ESCAPE) {
+      strcpy(line, "");
+      return false;
+    }
+    int value = getch();
+
+    if (value == 'A') {
+      (index > 0) ? index-- : index;
+    } else if (value == 'B') {
+      (*index < matching_commands.len - 1) ? (*index)++ : *index;
+    }
+  } else {
+    if (strlen(line) < 63 && c > 0 && c < 127) {
+      *index = 0;
+      line[*i] = c;
+      (*i)++;
+    }
+  }
+  return loop;
+}
+
+char* popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,
                        int current_cursor_height) {
   char c;
-  int index = 0;
-  int i = 0;
+  int* index = calloc(1, sizeof(int));
+  *index = 0;
+  int* i = calloc(1, sizeof(int));
+  *i = 0;
   char* line = calloc(64, sizeof(char));
   coordinates fuzzy_cursor_height = {.x = 2, .y = terminal_size.y * 0.85};
   int cursor_terminal_height_diff = terminal_size.y - fuzzy_cursor_height.y;
   string_array matching_commands;
   matching_commands.len = 0;
   matching_commands.values = NULL;
+  bool loop = true;
 
   moveCursor(terminal_size); // moving Cursor to bottom so that newline
                              // character shifts line up
   drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x);
 
-  while ((c = getch())) {
+  while (loop && (c = getch())) {
     CLEAR_LINE;
     CLEAR_BELOW_CURSOR;
+    loop = updateFuzzyfinder(line, c, matching_commands, index, i);
 
-    if (c == '\n') {
-      if (matching_commands.len > 0) {
-        memset(line, 0, strlen(line));
-        strcpy(line, matching_commands.values[index]);
-      }
-      break;
-    } else if (c == BACKSPACE) {
-      backspaceLogic(&line, &i);
-      index = 0;
-    } else if (c == ESCAPE) {
-      if (getch() == ESCAPE) {
-        strcpy(line, "");
-        break;
-      }
-      int value = getch();
+    if (loop) {
+      string_array filtered_history = filterHistory(all_time_command_history, line);
+      free_string_array(&matching_commands);
+      matching_commands = removeDuplicates(&filtered_history);
 
-      if (value == 'A') {
-        (index > 0) ? index-- : index;
-      } else if (value == 'B') {
-        (index < matching_commands.len - 1) ? index++ : index;
-      }
-    } else {
-      if (strlen(line) < 63 && c > 0 && c < 127) {
-        index = 0;
-        line[i] = c;
-        i++;
-      }
+      renderFuzzyFinder(fuzzy_cursor_height, terminal_size.x, line, *index, matching_commands,
+                        cursor_terminal_height_diff);
     }
-
-    string_array filtered_history =
-        filterHistory(all_time_command_history, line);
-    free_string_array(&matching_commands);
-    matching_commands = removeDuplicates(&filtered_history);
-
-    renderFuzzyFinder(fuzzy_cursor_height, terminal_size.x, line, index,
-                      matching_commands, cursor_terminal_height_diff);
   }
   free_string_array(&matching_commands);
+  free(index);
+  free(i);
 
   moveCursor((coordinates){0, fuzzy_cursor_height.y - 2});
   CLEAR_LINE;
