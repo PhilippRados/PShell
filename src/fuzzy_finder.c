@@ -222,7 +222,7 @@ bool updateFuzzyfinder(char* line, char c, string_array matching_commands, int* 
     int value = getch();
 
     if (value == 'A') {
-      (index > 0) ? index-- : index;
+      (*index > 0) ? (*index)-- : *index;
     } else if (value == 'B') {
       (*index < matching_commands.len - 1) ? (*index)++ : *index;
     }
