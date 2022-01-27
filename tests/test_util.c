@@ -12,8 +12,7 @@ Test(Split_func, split_string_at_delimeter) {
 Test(Split_func, single_strings_are_nullterminated) {
   string_array result = splitString("this.should.split", '.');
 
-  cr_expect(result.values[0][strlen(result.values[0])] == '\0', "%c",
-            result.values[0][strlen(result.values[0])]);
+  cr_expect(result.values[0][strlen(result.values[0])] == '\0', "%c", result.values[0][strlen(result.values[0])]);
 }
 
 Test(Split_func, quits_on_q) {

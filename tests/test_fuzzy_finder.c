@@ -6,32 +6,27 @@ Test(findDisplayIndices, if_matching_commands_less_than_fuzzy_height) {
   int cursor_height = 7;
   int index = 2;
 
-  integer_tuple result =
-      findDisplayIndices(matching_commands_len, cursor_height, index);
+  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
   cr_expect(result.one == 0);
   cr_expect(result.second == 3);
 }
 
-Test(findDisplayIndices,
-     if_matching_commands_more_than_fuzzy_height_but_index_less) {
+Test(findDisplayIndices, if_matching_commands_more_than_fuzzy_height_but_index_less) {
   int matching_commands_len = 30;
   int cursor_height = 7;
   int index = 2;
 
-  integer_tuple result =
-      findDisplayIndices(matching_commands_len, cursor_height, index);
+  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
   cr_expect(result.one == 0);
   cr_expect(result.second == 7);
 }
 
-Test(findDisplayIndices,
-     if_matching_commands_and_index_more_than_fuzzy_height) {
+Test(findDisplayIndices, if_matching_commands_and_index_more_than_fuzzy_height) {
   int matching_commands_len = 30;
   int cursor_height = 7;
   int index = 12;
 
-  integer_tuple result =
-      findDisplayIndices(matching_commands_len, cursor_height, index);
+  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
   cr_expect(result.one == 6);
   cr_expect(result.second == 13);
 }
@@ -41,8 +36,7 @@ Test(findDisplayIndices, if_index_equals_fuzzy_height) {
   int cursor_height = 7;
   int index = 7;
 
-  integer_tuple result =
-      findDisplayIndices(matching_commands_len, cursor_height, index);
+  integer_tuple result = findDisplayIndices(matching_commands_len, cursor_height, index);
   cr_expect(result.one == 1);
   cr_expect(result.second == 8);
 }

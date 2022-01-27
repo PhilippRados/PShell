@@ -168,9 +168,7 @@ void ctrlFPress(string_array global_command_history, coordinates terminal_size, 
   *i = strlen(line);
 
   if (cursor_pos->y >= (terminal_size.y * 0.85) - 2) {
-    logger(string, "new cursor pos: ");
     cursor_pos->y = (terminal_size.y * 0.85) - 3;
-    logger(integer, &(cursor_pos->y));
     moveCursor(*cursor_pos);
   } else {
     moveCursor(*cursor_pos);
@@ -227,8 +225,6 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
                global_command_history, possible_autocomplete, all_time_command_history, PATH_BINS);
     render(line, *command_history, PATH_BINS, *autocomplete, possible_autocomplete, directories);
     moveCursor(*cursor_pos);
-    logger(string, "loop cursor_pos:");
-    logger(integer, &(cursor_pos->y));
   }
   free(possible_autocomplete);
   free_string_array(&all_time_command_history);
