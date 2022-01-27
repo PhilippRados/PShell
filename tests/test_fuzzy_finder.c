@@ -94,3 +94,91 @@ Test(removing_whitespace, removing_multiple_whitespaces) {
   free(s1);
   free(result);
 }
+
+Test(updateFuzzyFinder, when_pressing_enter_copies_current_match_to_line) {
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = {one, two};
+  string_array arr1 = {.len = 2, .values = addr_one};
+  char c = '\n';
+  char* line = calloc(12, sizeof(char));
+  strcpy(line, "not this");
+  int* index = calloc(1, sizeof(int));
+  *index = 1;
+  int* i;
+
+  bool result = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result == false);
+  cr_expect(strcmp(line, "two") == 0);
+  free(line);
+  free(index);
+}
+
+Test(updateFuzzyFinder, when_pressing_backspace_deletes_last_char) {
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = {one, two};
+  string_array arr1 = {.len = 2, .values = addr_one};
+  char c = BACKSPACE;
+  char* line = calloc(12, sizeof(char));
+  strcpy(line, "not this");
+  int* index = calloc(1, sizeof(int));
+  *index = 1;
+  int* i = calloc(1, sizeof(int));
+  *i = strlen(line);
+
+  bool result = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result == true);
+  cr_expect(strcmp(line, "not thi") == 0);
+  cr_expect(*index == 0);
+  cr_expect(*i == strlen("not thi"));
+  free(line);
+  free(index);
+  free(i);
+}
+
+// Ends in endless loop bc getch blocks
+// Test(updateFuzzyFinder, when_space_twice_exits_finder) {
+//   char* one = "one";
+//   char* two = "two";
+//   char* addr_one[] = {one, two};
+//   string_array arr1 = {.len = 2, .values = addr_one};
+//   char c = ESCAPE;
+//   char* line = calloc(12, sizeof(char));
+//   strcpy(line, "not this");
+//   int* index = calloc(1, sizeof(int));
+//   *index = 1;
+//   int* i;
+
+//   int file = open(STDIN_FILENO, O_RDWR);
+//   write(file, "\033", sizeof("\033"));
+// bool result = updateFuzzyfinder(line, c, arr1, index, i);
+//   cr_expect(result == false);
+//   cr_expect(strcmp(line, "two") == 0);
+//   free(line);
+//   free(index);
+//   close(file);
+// }
+
+Test(updateFuzzyFinder, when_typing_char_appends_to_line) {
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = {one, two};
+  string_array arr1 = {.len = 2, .values = addr_one};
+  char c = 's';
+  char* line = calloc(12, sizeof(char));
+  strcpy(line, "not this");
+  int* index = calloc(1, sizeof(int));
+  *index = 1;
+  int* i = calloc(1, sizeof(int));
+  *i = strlen(line);
+
+  bool result = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result == true);
+  cr_expect(strcmp(line, "not thiss") == 0);
+  cr_expect(*index == 0);
+  cr_expect(*i == strlen("not thiss"));
+  free(line);
+  free(index);
+  free(i);
+}

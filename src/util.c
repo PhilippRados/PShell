@@ -12,8 +12,7 @@ int getch() {
   return ch;
 }
 
-void printColor(const char* string, color color,
-                enum color_decorations color_decorations) {
+void printColor(const char* string, color color, enum color_decorations color_decorations) {
   char command[13];
 
   sprintf(command, "%c[%d;%d;%dm", 0x1B, color_decorations, color.fg, color.bg);
@@ -27,8 +26,7 @@ void printColor(const char* string, color color,
 string_array splitString(const char* string_to_split, char delimeter) {
   int start = 0;
   int j = 0;
-  char** splitted_strings =
-      (char**)calloc(strlen(string_to_split), sizeof(char*));
+  char** splitted_strings = (char**)calloc(strlen(string_to_split), sizeof(char*));
   string_array result;
 
   for (int i = 0;; i++) {
@@ -68,16 +66,14 @@ char* getLastTwoDirs(char* cwd) {
       last_slash_pos = i + 1;
     }
   }
-  char* last_two_dirs =
-      (char*)calloc(i - second_to_last_slash + 1, sizeof(char));
+  char* last_two_dirs = (char*)calloc(i - second_to_last_slash + 1, sizeof(char));
   strncpy(last_two_dirs, &cwd[second_to_last_slash], i - second_to_last_slash);
 
   return last_two_dirs;
 }
 
 string_array concatenateArrays(const string_array one, const string_array two) {
-  string_array concatenated = {.values =
-                                   calloc((one.len + two.len), sizeof(char*))};
+  string_array concatenated = {.values = calloc((one.len + two.len), sizeof(char*))};
   int i = 0;
 
   for (int k = 0; k < one.len; k++) {
@@ -95,9 +91,7 @@ string_array concatenateArrays(const string_array one, const string_array two) {
   return concatenated;
 }
 
-void moveCursor(coordinates new_pos) {
-  printf("\033[%d;%dH", new_pos.y, new_pos.x);
-}
+void moveCursor(coordinates new_pos) { printf("\033[%d;%dH", new_pos.y, new_pos.x); }
 
 coordinates getTerminalSize() {
   coordinates size;
@@ -135,8 +129,7 @@ string_array removeDots(string_array* array) {
       }
     }
     if (!remove_index) {
-      no_dots_array.values[j] =
-          calloc(strlen(array->values[i]) + 1, sizeof(char));
+      no_dots_array.values[j] = calloc(strlen(array->values[i]) + 1, sizeof(char));
       strcpy(no_dots_array.values[j], array->values[i]);
       no_dots_array.len += 1;
       j++;
@@ -154,8 +147,7 @@ string_array removeDuplicates(string_array* matching_commands) {
 
   for (int i = 0; i < matching_commands->len; i++) {
     if (!inArray(matching_commands->values[i], no_dup_array)) {
-      no_dup_array.values[j] =
-          calloc(strlen(matching_commands->values[i]) + 1, sizeof(char));
+      no_dup_array.values[j] = calloc(strlen(matching_commands->values[i]) + 1, sizeof(char));
       strcpy(no_dup_array.values[j], matching_commands->values[i]);
       no_dup_array.len += 1;
       j++;
@@ -243,8 +235,7 @@ coordinates getCursorPos() {
   return cursor_pos;
 }
 
-void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff,
-                         int row_size) {
+void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size) {
   if (cursor_height_diff <= row_size || cursor_height_diff == 0) {
     cursor_pos->y = cursor_pos->y - (row_size - cursor_height_diff);
     moveCursor(*cursor_pos);
@@ -266,8 +257,7 @@ string_array getAllFilesInDir(string_array* directory_array) {
     while ((file = readdir(dr)) != NULL) {
       if (j >= (1024 * realloc_index)) {
         realloc_index++;
-        files = (char**)realloc(files,
-                                realloc_index * (1024 * (sizeof(char) * 24)));
+        files = (char**)realloc(files, realloc_index * (1024 * (sizeof(char) * 24)));
         if (files == NULL) {
           exit(0);
         }
@@ -296,11 +286,9 @@ string_array filterMatching(char* line, const string_array PATH_BINS) {
     if (strncmp(PATH_BINS.values[i], line, strlen(line)) == 0) {
       if (j >= (realloc_index * buf_size)) {
         realloc_index++;
-        matching_binaries = realloc(matching_binaries,
-                                    realloc_index * buf_size * sizeof(char*));
+        matching_binaries = realloc(matching_binaries, realloc_index * buf_size * sizeof(char*));
       }
-      matching_binaries[j] =
-          calloc(strlen(PATH_BINS.values[i]) + 1, sizeof(char));
+      matching_binaries[j] = calloc(strlen(PATH_BINS.values[i]) + 1, sizeof(char));
       strcpy(matching_binaries[j], PATH_BINS.values[i]);
       j++;
     }
@@ -345,8 +333,7 @@ void insertStringAtPos(char* line, char* insert_string, int position) {
   insertCharAtPos(line, position, '%');
   insertCharAtPos(line, position + 1, 's');
 
-  char* new_line =
-      calloc(strlen(line) + strlen(insert_string) + 1, sizeof(char));
+  char* new_line = calloc(strlen(line) + strlen(insert_string) + 1, sizeof(char));
   sprintf(new_line, line, insert_string);
   strcpy(line, new_line);
   free(new_line);
@@ -367,8 +354,7 @@ void stringToLower(char* string) {
 }
 
 char* joinHistoryFilePath(char* home_dir, char* destination_file) {
-  char* home_dir_copied =
-      calloc(strlen(home_dir) + strlen(destination_file) + 1, sizeof(char));
+  char* home_dir_copied = calloc(strlen(home_dir) + strlen(destination_file) + 1, sizeof(char));
   strcpy(home_dir_copied, home_dir);
 
   char* file_path = strcat(home_dir_copied, destination_file);
@@ -390,8 +376,7 @@ int isFile(const char* path) {
 }
 
 string_array copyStringArray(string_array arr) {
-  string_array copy = {.len = arr.len,
-                       .values = calloc(arr.len, sizeof(char*))};
+  string_array copy = {.len = arr.len, .values = calloc(arr.len, sizeof(char*))};
   for (int i = 0; i < arr.len; i++) {
     copy.values[i] = calloc(strlen(arr.values[i]) + 1, sizeof(char));
     strcpy(copy.values[i], arr.values[i]);

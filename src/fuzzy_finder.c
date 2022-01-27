@@ -167,6 +167,8 @@ void renderMatches(string_array matching_commands, coordinates initial_cursor_po
 
 void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char* line, int index,
                        string_array matching_commands, int cursor_terminal_height_diff) {
+  CLEAR_LINE;
+  CLEAR_BELOW_CURSOR;
   coordinates end_of_line = {
       .x = initial_cursor_pos.x + (terminal_width - 10),
       .y = initial_cursor_pos.y,
@@ -213,7 +215,7 @@ bool updateFuzzyfinder(char* line, char c, string_array matching_commands, int* 
     loop = false;
   } else if (c == BACKSPACE) {
     backspaceLogic(&line, i);
-    index = 0;
+    *index = 0;
   } else if (c == ESCAPE) {
     if (getch() == ESCAPE) {
       strcpy(line, "");
@@ -256,8 +258,6 @@ char* popupFuzzyFinder(const string_array all_time_command_history, const coordi
   drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x);
 
   while (loop && (c = getch())) {
-    CLEAR_LINE;
-    CLEAR_BELOW_CURSOR;
     loop = updateFuzzyfinder(line, c, matching_commands, index, i);
 
     if (loop) {
