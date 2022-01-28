@@ -137,28 +137,126 @@ Test(updateFuzzyFinder, when_pressing_backspace_deletes_last_char) {
   free(i);
 }
 
-// Ends in endless loop bc getch blocks
-// Test(updateFuzzyFinder, when_space_twice_exits_finder) {
-//   char* one = "one";
-//   char* two = "two";
-//   char* addr_one[] = {one, two};
-//   string_array arr1 = {.len = 2, .values = addr_one};
-//   char c = ESCAPE;
-//   char* line = calloc(12, sizeof(char));
-//   strcpy(line, "not this");
-//   int* index = calloc(1, sizeof(int));
-//   *index = 1;
-//   int* i;
+Test(updateFuzzyFinder, when_escape_twice_exits_finder) {
+  int fds[2];
 
-//   int file = open(STDIN_FILENO, O_RDWR);
-//   write(file, "\033", sizeof("\033"));
-// bool result = updateFuzzyfinder(line, c, arr1, index, i);
-//   cr_expect(result == false);
-//   cr_expect(strcmp(line, "two") == 0);
-//   free(line);
-//   free(index);
-//   close(file);
-// }
+  if (pipe(fds) == 1) {
+    perror("pipe");
+    exit(1);
+  }
+
+  dup2(fds[0], 0);
+  close(fds[0]);
+  write(fds[1], "\033", sizeof("\033"));
+  close(fds[1]);
+
+  // Rest of the program thinks that stdin is from
+  // pipe
+
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = {one, two};
+  string_array arr1 = {.len = 2, .values = addr_one};
+  char c = ESCAPE;
+  char* line = calloc(12, sizeof(char));
+  strcpy(line, "not this");
+  int* index = calloc(1, sizeof(int));
+  *index = 1;
+  int* i;
+
+  bool result = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result == false);
+  cr_expect(strcmp(line, "") == 0);
+  free(line);
+  free(index);
+}
+
+Test(updateFuzzyFinder, when_up_arrowpress_dec_index) {
+  int fds[2];
+
+  if (pipe(fds) == 1) {
+    perror("pipe");
+    exit(1);
+  }
+
+  dup2(fds[0], 0);
+  close(fds[0]);
+  write(fds[1], "ZAZAZA", sizeof("ZAZAZA")); // Z is any char that is not ESC
+  close(fds[1]);
+
+  // Rest of the program thinks that stdin is from
+  // pipe
+
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = {one, two};
+  string_array arr1 = {.len = 2, .values = addr_one};
+  char c = ESCAPE;
+  char* line = calloc(12, sizeof(char));
+  strcpy(line, "not this");
+  int* index = calloc(1, sizeof(int));
+  *index = 2;
+  int* i;
+
+  bool result1 = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result1 == true);
+  cr_expect(strcmp(line, "not this") == 0);
+  cr_expect(*index == 1);
+
+  bool result2 = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result2 == true);
+  cr_expect(strcmp(line, "not this") == 0);
+  cr_expect(*index == 0);
+
+  bool result3 = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result3 == true);
+  cr_expect(strcmp(line, "not this") == 0);
+  cr_expect(*index == 0);
+  free(line);
+  free(index);
+}
+
+Test(updateFuzzyFinder, when_up_downarrow_inc_index_if_not_bottom) {
+  int fds[2];
+
+  if (pipe(fds) == 1) {
+    perror("pipe");
+    exit(1);
+  }
+
+  dup2(fds[0], 0);
+  close(fds[0]);
+  write(fds[1], "ZB", sizeof("ZB")); // Z is any char that is not ESC
+  close(fds[1]);
+
+  // Rest of the program thinks that stdin is from
+  // pipe
+
+  char* one = "one";
+  char* two = "two";
+  char* three = "three";
+  char* addr_one[] = {one, two};
+  string_array arr1 = {.len = 3, .values = addr_one};
+  char c = ESCAPE;
+  char* line = calloc(12, sizeof(char));
+  strcpy(line, "not this");
+  int* index = calloc(1, sizeof(int));
+  *index = 1;
+  int* i;
+
+  bool result1 = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result1 == true);
+  cr_expect(strcmp(line, "not this") == 0);
+  cr_expect(*index == 2);
+
+  bool result2 = updateFuzzyfinder(line, c, arr1, index, i);
+  cr_expect(result2 == true);
+  cr_expect(strcmp(line, "not this") == 0);
+  cr_expect(*index == 2);
+
+  free(line);
+  free(index);
+}
 
 Test(updateFuzzyFinder, when_typing_char_appends_to_line) {
   char* one = "one";
