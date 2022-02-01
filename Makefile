@@ -3,7 +3,9 @@
 CC = gcc-11
 CFLAGS = -g -fsanitize=address -fsanitize=leak
 TEST_COVERAGE = -fprofile-arcs -ftest-coverage
+LIB_COVERAGE = -fprofile-arcs -lgcov --coverage
 OBJECTS = src/bin/main.o src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o
+OBJECTS_NO_MAIN = src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o
 TEST_OBJECTS = tests/bin/test_main.o tests/bin/test_util.o tests/bin/test_fuzzy_finder.o tests/bin/test_tab_complete.o
 TEST_SOURCES = tests/test_main.c tests/test_util.c tests/test_fuzzy_finder.c tests/test_tab_complete.c
 test_target = $(basename $(notdir $(TEST_SOURCES)))
@@ -24,9 +26,9 @@ shell: ${OBJECTS} ## Compile the shell
 start_shell: src/bin/pshell ## Start the shell after compilation
 	./src/bin/pshell
 
-run_tests: $(TEST_OBJECTS) $(OBJECTS) ## Run all tests
-	${CC} ${CFLAGS} -fprofile-arcs -lgcov --coverage -o ./tests/bin/compiled_tests ${TEST_OBJECTS} src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o  \
-		-L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0
+run_tests: $(TEST_OBJECTS) $(OBJECTS_NO_MAIN) ## Run all tests
+	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ${TEST_OBJECTS} ${OBJECTS_NO_MAIN}  \
+		-L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0 
 	./tests/bin/compiled_tests -l
 	./tests/bin/compiled_tests
 
