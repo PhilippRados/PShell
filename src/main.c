@@ -124,25 +124,27 @@ void underlineIfValidPath(string_array command_line) {
   free_string_array(&copy);
 }
 
-void render(const char* line, const string_array command_history, const string_array PATH_BINS,
-            const bool autocomplete, const char* possible_autocomplete, char* directories) {
+void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
+            const string_array PATH_BINS, char* directories, coordinates* cursor_pos) {
+  cursor_pos->x = *line_info->i + line_info->prompt_len;
   CLEAR_LINE;
   CLEAR_BELOW_CURSOR;
   printf("\r");
   printPrompt(directories, CYAN);
 
-  if (strlen(line) > 0) {
-    string_array command_line = splitString(line, ' ');
+  if (strlen(line_info->line) > 0) {
+    string_array command_line = splitString(line_info->line, ' ');
 
     isInPath(command_line.values[0], PATH_BINS) ? printColor(command_line.values[0], GREEN, standard)
                                                 : printColor(command_line.values[0], RED, bold);
     underlineIfValidPath(command_line);
     free_string_array(&command_line);
 
-    if (autocomplete) {
-      printf("%s", &possible_autocomplete[strlen(line)]);
+    if (autocomplete_info->autocomplete) {
+      printf("%s", &autocomplete_info->possible_autocomplete[strlen(line_info->line)]);
     }
   }
+  moveCursor(*cursor_pos);
 }
 
 void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size) {
@@ -251,10 +253,8 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   while (loop && (line_info->c = getch())) {
     loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
 
-    cursor_pos->x = *line_info->i + line_info->prompt_len;
-    render(line_info->line, *command_history, PATH_BINS, autocomplete_info->autocomplete,
-           autocomplete_info->possible_autocomplete, directories);
-    moveCursor(*cursor_pos);
+    render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
+           cursor_pos);
   }
   char* result = calloc(BUFFER, sizeof(char));
   strcpy(result, line_info->line);

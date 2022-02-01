@@ -294,8 +294,6 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
   autocomplete_array possible_tabcomplete =
       checkForCommandAutoComplete(current_word, splitted_line.values[0], line_index, PATH_BINS);
-  free_string_array(&splitted_line);
-  free(current_word);
   render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
   bool loop = true;
 
@@ -310,7 +308,10 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
     }
 
   } while (loop && (*c = getch()));
+
   free_string_array(&(possible_tabcomplete.array));
+  free_string_array(&splitted_line);
+  free(current_word);
 
   return *c;
 }
