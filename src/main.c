@@ -96,12 +96,12 @@ void arrowPress(line_data* line_info, history_data* history_info, autocomplete_d
   }
 }
 
-bool filterHistoryForMatchingAutoComplete(const string_array concatenated, char* line,
+bool filterHistoryForMatchingAutoComplete(const string_array all_time_commands, char* line,
                                           char* possible_autocomplete) {
 
-  for (int i = 0; i < concatenated.len; i++) {
-    if (strlen(line) > 0 && (strncmp(line, concatenated.values[i], strlen(line)) == 0)) {
-      strcpy(possible_autocomplete, concatenated.values[i]);
+  for (int i = 0; i < all_time_commands.len; i++) {
+    if (strlen(line) > 0 && (strncmp(line, all_time_commands.values[i], strlen(line)) == 0)) {
+      strcpy(possible_autocomplete, all_time_commands.values[i]);
 
       return true;
     }
