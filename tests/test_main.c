@@ -1,5 +1,5 @@
-#include "../include/criterion.h"
 #include "../src/util.h"
+#include <criterion/criterion.h>
 
 // Unit Tests
 Test(Parsing_directory, get_last_two_dirs) {

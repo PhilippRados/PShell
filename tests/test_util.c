@@ -1,5 +1,5 @@
-#include "../include/criterion.h"
 #include "../src/util.h"
+#include <criterion/criterion.h>
 
 Test(Split_func, split_string_at_delimeter) {
   string_array result = splitString("this.should.split", '.');

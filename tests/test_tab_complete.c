@@ -1,5 +1,5 @@
-#include "../include/criterion.h"
 #include "../src/tab_complete.h"
+#include <criterion/criterion.h>
 
 Test(getAppendingIndex, returns_3_if_second_word_is_len_3) {
   char line[64] = "make mak";

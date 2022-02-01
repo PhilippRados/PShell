@@ -17,7 +17,7 @@ src/bin/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 tests/bin/%.o: tests/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ -I /usr/local/Cellar/criterion/2.3.3/include/ -L/usr/local/Cellar/criterion/2.3.3/lib  -lcriterion.3.1.0 
 
 .SILENT:
 shell: ${OBJECTS} ## Compile the shell
@@ -26,17 +26,17 @@ shell: ${OBJECTS} ## Compile the shell
 start_shell: src/bin/pshell ## Start the shell after compilation
 	./src/bin/pshell
 
-run_tests: $(TEST_OBJECTS) $(OBJECTS_NO_MAIN) ## Run all tests
-	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ${TEST_OBJECTS} ${OBJECTS_NO_MAIN}  \
-		-L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0 
+run_tests: $(TEST_OBJECTS) $(OBJECTS_NO_MAIN) ## Run all tests (needs criterion)
+	${CC} ${CFLAGS} -o ./tests/bin/compiled_tests ${TEST_OBJECTS} ${OBJECTS_NO_MAIN} \
+		-I /usr/local/Cellar/criterion/2.3.3/include/ -L/usr/local/Cellar/criterion/2.3.3/lib  -lcriterion.3.1.0
 	./tests/bin/compiled_tests -l
 	./tests/bin/compiled_tests
 
-$(test_target): $(TEST_OBJECTS) $(OBJECTS)
+$(test_target): $(TEST_OBJECTS) $(OBJECTS) ## Run individual tests (needs criterion)
 	if [ $@ = "test_util" -o $@ = "test_main" ]; then\
-		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o -L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0;\
+		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/lib/include/criterion -lcriterion.3.1.0;\
 	else\
-		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o src/bin/$(subst test_,'',$@).o -L/usr/local/Cellar/criterion/2.3.3/lib/ -lcriterion.3.1.0;\
+		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o src/bin/$(subst test_,'',$@).o -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/lib/include/criterion -lcriterion.3.1.0;\
   fi
 	./tests/bin/compiled_tests -l
 	./tests/bin/compiled_tests

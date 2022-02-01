@@ -5,3 +5,4 @@ user_test.txt
 debug.txt
 .psh_history
 .clang-format
+compile_flags.txt
