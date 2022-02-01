@@ -214,7 +214,7 @@ bool updateFuzzyfinder(char* line, char c, string_array matching_commands, int* 
     }
     loop = false;
   } else if (c == BACKSPACE) {
-    backspaceLogic(&line, i);
+    backspaceLogic(line, i);
     *index = 0;
   } else if (c == ESCAPE) {
     if (getch() == ESCAPE) {

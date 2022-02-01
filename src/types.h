@@ -46,3 +46,21 @@ typedef struct {
   coordinates* cursor_pos;
   coordinates terminal_size;
 } render_objects;
+
+typedef struct {
+  char* line;
+  char c;
+  int* i;
+  int prompt_len;
+} line_data;
+
+typedef struct {
+  string_array sessions_command_history;
+  string_array global_command_history;
+  int history_index;
+} history_data;
+
+typedef struct {
+  char* possible_autocomplete;
+  int autocomplete;
+} autocomplete_data;

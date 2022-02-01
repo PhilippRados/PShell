@@ -23,72 +23,74 @@ bool isInPath(char* line, string_array PATH_BINS) {
   return result;
 }
 
-void upArrowPress(int* history_index, char** line, const string_array command_history) {
-  if (*history_index < command_history.len) {
-    *history_index += 1;
-    memset(*line, 0, strlen(*line));
-    strcpy(*line, command_history.values[*history_index - 1]);
+void upArrowPress(char* line, history_data* history_info) {
+  if (history_info->history_index < history_info->sessions_command_history.len) {
+    history_info->history_index += 1;
+    memset(line, 0, strlen(line));
+    strcpy(line, history_info->sessions_command_history.values[history_info->history_index - 1]);
   };
 }
 
-void downArrowPress(int* history_index, char** line, const string_array command_history) {
-  if (*history_index > 1) {
-    *history_index -= 1;
-    memset(*line, 0, strlen(*line));
-    strcpy(*line, command_history.values[*history_index - 1]);
+void downArrowPress(char* line, history_data* history_info) {
+  if (history_info->history_index > 1) {
+    history_info->history_index -= 1;
+    memset(line, 0, strlen(line));
+    strcpy(line, history_info->sessions_command_history.values[history_info->history_index - 1]);
 
-  } else if (*history_index > 0) {
-    *history_index -= 1;
-    memset(*line, 0, strlen(*line));
+  } else if (history_info->history_index > 0) {
+    history_info->history_index -= 1;
+    memset(line, 0, strlen(line));
   };
 }
 
-bool typedLetter(char** line, const char c, const int i) {
+bool typedLetter(line_data* line_info) {
   bool cursor_moved = false;
-  if (strlen(*line) == 0 && (c == 32 || c == TAB)) {
+  if (strlen(line_info->line) == 0 && (line_info->c == 32 || line_info->c == TAB)) {
     return false;
   }
 
-  if (c < 0 || c > 127) {
+  if (line_info->c < 0 || line_info->c > 127) {
     getch();
-  } else if (i == strlen(*line)) {
-    (*line)[i] = c;
+  } else if (*line_info->i == strlen(line_info->line)) {
+    (line_info->line)[*line_info->i] = line_info->c;
     cursor_moved = true;
-  } else if (insertCharAtPos(*line, i, c)) {
+  } else if (insertCharAtPos(line_info->line, *line_info->i, line_info->c)) {
     cursor_moved = true;
   }
 
   return cursor_moved;
 }
 
-void arrowPress(char** line, int* i, int* history_index, const bool autocomplete,
-                const char* possible_autocomplete, const string_array command_history, const char value) {
+void arrowPress(line_data* line_info, history_data* history_info, autocomplete_data* autocomplete_info) {
+  getch();
+  int value = getch();
   switch (value) {
   case 'A':
-    upArrowPress(history_index, line, command_history);
+    upArrowPress(line_info->line, history_info);
 
-    *i = strlen(*line);
+    *line_info->i = strlen(line_info->line);
     break;
 
   case 'B':
-    downArrowPress(history_index, line, command_history);
+    downArrowPress(line_info->line, history_info);
 
-    *i = strlen(*line);
+    *line_info->i = strlen(line_info->line);
     break;
 
   case 'C': { // right-arrow
-    if (autocomplete && strncmp(*line, possible_autocomplete, strlen(*line)) == 0) {
-      memset(*line, 0, strlen(*line));
-      strcpy(*line, possible_autocomplete);
-      *i = strlen(*line);
+    if (autocomplete_info->autocomplete &&
+        strncmp(line_info->line, autocomplete_info->possible_autocomplete, strlen(line_info->line)) == 0) {
+      memset(line_info->line, 0, strlen(line_info->line));
+      strcpy(line_info->line, autocomplete_info->possible_autocomplete);
+      *line_info->i = strlen(line_info->line);
     } else {
-      *i = (*i < strlen(*line)) ? (*i) + 1 : *i;
+      *line_info->i = (*line_info->i < strlen(line_info->line)) ? *line_info->i + 1 : *line_info->i;
     }
     break;
   }
 
   case 'D': { // left-arrow
-    *i = (*i > 0) ? (*i) - 1 : *i;
+    *line_info->i = (*line_info->i > 0) ? (*line_info->i) - 1 : *line_info->i;
     break;
   }
   }
@@ -143,16 +145,16 @@ void render(const char* line, const string_array command_history, const string_a
   }
 }
 
-void tab(char* line, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size, int* i, char* c) {
-  if (strlen(line) <= 0)
+void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size) {
+  if (strlen(line_info->line) <= 0)
     return;
 
   char temp;
-  if ((temp = tabLoop(line, cursor_pos, PATH_BINS, terminal_size, *i)) != 0) {
-    *c = temp;
+  if ((temp = tabLoop(line_info->line, cursor_pos, PATH_BINS, terminal_size, *line_info->i)) != 0) {
+    line_info->c = temp;
   } else {
-    *c = -1;
-    *i = getWordEndIndex(line, *i);
+    line_info->c = -1;
+    *line_info->i = getWordEndIndex(line_info->line, *line_info->i);
   }
 }
 
@@ -175,29 +177,30 @@ void ctrlFPress(string_array global_command_history, coordinates terminal_size, 
   }
 }
 
-bool update(char* c, char** line, int* i, coordinates* cursor_pos, int prompt_len, coordinates terminal_size,
-            string_array command_history, bool* autocomplete, int* history_index,
-            string_array global_command_history, char* possible_autocomplete,
-            string_array all_time_command_history, string_array PATH_BINS) {
+bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_data* history_info,
+            coordinates terminal_size, string_array PATH_BINS, coordinates* cursor_pos) {
+
+  string_array all_time_command_history =
+      concatenateArrays(history_info->sessions_command_history, history_info->global_command_history);
   bool loop = true;
-  if (*c == TAB) {
-    tab(*line, cursor_pos, PATH_BINS, terminal_size, i, c);
+  if (line_info->c == TAB) {
+    tab(line_info, cursor_pos, PATH_BINS, terminal_size);
   }
-  if (*c == BACKSPACE) {
-    backspaceLogic(line, i);
-  } else if (*c == ESCAPE) {
-    getch();
-    int value = getch();
-    arrowPress(line, i, history_index, *autocomplete, possible_autocomplete, command_history, value);
-  } else if (*c == '\n') {
+  if (line_info->c == BACKSPACE) {
+    backspaceLogic(line_info->line, line_info->i);
+  } else if (line_info->c == ESCAPE) {
+    arrowPress(line_info, history_info, autocomplete_info);
+  } else if (line_info->c == '\n') {
     return false;
-  } else if ((int)*c == CONTROL_F) {
-    ctrlFPress(global_command_history, terminal_size, cursor_pos, *line, command_history, i);
-  } else if (*c != -1 && typedLetter(line, *c, *i)) {
-    (*i)++;
+  } else if ((int)line_info->c == CONTROL_F) {
+    ctrlFPress(history_info->global_command_history, terminal_size, cursor_pos, line_info->line,
+               history_info->sessions_command_history, line_info->i);
+  } else if (line_info->c != -1 && typedLetter(line_info)) {
+    (*line_info->i)++;
   }
-  cursor_pos->x = *i + prompt_len;
-  *autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, *line, possible_autocomplete);
+  autocomplete_info->autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, line_info->line,
+                                                                         autocomplete_info->possible_autocomplete);
+  free_string_array(&all_time_command_history);
 
   return loop;
 }
@@ -205,36 +208,44 @@ bool update(char* c, char** line, int* i, coordinates* cursor_pos, int prompt_le
 char* readLine(string_array PATH_BINS, char* directories, string_array* command_history,
                const string_array global_command_history) {
   const coordinates terminal_size = getTerminalSize();
-  char* c = calloc(1, sizeof(char));
-  char* line = calloc(BUFFER, sizeof(char));
-  char* possible_autocomplete = calloc(BUFFER, sizeof(char));
-  int* i = calloc(1, sizeof(int));
-  *i = 0;
-  int history_index = 0;
+  line_data* line_info = calloc(1, sizeof(line_data));
+  *line_info = (line_data){
+      .line = calloc(BUFFER, sizeof(char)),
+      .i = calloc(1, sizeof(int)),
+      .prompt_len = strlen(directories) + 4,
+  };
+  *line_info->i = 0;
+  autocomplete_data* autocomplete_info = calloc(1, sizeof(autocomplete_data));
+  *autocomplete_info = (autocomplete_data){
+      .possible_autocomplete = calloc(BUFFER, sizeof(char)),
+      .autocomplete = false,
+  };
+  history_data* history_info = calloc(1, sizeof(history_data));
+  *history_info = (history_data){
+      .history_index = 0,
+      .sessions_command_history = *command_history,
+      .global_command_history = global_command_history,
+  };
   coordinates* cursor_pos = calloc(1, sizeof(coordinates));
   *cursor_pos = getCursorPos();
-  int prompt_len = strlen(directories) + 4;
-  bool* autocomplete = calloc(1, sizeof(bool));
-  *autocomplete = false;
-  string_array all_time_command_history = concatenateArrays(*command_history, global_command_history);
   int loop = true;
 
-  while (loop && (*c = getch())) {
-    loop =
-        update(c, &line, i, cursor_pos, prompt_len, terminal_size, *command_history, autocomplete, &history_index,
-               global_command_history, possible_autocomplete, all_time_command_history, PATH_BINS);
-    render(line, *command_history, PATH_BINS, *autocomplete, possible_autocomplete, directories);
+  while (loop && (line_info->c = getch())) {
+    loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
+
+    cursor_pos->x = *line_info->i + line_info->prompt_len;
+    render(line_info->line, *command_history, PATH_BINS, autocomplete_info->autocomplete,
+           autocomplete_info->possible_autocomplete, directories);
     moveCursor(*cursor_pos);
   }
-  free(possible_autocomplete);
-  free_string_array(&all_time_command_history);
-  free(autocomplete);
+  free(autocomplete_info->possible_autocomplete);
+  free(autocomplete_info);
+  free(history_info);
   free(cursor_pos);
-  free(i);
-  free(c);
+  // still have to free line_info
 
   printf("\n");
-  return line;
+  return line_info->line;
 }
 
 void printPrompt(const char* dir, color color) {

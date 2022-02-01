@@ -40,7 +40,7 @@ char* popupFuzzyFinder(const string_array all_time_command_history, const coordi
                        int current_cursor_height);
 coordinates getTerminalSize();
 string_array removeDuplicates(string_array* matching_commands);
-void backspaceLogic(char** line, int* i);
+void backspaceLogic(char* line, int* i);
 char* removeCharAtPos(char* line, int x_pos);
 void logger(enum logger_type type, void* message);
 char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size,

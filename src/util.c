@@ -165,9 +165,9 @@ char* removeCharAtPos(char* line, int x_pos) {
   return line;
 }
 
-void backspaceLogic(char** line, int* i) {
-  if (strlen(*line) > 0 && i >= 0) {
-    *line = removeCharAtPos(*line, *i);
+void backspaceLogic(char* line, int* i) {
+  if (strlen(line) > 0 && i >= 0) {
+    line = removeCharAtPos(line, *i);
 
     if (*i > 0) {
       *i -= 1;
