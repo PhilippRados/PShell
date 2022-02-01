@@ -160,14 +160,12 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   }
 }
 
-void ctrlFPress(string_array global_command_history, coordinates terminal_size, coordinates* cursor_pos,
-                char* line, string_array command_history, int* i) {
-  string_array concatenated_history_commands = concatenateArrays(global_command_history, command_history);
-  char* popup_result = popupFuzzyFinder(concatenated_history_commands, terminal_size, cursor_pos->y);
+void ctrlFPress(string_array all_time_command_history, char* line, int* i, coordinates terminal_size,
+                coordinates* cursor_pos) {
+  char* popup_result = popupFuzzyFinder(all_time_command_history, terminal_size, cursor_pos->y);
   if (strcmp(popup_result, "") != 0) {
     strcpy(line, popup_result);
   }
-  free_string_array(&concatenated_history_commands);
   free(popup_result);
   *i = strlen(line);
 
@@ -195,8 +193,7 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
   } else if (line_info->c == '\n') {
     return false;
   } else if ((int)line_info->c == CONTROL_F) {
-    ctrlFPress(history_info->global_command_history, terminal_size, cursor_pos, line_info->line,
-               history_info->sessions_command_history, line_info->i);
+    ctrlFPress(all_time_command_history, line_info->line, line_info->i, terminal_size, cursor_pos);
   } else if (line_info->c != -1 && typedLetter(line_info)) {
     (*line_info->i)++;
   }
