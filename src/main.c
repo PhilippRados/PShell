@@ -205,27 +205,45 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
   return loop;
 }
 
-char* readLine(string_array PATH_BINS, char* directories, string_array* command_history,
-               const string_array global_command_history) {
-  const coordinates terminal_size = getTerminalSize();
+line_data* lineDataConstructor(int directory_len) {
   line_data* line_info = calloc(1, sizeof(line_data));
   *line_info = (line_data){
       .line = calloc(BUFFER, sizeof(char)),
       .i = calloc(1, sizeof(int)),
-      .prompt_len = strlen(directories) + 4,
+      .prompt_len = directory_len + 4,
   };
   *line_info->i = 0;
+
+  return line_info;
+}
+
+autocomplete_data* autcompleteDataConstructor() {
   autocomplete_data* autocomplete_info = calloc(1, sizeof(autocomplete_data));
   *autocomplete_info = (autocomplete_data){
       .possible_autocomplete = calloc(BUFFER, sizeof(char)),
       .autocomplete = false,
   };
+
+  return autocomplete_info;
+}
+
+history_data* historyDataConstructor(string_array* command_history, string_array global_command_history) {
   history_data* history_info = calloc(1, sizeof(history_data));
   *history_info = (history_data){
       .history_index = 0,
       .sessions_command_history = *command_history,
       .global_command_history = global_command_history,
   };
+
+  return history_info;
+}
+char* readLine(string_array PATH_BINS, char* directories, string_array* command_history,
+               const string_array global_command_history) {
+
+  const coordinates terminal_size = getTerminalSize();
+  line_data* line_info = lineDataConstructor(strlen(directories));
+  autocomplete_data* autocomplete_info = autcompleteDataConstructor();
+  history_data* history_info = historyDataConstructor(command_history, global_command_history);
   coordinates* cursor_pos = calloc(1, sizeof(coordinates));
   *cursor_pos = getCursorPos();
   int loop = true;
@@ -238,14 +256,19 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
            autocomplete_info->possible_autocomplete, directories);
     moveCursor(*cursor_pos);
   }
+  char* result = calloc(BUFFER, sizeof(char));
+  strcpy(result, line_info->line);
+
   free(autocomplete_info->possible_autocomplete);
   free(autocomplete_info);
   free(history_info);
   free(cursor_pos);
-  // still have to free line_info
+  free(line_info->line);
+  free(line_info->i);
+  free(line_info);
 
   printf("\n");
-  return line_info->line;
+  return result;
 }
 
 void printPrompt(const char* dir, color color) {
