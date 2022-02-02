@@ -2,7 +2,7 @@
 
 CC = gcc-11
 CFLAGS = -g -fsanitize=address -fsanitize=leak
-TEST_COVERAGE = -fprofile-arcs -ftest-coverage
+TEST_COVERAGE = -fprofile-arcs -ftest-coverage -O0
 LIB_COVERAGE = -fprofile-arcs -lgcov --coverage
 OBJECTS = src/bin/main.o src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o
 OBJECTS_NO_MAIN = src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o
@@ -34,9 +34,9 @@ run_tests: $(TEST_OBJECTS) $(OBJECTS_NO_MAIN) ## Run all tests (needs criterion)
 
 $(test_target): $(TEST_OBJECTS) $(OBJECTS) ## Run individual tests (needs criterion)
 	if [ $@ = "test_util" -o $@ = "test_main" ]; then\
-		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/lib/include/criterion -lcriterion.3.1.0;\
+		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/include/ -lcriterion.3.1.0;\
 	else\
-		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o src/bin/$(subst test_,'',$@).o -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/lib/include/criterion -lcriterion.3.1.0;\
+		${CC} ${CFLAGS} -o ./tests/bin/compiled_tests tests/bin/$@.o src/bin/util.o src/bin/$(subst test_,'',$@).o -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/include/ -lcriterion.3.1.0;\
   fi
 	./tests/bin/compiled_tests -l
 	./tests/bin/compiled_tests
