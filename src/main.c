@@ -1,3 +1,4 @@
+#include "main.h"
 #include "util.h"
 
 const int BUFFER = 256;
@@ -21,6 +22,90 @@ bool isInPath(char* line, string_array PATH_BINS) {
   }
   free(line_copy);
   return result;
+}
+
+char* getLastTwoDirs(char* cwd) {
+  int i = 1;
+  int last_slash_pos = 0;
+  int second_to_last_slash = 0;
+
+  for (; cwd[i] != '\n' && cwd[i] != '\0'; i++) {
+    if (cwd[i] == '/') {
+      second_to_last_slash = last_slash_pos;
+      last_slash_pos = i + 1;
+    }
+  }
+  char* last_two_dirs = (char*)calloc(i - second_to_last_slash + 1, sizeof(char));
+  strncpy(last_two_dirs, &cwd[second_to_last_slash], i - second_to_last_slash);
+
+  return last_two_dirs;
+}
+
+void stringToLower(char* string) {
+  for (int i = 0; i < strlen(string); i++) {
+    string[i] = tolower(string[i]);
+  }
+}
+
+string_array removeDots(string_array* array) {
+  int j = 0;
+  bool remove_index;
+  char* not_allowed_dots[] = {".", "..", "./", "../"};
+  string_array no_dots_array;
+  no_dots_array.values = calloc(array->len, sizeof(char*));
+  no_dots_array.len = 0;
+
+  for (int i = 0; i < array->len; i++) {
+    remove_index = false;
+    for (int k = 0; k < 4; k++) {
+      if (strcmp(array->values[i], not_allowed_dots[k]) == 0) {
+        remove_index = true;
+      }
+    }
+    if (!remove_index) {
+      no_dots_array.values[j] = calloc(strlen(array->values[i]) + 1, sizeof(char));
+      strcpy(no_dots_array.values[j], array->values[i]);
+      no_dots_array.len += 1;
+      j++;
+    }
+  }
+  free_string_array(array);
+  return no_dots_array;
+}
+
+char* joinHistoryFilePath(char* home_dir, char* destination_file) {
+  char* home_dir_copied = calloc(strlen(home_dir) + strlen(destination_file) + 1, sizeof(char));
+  strcpy(home_dir_copied, home_dir);
+
+  char* file_path = strcat(home_dir_copied, destination_file);
+
+  return file_path;
+}
+
+int isFile(const char* path) {
+  struct stat statbuf;
+  return (stat(path, &statbuf) == 0);
+}
+
+string_array concatenateArrays(const string_array one, const string_array two) {
+  if (one.len == 0 && two.len == 0)
+    return (string_array){.len = 0, .values = NULL};
+  string_array concatenated = {.values = calloc((one.len + two.len), sizeof(char*))};
+  int i = 0;
+
+  for (int k = 0; k < one.len; k++) {
+    concatenated.values[i] = calloc(strlen(one.values[k]) + 1, sizeof(char));
+    strcpy(concatenated.values[i], one.values[k]);
+    i++;
+  }
+  for (int j = 0; j < two.len; j++) {
+    concatenated.values[i] = calloc(strlen(two.values[j]) + 1, sizeof(char));
+    strcpy(concatenated.values[i], two.values[j]);
+    i++;
+  }
+  concatenated.len = i;
+
+  return concatenated;
 }
 
 void upArrowPress(char* line, history_data* history_info) {
@@ -182,6 +267,7 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
 
   string_array all_time_command_history =
       concatenateArrays(history_info->sessions_command_history, history_info->global_command_history);
+  logger(string, "somefing woring");
   bool loop = true;
   if (line_info->c == TAB) {
     tab(line_info, cursor_pos, PATH_BINS, terminal_size);
@@ -216,7 +302,7 @@ line_data* lineDataConstructor(int directory_len) {
   return line_info;
 }
 
-autocomplete_data* autcompleteDataConstructor() {
+autocomplete_data* autocompleteDataConstructor() {
   autocomplete_data* autocomplete_info = calloc(1, sizeof(autocomplete_data));
   *autocomplete_info = (autocomplete_data){
       .possible_autocomplete = calloc(BUFFER, sizeof(char)),
@@ -241,7 +327,7 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
 
   const coordinates terminal_size = getTerminalSize();
   line_data* line_info = lineDataConstructor(strlen(directories));
-  autocomplete_data* autocomplete_info = autcompleteDataConstructor();
+  autocomplete_data* autocomplete_info = autocompleteDataConstructor();
   history_data* history_info = historyDataConstructor(command_history, global_command_history);
   coordinates* cursor_pos = calloc(1, sizeof(coordinates));
   *cursor_pos = getCursorPos();
@@ -391,6 +477,8 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history) {
   free_string_array(&history_commands);
 }
 
+#ifndef TEST
+
 int main(int argc, char* argv[]) {
   char* line;
   string_array splitted_line;
@@ -468,3 +556,5 @@ int main(int argc, char* argv[]) {
   /* free(line); */
   /* free(PATH_ARR.values); */
 }
+
+#endif /* !TEST */

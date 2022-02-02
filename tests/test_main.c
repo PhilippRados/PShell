@@ -1,4 +1,4 @@
-#include "../src/util.h"
+#include "../src/main.h"
 #include <criterion/criterion.h>
 
 // Unit Tests
@@ -117,4 +117,43 @@ Test(isFile, check_if_existing_file_is_true) {
 Test(isFile, check_if_not_existing_file_is_false) {
   int result = isFile("not_existant");
   cr_expect(result == false);
+}
+
+// big update tests
+Test(update, writing_normal_commands_works) {
+  line_data* line_info = lineDataConstructor(4);
+  autocomplete_data* autocomplete_info = autocompleteDataConstructor();
+  line_info->c = 'l';
+
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = {one, two};
+  string_array arr1 = {.len = 0};
+  string_array global_command_history = arr1;
+  string_array* sessions_command_history = &arr1;
+  history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
+  coordinates* cursor_pos;
+
+  bool result =
+      update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+
+  cr_expect(result == true);
+  cr_expect(strcmp(line_info->line, "l") == 0);
+  cr_expect(*line_info->i == 1);
+  cr_expect(autocomplete_info->autocomplete == false);
+
+  line_info->c = 's';
+  bool result2 =
+      update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(result == true);
+  cr_expect(strcmp(line_info->line, "ls") == 0);
+  cr_expect(*line_info->i == 2);
+  cr_expect(autocomplete_info->autocomplete == false);
+
+  free(autocomplete_info->possible_autocomplete);
+  free(autocomplete_info);
+  free(history_info);
+  free(line_info->line);
+  free(line_info->i);
+  free(line_info);
 }
