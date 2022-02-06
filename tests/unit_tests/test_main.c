@@ -285,54 +285,102 @@ Test(update, moving_through_history_with_cursor) {
   free(line_info);
 }
 
-// Test(update, moving_cursor_to_endofline_when_matching_complete) {
-//   line_data* line_info = lineDataConstructor(8);
-//   autocomplete_data* autocomplete_info = autocompleteDataConstructor();
+Test(update, moving_cursor_to_endofline_when_matching_complete_from_current_session) {
+  line_data* line_info = lineDataConstructor(8);
+  autocomplete_data* autocomplete_info = autocompleteDataConstructor();
 
-//   string_array arr1 = {.len = 0};
-//   string_array global_command_history = arr1;
-//   string_array* sessions_command_history = &arr1;
-//   history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
-//   coordinates* cursor_pos;
+  string_array global_command_history = (string_array){.len = 0};
+  string_array* sessions_command_history = calloc(1, sizeof(string_array));
+  char** addr_one = calloc(2, sizeof(char*));
+  addr_one[0] = calloc(strlen("yeyeye") + 1, 1);
+  strcpy(addr_one[0], "yeyeye");
+  addr_one[1] = calloc(strlen("test") + 1, 1);
+  strcpy(addr_one[1], "test");
+  sessions_command_history->values = addr_one;
+  sessions_command_history->len = 2;
+  history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
+  coordinates* cursor_pos;
 
-//   // type something to test
-//   line_info->c = 'l';
-//   update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
-//   line_info->c = 's';
-//   update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  // type something to test
+  line_info->c = 't';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  line_info->c = 'e';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(autocomplete_info->autocomplete == true);
+  cr_expect(strcmp(autocomplete_info->possible_autocomplete, "test") == 0);
 
-//   line_info->c = ESCAPE;
-//   int fds[2];
-//   if (pipe(fds) == 1) {
-//     perror("pipe");
-//     exit(1);
-//   }
-//   dup2(fds[0], 0);
-//   close(fds[0]);
-//   write(fds[1], "ZD", sizeof("ZD")); // emulate left-arrow-press
-//   close(fds[1]);
+  line_info->c = ESCAPE;
+  int fds[2];
+  if (pipe(fds) == 1) {
+    perror("pipe");
+    exit(1);
+  }
+  dup2(fds[0], 0);
+  close(fds[0]);
+  write(fds[1], "ZC", sizeof("ZC")); // emulate left-arrow-press
+  close(fds[1]);
 
-//   bool result =
-//       update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL},
-//       cursor_pos);
-//   cr_expect(result == true);
-//   cr_expect(strcmp(line_info->line, "ls") == 0);
-//   cr_expect(*line_info->i == 1);
-//   cr_expect(autocomplete_info->autocomplete == false);
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "test") == 0);
+  cr_expect(*line_info->i == strlen("test"));
+  cr_expect(autocomplete_info->autocomplete == true);
 
-//   line_info->c = 'e';
-//   bool result2 =
-//       update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL},
-//       cursor_pos);
-//   cr_expect(result2 == true);
-//   cr_expect(strcmp(line_info->line, "les") == 0);
-//   cr_expect(*line_info->i == 2);
-//   cr_expect(autocomplete_info->autocomplete == false);
+  line_info->c = 'e';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(autocomplete_info->autocomplete == false);
+  cr_expect(strcmp(line_info->line, "teste") == 0);
+  cr_expect(*line_info->i == strlen("teste"));
 
-//   free(autocomplete_info->possible_autocomplete);
-//   free(autocomplete_info);
-//   free(history_info);
-//   free(line_info->line);
-//   free(line_info->i);
-//   free(line_info);
-// }
+  free(autocomplete_info->possible_autocomplete);
+  free(autocomplete_info);
+  free(history_info);
+  free(line_info->line);
+  free(line_info->i);
+  free(line_info);
+}
+
+Test(update, moving_cursor_to_endofline_when_matching_complete_from_global_history) {
+  line_data* line_info = lineDataConstructor(8);
+  autocomplete_data* autocomplete_info = autocompleteDataConstructor();
+
+  string_array* sessions_command_history = calloc(1, sizeof(string_array));
+  char** addr_one = calloc(1, sizeof(char*));
+  char** addr_two = calloc(1, sizeof(char*));
+  addr_one[0] = calloc(strlen("test") + 1, 1);
+  strcpy(addr_one[0], "test");
+  addr_two[0] = calloc(strlen("tig") + 1, 1);
+  strcpy(addr_two[0], "tig");
+  sessions_command_history->values = addr_one;
+  sessions_command_history->len = 1;
+  string_array global_command_history = {.values = addr_two, .len = 1};
+  history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
+  coordinates* cursor_pos;
+
+  // type something to test
+  line_info->c = 't';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  line_info->c = 'e';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(autocomplete_info->autocomplete == true);
+  cr_expect(strcmp(autocomplete_info->possible_autocomplete, "test") == 0);
+
+  line_info->c = BACKSPACE;
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "t") == 0);
+  cr_expect(*line_info->i == strlen("t"));
+  cr_expect(autocomplete_info->autocomplete == true);
+
+  line_info->c = 'i';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(autocomplete_info->autocomplete == true);
+  cr_expect(strcmp(autocomplete_info->possible_autocomplete, "tig") == 0);
+  cr_expect(strcmp(line_info->line, "ti") == 0);
+  cr_expect(*line_info->i == strlen("ti"));
+
+  free(autocomplete_info->possible_autocomplete);
+  free(autocomplete_info);
+  free(history_info);
+  free(line_info->line);
+  free(line_info->i);
+  free(line_info);
+}
