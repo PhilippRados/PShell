@@ -229,9 +229,6 @@ Test(updateFuzzyFinder, when_up_downarrow_inc_index_if_not_bottom) {
   write(fds[1], "ZB", sizeof("ZB")); // Z is any char that is not ESC
   close(fds[1]);
 
-  // Rest of the program thinks that stdin is from
-  // pipe
-
   char* one = "one";
   char* two = "two";
   char* three = "three";

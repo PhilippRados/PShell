@@ -1,4 +1,5 @@
 #include "../../src/main.h"
+#include "criterion/assert.h"
 #include <criterion/criterion.h>
 
 // Unit Tests
@@ -125,9 +126,6 @@ Test(update, writing_normal_commands_works) {
   autocomplete_data* autocomplete_info = autocompleteDataConstructor();
   line_info->c = 'l';
 
-  char* one = "one";
-  char* two = "two";
-  char* addr_one[] = {one, two};
   string_array arr1 = {.len = 0};
   string_array global_command_history = arr1;
   string_array* sessions_command_history = &arr1;
@@ -157,3 +155,184 @@ Test(update, writing_normal_commands_works) {
   free(line_info->i);
   free(line_info);
 }
+
+Test(update, moving_cursor_with_arrow_keys) {
+  line_data* line_info = lineDataConstructor(8);
+  autocomplete_data* autocomplete_info = autocompleteDataConstructor();
+
+  string_array arr1 = {.len = 0};
+  string_array global_command_history = arr1;
+  string_array* sessions_command_history = &arr1;
+  history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
+  coordinates* cursor_pos;
+
+  // type something to test
+  line_info->c = 'l';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  line_info->c = 's';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+
+  int fds[2];
+  if (pipe(fds) == 1) {
+    perror("pipe");
+    exit(1);
+  }
+  dup2(fds[0], 0);
+  close(fds[0]);
+  write(fds[1], "ZDZDZDZC", sizeof("ZDZDZDZC")); // emulate horizontal-arrow-press
+  close(fds[1]);
+
+  line_info->c = ESCAPE;
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "ls") == 0);
+  cr_expect(*line_info->i == 1);
+
+  line_info->c = ESCAPE;
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "ls") == 0);
+  cr_expect(*line_info->i == 0);
+
+  line_info->c = ESCAPE;
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "ls") == 0);
+  cr_expect(*line_info->i == 0);
+
+  line_info->c = ESCAPE;
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "ls") == 0);
+  cr_expect(*line_info->i == 1);
+
+  line_info->c = 'e';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "les") == 0);
+  cr_expect(*line_info->i == 2);
+
+  free(autocomplete_info->possible_autocomplete);
+  free(autocomplete_info);
+  free(history_info);
+  free(line_info->line);
+  free(line_info->i);
+  free(line_info);
+}
+
+Test(update, moving_through_history_with_cursor) {
+  line_data* line_info = lineDataConstructor(8);
+  autocomplete_data* autocomplete_info = autocompleteDataConstructor();
+
+  char** addr_one = calloc(2, sizeof(char*));
+  addr_one[0] = calloc(strlen("yeyeye") + 1, 1);
+  strcpy(addr_one[0], "yeyeye");
+  addr_one[1] = calloc(strlen("test") + 1, 1);
+  strcpy(addr_one[1], "test");
+  string_array global_command_history = (string_array){.len = 0};
+  string_array* sessions_command_history = calloc(1, sizeof(string_array));
+  sessions_command_history->values = addr_one;
+  sessions_command_history->len = 2;
+  history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
+  coordinates* cursor_pos;
+
+  // type something to test
+  line_info->c = 'l';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  line_info->c = 's';
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(history_info->history_index == 0);
+
+  line_info->c = ESCAPE;
+  int fds[2];
+  if (pipe(fds) == 1) {
+    perror("pipe");
+    exit(1);
+  }
+  dup2(fds[0], 0);
+  close(fds[0]);
+  write(fds[1], "ZAZAZAZBZB", sizeof("ZAZAZAZBZB")); // emulate key-press_sequence
+  close(fds[1]);
+
+  bool result =
+      update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(result == true);
+  cr_expect(strcmp(line_info->line, "yeyeye") == 0);
+  cr_expect(*line_info->i == strlen("yeyeye"));
+  cr_expect(history_info->history_index == 1);
+
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "test") == 0);
+  cr_expect(*line_info->i == strlen("test"));
+  cr_expect(history_info->history_index == 2);
+
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "test") == 0);
+  cr_expect(*line_info->i == strlen("test"));
+  cr_expect(history_info->history_index == 2);
+
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "yeyeye") == 0);
+  cr_expect(*line_info->i == strlen("yeyeye"));
+  cr_expect(history_info->history_index == 1);
+
+  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  cr_expect(strcmp(line_info->line, "") == 0);
+  cr_expect(*line_info->i == strlen(""));
+  cr_expect(history_info->history_index == 0);
+
+  free(autocomplete_info->possible_autocomplete);
+  free(autocomplete_info);
+  free_string_array(&history_info->sessions_command_history);
+  free(history_info);
+  free(line_info->line);
+  free(line_info->i);
+  free(line_info);
+}
+
+// Test(update, moving_cursor_to_endofline_when_matching_complete) {
+//   line_data* line_info = lineDataConstructor(8);
+//   autocomplete_data* autocomplete_info = autocompleteDataConstructor();
+
+//   string_array arr1 = {.len = 0};
+//   string_array global_command_history = arr1;
+//   string_array* sessions_command_history = &arr1;
+//   history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
+//   coordinates* cursor_pos;
+
+//   // type something to test
+//   line_info->c = 'l';
+//   update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+//   line_info->c = 's';
+//   update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+
+//   line_info->c = ESCAPE;
+//   int fds[2];
+//   if (pipe(fds) == 1) {
+//     perror("pipe");
+//     exit(1);
+//   }
+//   dup2(fds[0], 0);
+//   close(fds[0]);
+//   write(fds[1], "ZD", sizeof("ZD")); // emulate left-arrow-press
+//   close(fds[1]);
+
+//   bool result =
+//       update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL},
+//       cursor_pos);
+//   cr_expect(result == true);
+//   cr_expect(strcmp(line_info->line, "ls") == 0);
+//   cr_expect(*line_info->i == 1);
+//   cr_expect(autocomplete_info->autocomplete == false);
+
+//   line_info->c = 'e';
+//   bool result2 =
+//       update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL},
+//       cursor_pos);
+//   cr_expect(result2 == true);
+//   cr_expect(strcmp(line_info->line, "les") == 0);
+//   cr_expect(*line_info->i == 2);
+//   cr_expect(autocomplete_info->autocomplete == false);
+
+//   free(autocomplete_info->possible_autocomplete);
+//   free(autocomplete_info);
+//   free(history_info);
+//   free(line_info->line);
+//   free(line_info->i);
+//   free(line_info);
+// }
