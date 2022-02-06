@@ -273,6 +273,7 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
   } else if (line_info->c == ESCAPE) {
     arrowPress(line_info, history_info, autocomplete_info);
   } else if (line_info->c == '\n') {
+    free_string_array(&all_time_command_history);
     return false;
   } else if ((int)line_info->c == CONTROL_F) {
     ctrlFPress(all_time_command_history, line_info->line, line_info->i, terminal_size, cursor_pos);

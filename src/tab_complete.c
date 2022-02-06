@@ -200,6 +200,8 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   if (possible_tabcomplete.array.len <= 0 ||
       tooManyMatches(cursor_pos, render_data.row_size, render_data.cursor_height_diff)) {
     free_string_array(&(possible_tabcomplete.array));
+    free_string_array(&splitted_line);
+    free(current_word);
     return 0;
   }
   do {
