@@ -1,4 +1,4 @@
-#include "../src/main.h"
+#include "../../src/main.h"
 #include <criterion/criterion.h>
 
 // Unit Tests

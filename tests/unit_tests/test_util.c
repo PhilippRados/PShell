@@ -1,4 +1,4 @@
-#include "../src/util.h"
+#include "../../src/util.h"
 #include <criterion/criterion.h>
 
 Test(Split_func, split_string_at_delimeter) {

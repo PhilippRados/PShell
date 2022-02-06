@@ -267,7 +267,6 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
 
   string_array all_time_command_history =
       concatenateArrays(history_info->sessions_command_history, history_info->global_command_history);
-  logger(string, "somefing woring");
   bool loop = true;
   if (line_info->c == TAB) {
     tab(line_info, cursor_pos, PATH_BINS, terminal_size);

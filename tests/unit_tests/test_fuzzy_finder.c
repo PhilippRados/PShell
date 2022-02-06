@@ -1,4 +1,4 @@
-#include "../src/fuzzy_finder.h"
+#include "../../src/fuzzy_finder.h"
 #include <criterion/criterion.h>
 
 Test(findDisplayIndices, if_matching_commands_less_than_fuzzy_height) {

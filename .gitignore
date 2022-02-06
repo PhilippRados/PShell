@@ -1,5 +1,5 @@
 src/bin/
-tests/bin/
+tests/unit_tests/bin
 log.txt
 user_test.txt
 debug.txt
