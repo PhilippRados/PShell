@@ -5,7 +5,6 @@ void printPrompt(const char* dir, color color);
 string_array removeDots(string_array* array);
 void stringToLower(char* string);
 char* joinHistoryFilePath(char* home_dir, char* destination_file);
-int isFile(const char* path);
 void replaceAliases(string_array* splitted_line);
 bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_data* history_info,
             coordinates terminal_size, string_array PATH_BINS, coordinates* cursor_pos);

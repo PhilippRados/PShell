@@ -82,11 +82,6 @@ char* joinHistoryFilePath(char* home_dir, char* destination_file) {
   return file_path;
 }
 
-int isFile(const char* path) {
-  struct stat statbuf;
-  return (stat(path, &statbuf) == 0);
-}
-
 string_array concatenateArrays(const string_array one, const string_array two) {
   if (one.len == 0 && two.len == 0)
     return (string_array){.len = 0, .values = NULL};
@@ -199,12 +194,14 @@ void underlineIfValidPath(string_array command_line) {
   string_array copy = copyStringArray(command_line);
   replaceAliases(&copy);
   for (int i = 1; i < command_line.len; i++) {
-    if (isDirectory(copy.values[i]) || isFile(copy.values[i])) {
+    autocomplete_array autocomplete = fileComp(command_line.values[i]);
+    if (autocomplete.array.len > 0) {
       printf(" ");
       printColor(command_line.values[i], WHITE, underline);
     } else {
       printf(" %s", command_line.values[i]);
     }
+    free_string_array(&autocomplete.array);
   }
   free_string_array(&copy);
 }

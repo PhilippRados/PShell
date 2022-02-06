@@ -79,3 +79,17 @@ Test(getWordEndIndex, index_in_middle_of_word) {
   cr_expect(result == 16);
   free(word);
 }
+
+Test(getAppendingIndex, returns_3_if_second_word_is_len_3) {
+  char line[64] = "make mak";
+  int result = getAppendingIndex(line, ' ');
+
+  cr_expect(result == 3);
+}
+
+Test(getAppendingIndex, still_works_with_only_space) {
+  char line[64] = "make ";
+  int result = getAppendingIndex(line, ' ');
+
+  cr_expect(result == 0);
+}

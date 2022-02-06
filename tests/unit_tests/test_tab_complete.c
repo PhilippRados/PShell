@@ -1,20 +1,6 @@
 #include "../../src/tab_complete.h"
 #include <criterion/criterion.h>
 
-Test(getAppendingIndex, returns_3_if_second_word_is_len_3) {
-  char line[64] = "make mak";
-  int result = getAppendingIndex(line, ' ');
-
-  cr_expect(result == 3);
-}
-
-Test(getAppendingIndex, still_works_with_only_space) {
-  char line[64] = "make ";
-  int result = getAppendingIndex(line, ' ');
-
-  cr_expect(result == 0);
-}
-
 Test(getCurrentWordFromLineIndex, cursor_in_middle_of_word) {
   char* one = "one";
   char* two = "two";

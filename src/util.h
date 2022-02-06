@@ -54,5 +54,9 @@ string_array copyStringArray(string_array arr);
 bool insertCharAtPos(char* line, int index, char c);
 bool inArray(char* value, string_array array);
 string_array getAllFilesInDir(string_array* directory_array);
+autocomplete_array fileComp(char* current_word);
+void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub);
+int getAppendingIndex(char* line, char delimeter);
+file_string_tuple getFileStrings(char* current_word, char* current_path);
 
 #endif // !UTIL_H

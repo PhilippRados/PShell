@@ -302,3 +302,101 @@ string_array copyStringArray(string_array arr) {
 
   return copy;
 }
+
+file_string_tuple getFileStrings(char* current_word, char* current_path) {
+  char* current_dir;
+  char* removed_sub;
+
+  switch (current_word[0]) {
+  case '/': {
+    current_dir = current_word;
+    if (strlen(current_dir) == 1) {
+      removed_sub = "";
+    } else {
+      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
+                                                                          '/')]); // c_e
+    }
+    break;
+  }
+  case '~': {
+    char* home_path = getenv("HOME"); // Users/username
+    char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
+    strcpy(home_path_copy, home_path);
+
+    char* current_path = strcat(home_path_copy, "/"); // Users/username/
+    current_dir = strcat(current_path,
+                         &(current_word[1])); // Users/username/documents
+    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
+                                                                        '/')]); // documents
+    break;
+  }
+  default: {
+    current_dir = strcat(current_path,
+                         current_word); // documents/coding/c_e
+    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
+                                                                        '/')]); // c_e
+    break;
+  }
+  }
+
+  return (file_string_tuple){.removed_sub = removed_sub, .current_dir = current_dir};
+}
+
+int getAppendingIndex(char* line, char delimeter) {
+  int j = 0;
+  for (int i = strlen(line) - 1; i >= 0; i--) {
+    if (line[i] == delimeter)
+      return j;
+    j++;
+  }
+  return -1;
+}
+
+void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub) {
+  char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
+  char* temp;
+  char copy[512];
+  strcat(current_dir_sub, "/");
+
+  for (int i = 0; i < filtered->len; i++) {
+    strcpy(current_dir_sub_copy, current_dir_sub);
+
+    temp = strcpy(copy, strcat(current_dir_sub_copy, filtered->values[i]));
+
+    if (isDirectory(temp)) {
+      filtered->values[i] = realloc(filtered->values[i], strlen(filtered->values[i]) + 2);
+      filtered->values[i][strlen(filtered->values[i]) + 1] = '\0';
+      filtered->values[i][strlen(filtered->values[i])] = '/';
+    }
+    memset(copy, 0, strlen(copy));
+    memset(temp, 0, strlen(temp));
+    memset(current_dir_sub_copy, 0, strlen(current_dir_sub_copy));
+  }
+  free(current_dir_sub_copy);
+  free(current_dir_sub);
+}
+
+int getCurrentWordPosInLine(string_array command_line, char* word) {
+  for (int i = 0; i < command_line.len; i++) {
+    if (strncmp(command_line.values[i], word, strlen(word)) == 0) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+autocomplete_array fileComp(char* current_word) {
+  char cd[256];
+  file_string_tuple file_strings = getFileStrings(current_word, strcat(getcwd(cd, sizeof(cd)), "/"));
+
+  char* current_dir_sub = calloc(strlen(file_strings.current_dir) + 2, sizeof(char));
+  strncpy(current_dir_sub, file_strings.current_dir,
+          strlen(file_strings.current_dir) - getAppendingIndex(file_strings.current_dir, '/'));
+  string_array filtered = getAllMatchingFiles(current_dir_sub, file_strings.removed_sub);
+
+  fileDirArray(&filtered, current_dir_sub, file_strings.removed_sub);
+
+  return (autocomplete_array){.array.values = filtered.values,
+                              .array.len = filtered.len,
+                              .appending_index = strlen(file_strings.removed_sub)};
+}
