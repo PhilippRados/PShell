@@ -313,8 +313,7 @@ file_string_tuple getFileStrings(char* current_word, char* current_path) {
     if (strlen(current_dir) == 1) {
       removed_sub = "";
     } else {
-      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
-                                                                          '/')]); // c_e
+      removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir, '/')]); // c_e
     }
     break;
   }
@@ -323,18 +322,14 @@ file_string_tuple getFileStrings(char* current_word, char* current_path) {
     char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
     strcpy(home_path_copy, home_path);
 
-    char* current_path = strcat(home_path_copy, "/"); // Users/username/
-    current_dir = strcat(current_path,
-                         &(current_word[1])); // Users/username/documents
-    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
-                                                                        '/')]); // documents
+    char* current_path = strcat(home_path_copy, "/");       // Users/username/
+    current_dir = strcat(current_path, &(current_word[1])); // Users/username/documents
+    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir, '/')]); // documents
     break;
   }
   default: {
-    current_dir = strcat(current_path,
-                         current_word); // documents/coding/c_e
-    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir,
-                                                                        '/')]); // c_e
+    current_dir = strcat(current_path, current_word); // documents/coding/c_e
+    removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir, '/')]); // c_e
     break;
   }
   }

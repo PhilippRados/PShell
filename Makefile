@@ -35,7 +35,7 @@ $(test_target): $(TEST_SOURCES) $(SOURCES) ## Run individual tests (needs criter
 	if [ $@ = "test_util" -o $@ = "test_main" ]; then\
 		${CC} ${CFLAGS} -o ./tests/unit_tests/bin/compiled_$(subst test_,'',$@)_tests -D TEST tests/unit_tests/$@.c $(SOURCES) -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/include/ -lcriterion.3.1.0;\
 	else\
-		${CC} ${CFLAGS} $(TEST_COVERAGE) -o ./tests/unit_tests/bin/compiled_$(subst test_,'',$@)_tests -D TEST tests/unit_tests/$@.c src/util.c src/$(subst test_,'',$@).c -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/include/ -lcriterion.3.1.0;\
+		${CC} ${CFLAGS} -o ./tests/unit_tests/bin/compiled_$(subst test_,'',$@)_tests -D TEST tests/unit_tests/$@.c src/util.c src/$(subst test_,'',$@).c -L/usr/local/Cellar/criterion/2.3.3/lib/ -I/usr/local/Cellar/criterion/2.3.3/include/ -lcriterion.3.1.0;\
   fi
 	./tests/unit_tests/bin/compiled_$(subst test_,'',$@)_tests -l
 	./tests/unit_tests/bin/compiled_$(subst test_,'',$@)_tests

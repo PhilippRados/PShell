@@ -2,12 +2,12 @@
 
 int getLongestWordInArray(const string_array array) {
   int longest = 0;
-  int currrent_len = 0;
+  int current_len = 0;
 
   for (int i = 0; i < array.len; i++) {
-    currrent_len = strlen(array.values[i]);
-    if (currrent_len > longest) {
-      longest = currrent_len;
+    current_len = strlen(array.values[i]);
+    if (current_len > longest) {
+      longest = current_len;
     }
   }
 
@@ -185,6 +185,23 @@ render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_a
   };
 }
 
+autocomplete_array removeDotFiles(autocomplete_array* tabcomp) {
+  autocomplete_array new;
+  new.array.values = calloc(tabcomp->array.len, sizeof(char*));
+  int j = 0;
+  for (int i = 0; i < tabcomp->array.len; i++) {
+    if (tabcomp->array.values[i][0] != '.') {
+      new.array.values[j] = calloc(strlen(tabcomp->array.values[i]) + 1, sizeof(char));
+      strcpy(new.array.values[j], tabcomp->array.values[i]);
+      j++;
+    }
+  }
+  new.appending_index = tabcomp->appending_index;
+  new.array.len = j;
+  free_string_array(&tabcomp->array);
+  return new;
+}
+
 char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size,
              int line_index) {
   char* c = calloc(1, sizeof(char));
@@ -196,6 +213,16 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
       checkForAutocomplete(current_word, splitted_line.values[0], line_index, PATH_BINS);
   render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
   bool loop = true;
+  int appending_index;
+  char* removed_sub;
+  if ((appending_index = getAppendingIndex(current_word, '/')) != -1) {
+    removed_sub = &(current_word[strlen(current_word) - getAppendingIndex(current_word, '/')]); // c_e
+  } else {
+    removed_sub = current_word;
+  }
+  if (removed_sub[0] != '.') {
+    possible_tabcomplete = removeDotFiles(&possible_tabcomplete);
+  }
 
   if (possible_tabcomplete.array.len <= 0 ||
       tooManyMatches(cursor_pos, render_data.row_size, render_data.cursor_height_diff)) {

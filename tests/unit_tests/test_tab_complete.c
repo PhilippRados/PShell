@@ -98,7 +98,6 @@ Test(updateCompletion, test_tabpress_when_single_command_match) {
 
   bool result = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
   cr_expect(result == false);
-  logger(string, line);
   cr_expect(strcmp(line, "testing") == 0);
   cr_expect(*c == 0);
 
@@ -215,4 +214,37 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs_when_cursor_m
   free(tab_index);
   free(line);
   free(c);
+}
+
+Test(getCurrentWordFromLineIndex, test_last_slsh) {
+  char* one = "one";
+  char* two = "tw/uwe/se";
+  char* addr_one[] = {one, two};
+
+  string_array arr1 = {.len = 2, .values = addr_one};
+
+  char* result = getCurrentWordFromLineIndex(arr1, 13);
+  char* removed_sub = &(result[strlen(result) - getAppendingIndex(result, '/')]); // c_e
+
+  cr_expect(strcmp(removed_sub, "se") == 0);
+}
+
+Test(getCurrentWordFromLineIndex, test_no_slash) {
+  char* one = "one";
+  char* two = "two";
+  char* addr_one[] = {one, two};
+
+  string_array arr1 = {.len = 2, .values = addr_one};
+
+  char* result = getCurrentWordFromLineIndex(arr1, 6);
+  int appending_index;
+  char* removed_sub;
+  if ((appending_index = getAppendingIndex(result, '/')) != -1) {
+    removed_sub = &(result[strlen(result) - getAppendingIndex(result, '/')]); // c_e
+  } else {
+    removed_sub = result;
+  }
+
+  logger(string, removed_sub);
+  cr_expect(strcmp(removed_sub, "tw") == 0);
 }
