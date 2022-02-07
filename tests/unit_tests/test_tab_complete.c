@@ -216,35 +216,52 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs_when_cursor_m
   free(c);
 }
 
-Test(getCurrentWordFromLineIndex, test_last_slsh) {
-  char* one = "one";
-  char* two = "tw/uwe/se";
-  char* addr_one[] = {one, two};
+Test(removeDotFilesIfnecessary, should_remove_if_no_dot_at_first_char) {
+  char** addr_one = calloc(4, sizeof(char*));
+  addr_one[0] = calloc(strlen("one") + 1, 1);
+  strcpy(addr_one[0], "one");
+  addr_one[1] = calloc(strlen(".two") + 1, 1);
+  strcpy(addr_one[1], ".two");
+  addr_one[2] = calloc(strlen("testi.ng") + 1, 1);
+  strcpy(addr_one[2], "testi.ng");
+  addr_one[3] = calloc(strlen("..") + 1, 1);
+  strcpy(addr_one[3], "..");
+  string_array arr1 = {.len = 4, .values = addr_one};
+  autocomplete_array autocomplete = {.array = arr1, .appending_index = 0};
+  char* current_word = "test";
 
-  string_array arr1 = {.len = 2, .values = addr_one};
+  removeDotFilesIfnecessary(current_word, &autocomplete);
 
-  char* result = getCurrentWordFromLineIndex(arr1, 13);
-  char* removed_sub = &(result[strlen(result) - getAppendingIndex(result, '/')]); // c_e
+  cr_expect(strcmp(autocomplete.array.values[0], "one") == 0);
+  cr_expect(strcmp(autocomplete.array.values[1], "testi.ng") == 0);
+  cr_expect(autocomplete.array.len == 2);
+  cr_expect(autocomplete.appending_index == 0);
 
-  cr_expect(strcmp(removed_sub, "se") == 0);
+  free_string_array(&autocomplete.array);
 }
 
-Test(getCurrentWordFromLineIndex, test_no_slash) {
-  char* one = "one";
-  char* two = "two";
-  char* addr_one[] = {one, two};
+Test(getCurrentWordFromLineIndex, should_not_remove_if_current_word_starts_with_dot) {
+  char** addr_one = calloc(4, sizeof(char*));
+  addr_one[0] = calloc(strlen("one") + 1, 1);
+  strcpy(addr_one[0], "one");
+  addr_one[1] = calloc(strlen(".two") + 1, 1);
+  strcpy(addr_one[1], ".two");
+  addr_one[2] = calloc(strlen("testi.ng") + 1, 1);
+  strcpy(addr_one[2], "testi.ng");
+  addr_one[3] = calloc(strlen("..") + 1, 1);
+  strcpy(addr_one[3], "..");
+  string_array arr1 = {.len = 4, .values = addr_one};
+  autocomplete_array autocomplete = {.array = arr1, .appending_index = 0};
+  char* current_word = "test/..";
 
-  string_array arr1 = {.len = 2, .values = addr_one};
+  removeDotFilesIfnecessary(current_word, &autocomplete);
 
-  char* result = getCurrentWordFromLineIndex(arr1, 6);
-  int appending_index;
-  char* removed_sub;
-  if ((appending_index = getAppendingIndex(result, '/')) != -1) {
-    removed_sub = &(result[strlen(result) - getAppendingIndex(result, '/')]); // c_e
-  } else {
-    removed_sub = result;
-  }
+  cr_expect(strcmp(autocomplete.array.values[0], "one") == 0);
+  cr_expect(strcmp(autocomplete.array.values[1], ".two") == 0);
+  cr_expect(strcmp(autocomplete.array.values[2], "testi.ng") == 0);
+  cr_expect(strcmp(autocomplete.array.values[3], "..") == 0);
+  cr_expect(autocomplete.array.len == 4);
+  cr_expect(autocomplete.appending_index == 0);
 
-  logger(string, removed_sub);
-  cr_expect(strcmp(removed_sub, "tw") == 0);
+  free_string_array(&autocomplete.array);
 }

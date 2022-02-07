@@ -202,6 +202,19 @@ autocomplete_array removeDotFiles(autocomplete_array* tabcomp) {
   return new;
 }
 
+void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_tabcomplete) {
+  int appending_index;
+  char* removed_sub;
+  if ((appending_index = getAppendingIndex(current_word, '/')) != -1) {
+    removed_sub = &(current_word[strlen(current_word) - getAppendingIndex(current_word, '/')]);
+  } else {
+    removed_sub = current_word;
+  }
+  if (removed_sub[0] != '.') {
+    *possible_tabcomplete = removeDotFiles(possible_tabcomplete);
+  }
+}
+
 char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size,
              int line_index) {
   char* c = calloc(1, sizeof(char));
@@ -211,18 +224,9 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
   autocomplete_array possible_tabcomplete =
       checkForAutocomplete(current_word, splitted_line.values[0], line_index, PATH_BINS);
+  removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
   render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
   bool loop = true;
-  int appending_index;
-  char* removed_sub;
-  if ((appending_index = getAppendingIndex(current_word, '/')) != -1) {
-    removed_sub = &(current_word[strlen(current_word) - getAppendingIndex(current_word, '/')]); // c_e
-  } else {
-    removed_sub = current_word;
-  }
-  if (removed_sub[0] != '.') {
-    possible_tabcomplete = removeDotFiles(&possible_tabcomplete);
-  }
 
   if (possible_tabcomplete.array.len <= 0 ||
       tooManyMatches(cursor_pos, render_data.row_size, render_data.cursor_height_diff)) {
