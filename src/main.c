@@ -234,7 +234,8 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
     return;
 
   char temp;
-  if ((temp = tabLoop(line_info->line, cursor_pos, PATH_BINS, terminal_size, *line_info->i)) != 0) {
+  if ((temp = tabLoop(line_info->line, cursor_pos, PATH_BINS, terminal_size, *line_info->i)) !=
+      0) { // if 0 then it should ignore last pressed char
     line_info->c = temp;
   } else {
     line_info->c = -1;

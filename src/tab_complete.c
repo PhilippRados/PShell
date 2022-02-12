@@ -233,7 +233,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
     free_string_array(&(possible_tabcomplete.array));
     free_string_array(&splitted_line);
     free(current_word);
-    return 0;
+    return -1;
   }
   do {
     if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index, &tab_index))) {
