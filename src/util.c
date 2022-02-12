@@ -190,21 +190,23 @@ string_array getAllFilesInDir(string_array* directory_array) {
   int realloc_index = 1;
 
   for (int i = 0; i < directory_array->len; i++) {
-    DIR* dr = opendir(directory_array->values[i]);
+    if (isDirectory(directory_array->values[i])) {
+      DIR* dr = opendir(directory_array->values[i]);
 
-    while ((file = readdir(dr)) != NULL) {
-      if (j >= (1024 * realloc_index)) {
-        realloc_index++;
-        files = (char**)realloc(files, realloc_index * (1024 * (sizeof(char) * 24)));
-        if (files == NULL) {
-          exit(0);
+      while ((file = readdir(dr)) != NULL) {
+        if (j >= (1024 * realloc_index)) {
+          realloc_index++;
+          files = (char**)realloc(files, realloc_index * (1024 * (sizeof(char) * 24)));
+          if (files == NULL) {
+            exit(0);
+          }
         }
+        files[j] = (char*)calloc(strlen(file->d_name) + 1, sizeof(char));
+        strcpy(files[j], file->d_name);
+        j++;
       }
-      files[j] = (char*)calloc(strlen(file->d_name) + 1, sizeof(char));
-      strcpy(files[j], file->d_name);
-      j++;
+      closedir(dr);
     }
-    closedir(dr);
   }
   all_path_files.values = files;
   all_path_files.len = j;
