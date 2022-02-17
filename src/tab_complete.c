@@ -239,6 +239,13 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
     if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index, &tab_index))) {
       renderCompletion(possible_tabcomplete, *c, tab_index, &render_data);
     }
+    if (render_data.row_size >= terminal_size.y) {
+      cursor_pos->y = terminal_size.y;
+      free_string_array(&(possible_tabcomplete.array));
+      free_string_array(&splitted_line);
+      free(current_word);
+      return -1;
+    }
 
   } while (loop && (*c = getch()));
 
