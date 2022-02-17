@@ -82,17 +82,32 @@ autocomplete_array checkForAutocomplete(char* current_word, char* first_word, in
   return possible_autocomplete;
 }
 
-bool tooManyMatches(coordinates* cursor_pos, int row_size, int cursor_height_diff) {
+void renderCompletion(autocomplete_array possible_tabcomplete, int tab_index, render_objects* render_data) {
+  render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y;
+
+  moveCursor((coordinates){1000, render_data->cursor_pos->y}); // have to move cursor to end of
+                                                               // line to not cut off in middle
+  CLEAR_BELOW_CURSOR;
+  tabRender(possible_tabcomplete.array, tab_index, render_data->col_size, render_data->format_width);
+  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size);
+}
+
+bool tooManyMatches(render_objects render_data, autocomplete_array possible_tabcomplete) {
   char answer;
-  if (row_size > 10) {
+  if (render_data.row_size > 10 || render_data.row_size > render_data.terminal_size.y) {
     printf("\nThe list of possible matches is %d "
            "lines. Do you want to print "
            "all of them? (y/n) ",
-           row_size);
+           render_data.row_size);
     answer = getch();
 
-    moveCursorIfShifted(cursor_pos, cursor_height_diff, 1);
+    moveCursorIfShifted(render_data.cursor_pos, render_data.cursor_height_diff, 1);
+
     if (answer != 'y') {
+      return true;
+    } else if (render_data.row_size >= render_data.terminal_size.y) {
+      renderCompletion(possible_tabcomplete, -1, &render_data);
+      render_data.cursor_pos->y = render_data.terminal_size.y;
       return true;
     }
   }
@@ -157,17 +172,6 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
   return loop;
 }
 
-void renderCompletion(autocomplete_array possible_tabcomplete, char c, int tab_index,
-                      render_objects* render_data) {
-  render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y;
-
-  moveCursor((coordinates){1000, render_data->cursor_pos->y}); // have to move cursor to end of
-                                                               // line to not cut off in middle
-  CLEAR_BELOW_CURSOR;
-  tabRender(possible_tabcomplete.array, tab_index, render_data->col_size, render_data->format_width);
-  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size);
-}
-
 render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_array possible_tabcomplete,
                                        coordinates* cursor_pos) {
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
@@ -228,8 +232,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
   bool loop = true;
 
-  if (possible_tabcomplete.array.len <= 0 ||
-      tooManyMatches(cursor_pos, render_data.row_size, render_data.cursor_height_diff)) {
+  if (possible_tabcomplete.array.len <= 0 || tooManyMatches(render_data, possible_tabcomplete)) {
     free_string_array(&(possible_tabcomplete.array));
     free_string_array(&splitted_line);
     free(current_word);
@@ -237,14 +240,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
   }
   do {
     if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index, &tab_index))) {
-      renderCompletion(possible_tabcomplete, *c, tab_index, &render_data);
-    }
-    if (render_data.row_size >= terminal_size.y) {
-      cursor_pos->y = terminal_size.y;
-      free_string_array(&(possible_tabcomplete.array));
-      free_string_array(&splitted_line);
-      free(current_word);
-      return -1;
+      renderCompletion(possible_tabcomplete, tab_index, &render_data);
     }
 
   } while (loop && (*c = getch()));
