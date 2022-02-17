@@ -128,8 +128,8 @@ bool typedLetter(line_data* line_info) {
     return false;
   }
 
-  if (line_info->c < 0 || line_info->c > 127) {
-    getch();
+  if (line_info->c < 27 || line_info->c > 127) {
+    return false;
   } else if (*line_info->i == strlen(line_info->line)) {
     (line_info->line)[*line_info->i] = line_info->c;
     cursor_moved = true;
