@@ -55,7 +55,10 @@ void free_string_array(string_array* arr) {
   arr->values = NULL;
 }
 
-void moveCursor(coordinates new_pos) { printf("\033[%d;%dH", new_pos.y, new_pos.x); }
+void moveCursor(coordinates new_pos) {
+  printf("\033[%d;%dH", new_pos.y, new_pos.x);
+  fflush(stdin);
+}
 
 coordinates getTerminalSize() {
   coordinates size;
