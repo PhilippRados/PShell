@@ -374,3 +374,25 @@ Test(update, moving_cursor_to_endofline_when_matching_complete_from_global_histo
   free(line_info->i);
   free(line_info);
 }
+
+Test(calculateCursorPos, jumps_down_if_current_line_longer_than_term) {
+  coordinates cursor_pos = {.x = 20, .y = 2};
+  coordinates term_size = {.x = 20, .y = 100};
+  int prompt_len = 5;
+  int i = 20;
+
+  coordinates result = calculateCursorPos(term_size, cursor_pos, prompt_len, i);
+  cr_expect(result.x == 5);
+  cr_expect(result.y == 3);
+}
+
+Test(calculateCursorPos, shouldnt_change_coordinates_when_line_short) {
+  coordinates cursor_pos = {.x = 15, .y = 2};
+  coordinates term_size = {.x = 20, .y = 100};
+  int prompt_len = 5;
+  int i = 10;
+
+  coordinates result = calculateCursorPos(term_size, cursor_pos, prompt_len, i);
+  cr_expect(result.x == 15);
+  cr_expect(result.y == 2);
+}

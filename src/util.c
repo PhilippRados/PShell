@@ -176,15 +176,6 @@ coordinates getCursorPos() {
   return cursor_pos;
 }
 
-void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size) {
-  if (cursor_height_diff <= row_size || cursor_height_diff == 0) {
-    cursor_pos->y = cursor_pos->y - (row_size - cursor_height_diff);
-    moveCursor(*cursor_pos);
-  } else {
-    moveCursor(*cursor_pos);
-  }
-}
-
 string_array getAllFilesInDir(string_array* directory_array) {
   struct dirent* file;
   string_array all_path_files;

@@ -205,9 +205,19 @@ void underlineIfValidPath(string_array command_line) {
   free_string_array(&copy);
 }
 
+coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i) {
+  int line_pos = i + prompt_len;
+
+  return (line_pos <= terminal_size.x)
+             ? (coordinates){.x = line_pos, .y = cursor_pos.y}
+             : (coordinates){.x = line_pos % terminal_size.x, .y = cursor_pos.y + (line_pos / terminal_size.x)};
+}
+
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
-            const string_array PATH_BINS, char* directories, coordinates* cursor_pos) {
-  cursor_pos->x = *line_info->i + line_info->prompt_len;
+            const string_array PATH_BINS, char* directories, coordinates* cursor_pos, coordinates terminal_size) {
+  int original_cursor_height = cursor_pos->y;
+  moveCursor(*cursor_pos);
+
   CLEAR_LINE;
   CLEAR_BELOW_CURSOR;
   printf("\r");
@@ -225,7 +235,8 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
       printf("%s", &autocomplete_info->possible_autocomplete[strlen(line_info->line)]);
     }
   }
-  moveCursor(*cursor_pos);
+  moveCursor(calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = original_cursor_height},
+                                line_info->prompt_len, *line_info->i));
 }
 
 void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size) {
@@ -334,7 +345,7 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
     loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
 
     render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
-           cursor_pos);
+           cursor_pos, terminal_size);
   }
   char* result = calloc(BUFFER, sizeof(char));
   strcpy(result, line_info->line);
