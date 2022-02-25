@@ -2,7 +2,6 @@
 
 CC = gcc-11
 CFLAGS = -g -fsanitize=address -fsanitize=leak
-TEST_COVERAGE = --coverage
 OBJECTS = src/bin/main.o src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o
 SOURCES = src/main.c src/util.c src/tab_complete.c src/fuzzy_finder.c
 TEST_OBJECTS = tests/unit_tests/bin/test_main.o tests/unit_tests/bin/test_util.o tests/unit_tests/bin/test_fuzzy_finder.o tests/unit_tests/bin/test_tab_complete.o
@@ -22,6 +21,9 @@ tests/bin/%.o: tests/%.c
 shell: ${OBJECTS} ## Compile the shell
 	${CC} ${CFLAGS} ${OBJECTS} -o src/bin/pshell -ldl -lm
 
+docker_shell:
+	gcc src/main.c src/util.c src/fuzzy_finder.c src/tab_complete.c -o src/bin/pshell -ldl -lm
+
 start_shell: src/bin/pshell ## Start the shell after compilation
 	./src/bin/pshell
 
@@ -40,8 +42,10 @@ $(test_target): $(TEST_SOURCES) $(SOURCES) ## Run individual tests (needs criter
 	./tests/unit_tests/bin/compiled_$(subst test_,'',$@)_tests -l
 	./tests/unit_tests/bin/compiled_$(subst test_,'',$@)_tests
 
-integration_tests: ./tests/integration_tests/test_pshell.rb ## (Only works with Ruby and ttytest)
-	ruby tests/integration_tests/test_pshell.rb
+integration_tests: #./tests/integration_tests/test_pshell.rb ## (Only works with Ruby and ttytest)
+	make clean
+	docker run -ti --rm -v /Users/philipprados/documents/coding/c/pshell:/pshell testing_container "make docker_shell && ruby ./tests/integration_tests/test_pshell.rb"
+	make clean
 
 compile_and_run: shell
 	make shell && ./src/bin/pshell
