@@ -44,7 +44,8 @@ $(test_target): $(TEST_SOURCES) $(SOURCES) ## Run individual tests (needs criter
 
 integration_tests: #./tests/integration_tests/test_pshell.rb ## (Only works with Ruby and ttytest)
 	make clean
-	docker run -ti --rm -v /Users/philipprados/documents/coding/c/pshell:/pshell testing_container "make docker_shell && ruby ./tests/integration_tests/test_pshell.rb"
+	docker run -ti --rm -v /Users/philipprados/documents/coding/c/pshell:/pshell testing_container \
+		"make docker_shell && cat ./tests/integration_tests/autocomplete_tests.txt >> /root/.psh_history && ruby ./tests/integration_tests/test_pshell.rb"
 	make clean
 
 compile_and_run: shell
