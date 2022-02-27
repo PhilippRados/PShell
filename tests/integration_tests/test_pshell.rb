@@ -7,9 +7,7 @@ TAB = 9.chr
 
 # Basic IO
 sleep 0.5
-@tty.send_keys(%(t))
-@tty.send_keys(%(e))
-@tty.send_keys(%(s))
+@tty.send_keys(%(tes))
 @tty.assert_cursor_position(13, 1)
 @tty.send_keys(%(\n))
 
@@ -20,8 +18,7 @@ puts "\u2705 Basic I/O".encode('utf-8')
 
 # Arrow upwards moves through history
 sleep 0.5
-@tty.send_keys(%(l))
-@tty.send_keys(%(s))
+@tty.send_keys(%(ls))
 @tty.assert_cursor_position(12, 4)
 @tty.send_keys(%(\033))
 @tty.send_keys(%(ZA))
@@ -43,10 +40,7 @@ puts "\u2705 Arrow downwards moves back to empty line".encode('utf-8')
 
 # Arrow left moves through current line
 sleep 0.5
-@tty.send_keys(%(t))
-@tty.send_keys(%(e))
-@tty.send_keys(%(s))
-@tty.send_keys(%(t))
+@tty.send_keys(%(test))
 @tty.assert_cursor_position(14, 4)
 @tty.send_keys(%(\033))
 @tty.send_keys(%(ZD))
@@ -84,8 +78,7 @@ puts "\u2705 Backspace removes char and moves cursor".encode('utf-8')
 
 # Shows matching autocomplete
 sleep 0.5
-@tty.send_keys(%(s))
-@tty.send_keys(%(o))
+@tty.send_keys(%(so))
 @tty.assert_cursor_position(12, 7)
 
 @tty.assert_row(7, '/pshell ❱ some autocomplete')
@@ -106,16 +99,39 @@ puts "\u2705 Arrow right moves cursor end of line".encode('utf-8')
 
 # builtin-cd changes dir
 sleep 0.5
-@tty.send_keys(%(c))
-@tty.send_keys(%(d))
-@tty.send_keys(%( ))
-@tty.send_keys(%(.))
-@tty.send_keys(%(.))
+@tty.send_keys(%(cd ..))
 @tty.send_keys(%(\n))
 
 @tty.assert_cursor_position(4, 12)
 @tty.assert_row(12, '/ ❱')
 
 puts "\u2705 Builtin-cd changes dir".encode('utf-8')
+
+# Cursor jumps down when line longer than term-width
+sleep 0.5
+@tty.send_keys(%(lllllllllllllllllllllllllllllllllllllllllllllll))
+
+@tty.assert_cursor_position(11, 13)
+@tty.assert_row(12, '/ ❱ llllllllllllllllllllllllllllllllllll')
+@tty.assert_row(13, 'lllllllllll')
+@tty.send_keys(%(\n))
+
+puts "\u2705 Cursor jumps down one row if line too long".encode('utf-8')
+
+# When on last line and line too long it shifts term up accordingly
+sleep 0.5
+@tty.send_keys(%(cd pshell))
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(make)) # arbitrary command to move to last line
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(kajldasjlsdjalsjdaljdjldasjlasldslks))
+
+@tty.assert_cursor_position(6, 24)
+@tty.assert_row(23, '/pshell ❱ kajldasjlsdjalsjdaljdjldasjlas')
+@tty.assert_row(24, 'ldslks')
+
+puts "\u2705 When on last line and line too long it shifts term up accordingly".encode('utf-8')
 
 @tty.send_keys(%(q\n))
