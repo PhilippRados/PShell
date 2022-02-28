@@ -99,7 +99,7 @@ void renderCompletion(autocomplete_array possible_tabcomplete, int tab_index, re
                                                   // line to not cut off in middle
   CLEAR_BELOW_CURSOR;
   tabRender(possible_tabcomplete.array, tab_index, render_data->col_size, render_data->format_width);
-  // moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size);
+  // moveCursorIfShifted(&current_pos, render_data->cursor_height_diff, render_data->row_size);
   moveCursor(current_pos);
 }
 

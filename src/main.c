@@ -189,7 +189,7 @@ bool filterHistoryForMatchingAutoComplete(const string_array all_time_commands, 
   return false;
 }
 
-void underlineIfValidPath(string_array command_line) {
+void printLine(string_array command_line) {
   string_array copy = copyStringArray(command_line);
   replaceAliases(&copy);
   for (int i = 1; i < command_line.len; i++) {
@@ -208,15 +208,28 @@ void underlineIfValidPath(string_array command_line) {
 coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i) {
   int line_pos = i + prompt_len;
 
-  return (line_pos <= terminal_size.x)
-             ? (coordinates){.x = line_pos, .y = cursor_pos.y}
-             : (coordinates){.x = line_pos % terminal_size.x, .y = cursor_pos.y + (line_pos / terminal_size.x)};
+  if (line_pos < terminal_size.x) {
+    return (coordinates){.x = line_pos, .y = cursor_pos.y};
+  } else if (line_pos % terminal_size.x == 0) {
+    return (coordinates){.x = terminal_size.x, .y = cursor_pos.y + ((line_pos - 1) / terminal_size.x)};
+  } else {
+    return (coordinates){.x = line_pos % terminal_size.x, .y = cursor_pos.y + (line_pos / terminal_size.x)};
+  }
 }
 
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
-            const string_array PATH_BINS, char* directories, coordinates* cursor_pos, coordinates terminal_size) {
-  int original_cursor_height = cursor_pos->y;
-  moveCursor(*cursor_pos);
+            const string_array PATH_BINS, char* directories, coordinates* starting_cursor_pos,
+            coordinates terminal_size) {
+  int original_cursor_height = starting_cursor_pos->y;
+  int height_diff =
+      calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, *line_info->i).y;
+  if (starting_cursor_pos->y + height_diff >= terminal_size.y) {
+    for (int i = 0; i < ((starting_cursor_pos->y + height_diff) - terminal_size.y); i++) {
+      printf("\n");
+    }
+    starting_cursor_pos->y -= (starting_cursor_pos->y + height_diff) - terminal_size.y;
+  }
+  moveCursor(*starting_cursor_pos);
 
   CLEAR_LINE;
   CLEAR_BELOW_CURSOR;
@@ -228,15 +241,17 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
 
     isInPath(command_line.values[0], PATH_BINS) ? printColor(command_line.values[0], GREEN, standard)
                                                 : printColor(command_line.values[0], RED, bold);
-    underlineIfValidPath(command_line);
+    printLine(command_line);
     free_string_array(&command_line);
 
     if (autocomplete_info->autocomplete) {
       printf("%s", &autocomplete_info->possible_autocomplete[strlen(line_info->line)]);
     }
   }
-  moveCursor(calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = original_cursor_height},
-                                line_info->prompt_len, *line_info->i));
+  coordinates new_cursor_pos = calculateCursorPos(
+      terminal_size, (coordinates){.x = 0, .y = original_cursor_height}, line_info->prompt_len, *line_info->i);
+
+  moveCursor(new_cursor_pos);
 }
 
 void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size) {
@@ -339,13 +354,14 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   history_data* history_info = historyDataConstructor(command_history, global_command_history);
   coordinates* cursor_pos = calloc(1, sizeof(coordinates));
   *cursor_pos = getCursorPos();
+  coordinates* starting_cursor_pos = cursor_pos;
   int loop = true;
 
   while (loop && (line_info->c = getch())) {
     loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
 
     render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
-           cursor_pos, terminal_size);
+           starting_cursor_pos, terminal_size);
   }
   char* result = calloc(BUFFER, sizeof(char));
   strcpy(result, line_info->line);

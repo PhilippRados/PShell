@@ -396,3 +396,30 @@ Test(calculateCursorPos, shouldnt_change_coordinates_when_line_short) {
   cr_expect(result.x == 15);
   cr_expect(result.y == 2);
 }
+
+Test(calculateCursorPos, when_on_last_row_should_still_increment) {
+  coordinates cursor_pos = {.x = 15, .y = 100};
+  coordinates term_size = {.x = 20, .y = 100};
+  int prompt_len = 5;
+  int i = 20;
+
+  coordinates result = calculateCursorPos(term_size, cursor_pos, prompt_len, i);
+  cr_expect(result.x == 5);
+  cr_expect(result.y == 101);
+}
+
+Test(calculateCursorPos, when_line_expands_over_many_rows_and_cursor_shouldnt_jump_down_too_early) {
+  coordinates cursor_pos = {.x = 0, .y = 1};
+  coordinates term_size = {.x = 45, .y = 100};
+  int prompt_len = 0;
+  int i = 90;
+
+  coordinates result = calculateCursorPos(term_size, cursor_pos, prompt_len, i);
+
+  logger(integer, &result.x);
+  logger(string, ":");
+  logger(integer, &result.y);
+  logger(string, "\n");
+  cr_expect(result.x == 45);
+  cr_expect(result.y == 2);
+}
