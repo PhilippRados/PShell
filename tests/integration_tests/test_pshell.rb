@@ -170,6 +170,94 @@ sleep 0.2
 @tty.assert_cursor_position(13, 1)
 @tty.assert_row(1, '/pshell ❱ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu')
 @tty.assert_row(2, 'uuuuuuuuuuuuuuuu')
+@tty.send_keys(%(\n))
 
 puts "\u2705 When not on last line and autocomplete longer than term should not shift up".encode('utf-8')
+
+# Multiple Tab-completion matches
+sleep 0.2
+@tty.send_keys(%(ls))
+@tty.send_keys(TAB)
+@tty.assert_cursor_position(12, 4)
+
+@tty.assert_row(4, '/pshell ❱ ls')
+@tty.assert_row(5, 'lsattr    lsns      lsmem     lslogins')
+@tty.assert_row(6, 'lsipc     lslocks   lscpu     lsblk')
+@tty.assert_row(7, 'ls')
+
+puts "\u2705 Multiple Tab-completion matches".encode('utf-8')
+
+# Pressing Tab cycles through all matches
+sleep 0.2
+@tty.send_keys(TAB)
+@tty.send_keys(TAB)
+@tty.assert_cursor_position(12, 4)
+
+@tty.assert_row(4, '/pshell ❱ ls')
+@tty.assert_row(5, 'lsattr    lsns      lsmem     lslogins')
+@tty.assert_row(6, 'lsipc     lslocks   lscpu     lsblk')
+@tty.assert_row(7, 'ls')
+
+@tty.send_keys(%(\n))
+@tty.assert_row(4, '/pshell ❱ lsmem')
+@tty.assert_cursor_position(15, 4)
+
+puts "\u2705 Pressing Tab cycles through tab-matches".encode('utf-8')
+
+# When only one match copies to line immediately
+sleep 0.2
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(%(a))
+@tty.send_keys(TAB)
+@tty.assert_cursor_position(16, 4)
+
+@tty.assert_row(4, '/pshell ❱ lsattr')
+
+puts "\u2705 When only one tab-comp matches immediately".encode('utf-8')
+
+# When pressing Tab in middle of word looks for matches until cursor-pos
+sleep 0.2
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.send_keys(TAB)
+@tty.assert_cursor_position(12, 4)
+
+@tty.assert_row(4, '/pshell ❱ lsattr')
+@tty.assert_row(5, 'lsattr    lsns      lsmem     lslogins')
+@tty.assert_row(6, 'lsipc     lslocks   lscpu     lsblk')
+@tty.assert_row(7, 'ls')
+
+puts "\u2705 When pressing Tab in middle of word looks for matches until cursor-pos".encode('utf-8')
+
+# When Tab-completing on last row should shift up and cursor too
+sleep 0.2
+@tty.send_keys(%(a))
+@tty.send_keys(%(\n))
+sleep 0.1
+@tty.send_keys(%(make))
+@tty.send_keys(%(\n))
+sleep 0.1
+@tty.send_keys(%(make))
+@tty.send_keys(%(\n))
+sleep 0.1
+@tty.send_keys(%(lsl))
+@tty.send_keys(TAB)
+
+@tty.assert_cursor_position(13, 22)
+@tty.assert_row(22, '/pshell ❱ lsl')
+@tty.assert_row(23, 'lslogins  lslocks')
+
+@tty.send_keys(TAB)
+@tty.assert_row(22, '/pshell ❱ lsl')
+@tty.assert_row(23, 'lslogins  lslocks')
+puts "\u2705 When Tab-comp on last row should shift term up and cursor too".encode('utf-8')
+
 @tty.send_keys(%(q\n))
