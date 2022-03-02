@@ -136,4 +136,40 @@ sleep 0.2
 
 puts "\u2705 When on last line and line too long it shifts term up accordingly".encode('utf-8')
 
+# When on last line and autocomplete longer than term should shift up but cursor stay
+sleep 0.2
+@tty.send_keys(%(\n))
+@tty.send_keys(%(uu))
+
+@tty.assert_cursor_position(12, 22)
+@tty.assert_row(22, '/pshell ❱ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu')
+@tty.assert_row(23, 'uuuuuuuuuuuuuuuu')
+
+@tty.send_keys(%(u))
+@tty.assert_cursor_position(13, 22)
+@tty.assert_row(22, '/pshell ❱ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu')
+@tty.assert_row(23, 'uuuuuuuuuuuuuuuu')
+
+puts "\u2705 When on last line and autocomplete longer than term should shift up but cursor stay".encode('utf-8')
+
+# When not on last line and autocomplete longer than term should not shift up
+sleep 0.2
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(%(clear))
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(uu))
+
+@tty.assert_cursor_position(12, 1)
+@tty.assert_row(1, '/pshell ❱ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu')
+@tty.assert_row(2, 'uuuuuuuuuuuuuuuu')
+
+@tty.send_keys(%(u))
+@tty.assert_cursor_position(13, 1)
+@tty.assert_row(1, '/pshell ❱ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu')
+@tty.assert_row(2, 'uuuuuuuuuuuuuuuu')
+
+puts "\u2705 When not on last line and autocomplete longer than term should not shift up".encode('utf-8')
 @tty.send_keys(%(q\n))

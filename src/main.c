@@ -220,9 +220,13 @@ coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
             const string_array PATH_BINS, char* directories, coordinates* starting_cursor_pos,
             coordinates terminal_size) {
-  int original_cursor_height = starting_cursor_pos->y;
   int height_diff =
-      calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, *line_info->i).y;
+      (autocomplete_info->autocomplete)
+          ? calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len,
+                               strlen(autocomplete_info->possible_autocomplete))
+                .y
+          : calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, *line_info->i)
+                .y;
   if (starting_cursor_pos->y + height_diff >= terminal_size.y) {
     for (int i = 0; i < ((starting_cursor_pos->y + height_diff) - terminal_size.y); i++) {
       printf("\n");
@@ -249,7 +253,7 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
     }
   }
   coordinates new_cursor_pos = calculateCursorPos(
-      terminal_size, (coordinates){.x = 0, .y = original_cursor_height}, line_info->prompt_len, *line_info->i);
+      terminal_size, (coordinates){.x = 0, .y = starting_cursor_pos->y}, line_info->prompt_len, *line_info->i);
 
   moveCursor(new_cursor_pos);
 }

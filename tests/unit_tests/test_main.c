@@ -416,10 +416,6 @@ Test(calculateCursorPos, when_line_expands_over_many_rows_and_cursor_shouldnt_ju
 
   coordinates result = calculateCursorPos(term_size, cursor_pos, prompt_len, i);
 
-  logger(integer, &result.x);
-  logger(string, ":");
-  logger(integer, &result.y);
-  logger(string, "\n");
   cr_expect(result.x == 45);
   cr_expect(result.y == 2);
 }
