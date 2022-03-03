@@ -36,8 +36,8 @@ string_array splitString(const char*, char);
 int getch();
 void printColor(const char* string, color color, enum color_decorations color_decorations);
 void moveCursor(coordinates new_pos);
-char* popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,
-                       int current_cursor_height);
+fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,
+                              int current_cursor_height, int line_row_count);
 coordinates getTerminalSize();
 string_array removeDuplicates(string_array* matching_commands);
 void backspaceLogic(char* line, int* i);

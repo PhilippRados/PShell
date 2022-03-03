@@ -273,16 +273,19 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
 }
 
 void ctrlFPress(string_array all_time_command_history, char* line, int* i, coordinates terminal_size,
-                coordinates* cursor_pos) {
-  char* popup_result = popupFuzzyFinder(all_time_command_history, terminal_size, cursor_pos->y);
-  if (strcmp(popup_result, "") != 0) {
-    strcpy(line, popup_result);
+                coordinates* cursor_pos, char* possible_autocomplete, int prompt_len) {
+  int line_len = (strlen(possible_autocomplete) > strlen(line)) ? strlen(possible_autocomplete) : strlen(line);
+  int line_row_count = calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, prompt_len, line_len).y;
+  fuzzy_result popup_result =
+      popupFuzzyFinder(all_time_command_history, terminal_size, cursor_pos->y, line_row_count);
+  if (strcmp(popup_result.line, "") != 0) {
+    strcpy(line, popup_result.line);
   }
-  free(popup_result);
+  free(popup_result.line);
   *i = strlen(line);
 
-  if (cursor_pos->y >= (terminal_size.y * 0.85) - 2) {
-    cursor_pos->y = (terminal_size.y * 0.85) - 3;
+  if (popup_result.shifted) {
+    cursor_pos->y = (terminal_size.y * 0.85) - 3 - line_row_count;
     moveCursor(*cursor_pos);
   } else {
     moveCursor(*cursor_pos);
@@ -306,7 +309,8 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
     free_string_array(&all_time_command_history);
     return false;
   } else if ((int)line_info->c == CONTROL_F) {
-    ctrlFPress(all_time_command_history, line_info->line, line_info->i, terminal_size, cursor_pos);
+    ctrlFPress(all_time_command_history, line_info->line, line_info->i, terminal_size, cursor_pos,
+               autocomplete_info->possible_autocomplete, line_info->prompt_len);
   } else if (line_info->c != -1 && typedLetter(line_info)) {
     (*line_info->i)++;
   }
@@ -358,14 +362,13 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   history_data* history_info = historyDataConstructor(command_history, global_command_history);
   coordinates* cursor_pos = calloc(1, sizeof(coordinates));
   *cursor_pos = getCursorPos();
-  coordinates* starting_cursor_pos = cursor_pos;
   int loop = true;
 
   while (loop && (line_info->c = getch())) {
     loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
 
     render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
-           starting_cursor_pos, terminal_size);
+           cursor_pos, terminal_size);
   }
   char* result = calloc(BUFFER, sizeof(char));
   strcpy(result, line_info->line);

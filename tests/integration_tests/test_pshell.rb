@@ -4,6 +4,7 @@ require 'ttytest'
 
 BACKSPACE = 127.chr
 TAB = 9.chr
+CTRLF = 6.chr
 
 # Basic IO
 sleep 0.2
@@ -139,6 +140,7 @@ puts "\u2705 When on last line and line too long it shifts term up accordingly".
 # When on last line and autocomplete longer than term should shift up but cursor stay
 sleep 0.2
 @tty.send_keys(%(\n))
+sleep 0.1
 @tty.send_keys(%(uu))
 
 @tty.assert_cursor_position(12, 22)
@@ -258,6 +260,62 @@ sleep 0.1
 @tty.send_keys(TAB)
 @tty.assert_row(22, '/pshell ❱ lsl')
 @tty.assert_row(23, 'lslogins  lslocks')
+
 puts "\u2705 When Tab-comp on last row should shift term up and cursor too".encode('utf-8')
+
+# When pressing Fuzzy-finder on last row should shift prior commands up
+sleep 0.2
+@tty.send_keys(%(a))
+@tty.send_keys(CTRLF)
+
+@tty.assert_row(16, '/pshell ❱ lsl')
+@tty.assert_row(17, ' ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+@tty.assert_cursor_position(3, 19)
+@tty.send_keys(%(te))
+@tty.assert_row(19, ' ❱ te                          1/2')
+@tty.assert_row(20, '   tlst')
+@tty.assert_row(21, '   tes')
+
+puts "\u2705 When pressing Fuzzy-finder on last row should shift prior commands up".encode('utf-8')
+
+# Fuzzy-finder picked command replaces current line
+sleep 0.2
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZB))
+
+@tty.assert_row(19, ' ❱ te                          2/2')
+@tty.send_keys(%(\n))
+@tty.assert_row(16, '/pshell ❱ tes')
+@tty.assert_cursor_position(13, 16)
+
+puts "\u2705 Fuzzy-finder picked command replaces current line".encode('utf-8')
+
+# When line longer than term fuzzy-finder should still shift bottom of line up
+sleep 0.2
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(%(ll))
+@tty.send_keys(CTRLF)
+
+@tty.assert_row(15, '/pshell ❱ llllllllllllllllllllllllllllll')
+@tty.assert_row(16, 'lllllllllllllllll')
+@tty.assert_row(17, ' ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+@tty.assert_row(19, ' ❱')
+
+puts "\u2705 When line longer than term fuzzy-finder should still shift bottom of line up".encode('utf-8')
+
+# When exiting fuzzy-finder should be on upshifted row
+sleep 0.2
+@tty.send_keys(%(\033))
+@tty.send_keys(%(\033))
+
+@tty.assert_row(15, '/pshell ❱ llllllllllllllllllllllllllllll')
+@tty.assert_row(16, 'lllllllllllllllll')
+@tty.assert_row(17, '')
+@tty.assert_cursor_position(12, 15)
+
+puts "\u2705 When exiting fuzzy-finder should be on upshifted row".encode('utf-8')
 
 @tty.send_keys(%(q\n))

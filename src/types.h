@@ -64,3 +64,8 @@ typedef struct {
   char* possible_autocomplete;
   int autocomplete;
 } autocomplete_data;
+
+typedef struct {
+  char* line;
+  int shifted;
+} fuzzy_result;
