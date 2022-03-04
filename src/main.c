@@ -258,12 +258,21 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
   moveCursor(new_cursor_pos);
 }
 
-void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size) {
+void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size,
+         autocomplete_data autocomplete_info) {
   if (strlen(line_info->line) <= 0)
     return;
 
+  int line_len = (autocomplete_info.autocomplete &&
+                  (strlen(autocomplete_info.possible_autocomplete) > strlen(line_info->line)))
+                     ? strlen(autocomplete_info.possible_autocomplete)
+                     : strlen(line_info->line);
+  int line_row_count =
+      calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, line_len).y;
+  int cursor_row =
+      calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, *line_info->i).y;
   char temp;
-  if ((temp = tabLoop(line_info->line, cursor_pos, PATH_BINS, terminal_size, *line_info->i)) == -1) {
+  if ((temp = tabLoop(*line_info, cursor_pos, PATH_BINS, terminal_size, cursor_row, line_row_count)) == -1) {
     // failed completion
     line_info->c = temp;
   } else {
@@ -299,7 +308,7 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
       concatenateArrays(history_info->sessions_command_history, history_info->global_command_history);
   bool loop = true;
   if (line_info->c == TAB) {
-    tab(line_info, cursor_pos, PATH_BINS, terminal_size);
+    tab(line_info, cursor_pos, PATH_BINS, terminal_size, *autocomplete_info);
   }
   if (line_info->c == BACKSPACE) {
     backspaceLogic(line_info->line, line_info->i);

@@ -318,4 +318,101 @@ sleep 0.2
 
 puts "\u2705 When exiting fuzzy-finder should be on upshifted row".encode('utf-8')
 
+# File-completes shows all matching files/dirs
+sleep 0.2
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(%(ls ../))
+@tty.send_keys(TAB)
+
+@tty.assert_row(15, '/pshell ❱ ls ../')
+@tty.assert_row(16, 'bin/     sys/     dev/     lib/')
+@tty.assert_row(17, 'home/    run/     lib64/   media/')
+@tty.assert_row(18, 'srv/     boot/    proc/    opt/')
+@tty.assert_row(19, 'var/     usr/     mnt/     tmp/')
+@tty.assert_row(20, 'etc/     sbin/    root/    pshell/')
+@tty.assert_cursor_position(16, 15)
+
+puts "\u2705 File-completes shows all matching files/dirs".encode('utf-8')
+
+# When only one matching file autocompletes immediately
+sleep 0.2
+@tty.send_keys(%(a)) # random key to exit out of tab-matches
+@tty.send_keys(%(ro))
+@tty.send_keys(TAB)
+
+@tty.assert_row(15, '/pshell ❱ ls ../root/')
+@tty.assert_cursor_position(21, 15)
+
+puts "\u2705 When only one matching file autocompletes immediately".encode('utf-8')
+
+# Doesnt show dotfiles in file-completion
+sleep 0.2
+@tty.send_keys(TAB)
+
+@tty.assert_row(15, '/pshell ❱ ls ../root/')
+@tty.assert_row(16, '')
+@tty.assert_cursor_position(21, 15)
+
+puts "\u2705 Doesnt show dotfiles in completion".encode('utf-8')
+
+# Shows dotfiles in file-completion if first char is dot
+sleep 0.2
+@tty.send_keys(%(.))
+@tty.send_keys(TAB)
+
+@tty.assert_row(15, '/pshell ❱ ls ../root/.')
+@tty.assert_row(16, '.bashrc       .profile')
+@tty.assert_row(17, '../           ./')
+@tty.assert_row(18, '.psh_history  .gem/')
+@tty.assert_cursor_position(22, 15)
+
+puts "\u2705 Shows dotfiles if first char is dot".encode('utf-8')
+
+# If tab-completing on second row completes below cursor
+sleep 0.2
+@tty.send_keys(%(\n))
+@tty.send_keys(%(\n))
+sleep 0.1
+@tty.send_keys(%(ls                                             ../m))
+@tty.send_keys(TAB)
+
+@tty.assert_row(18, '/pshell ❱ ls')
+@tty.assert_row(19, '                 ../m')
+@tty.assert_row(20, 'media/  mnt/')
+@tty.assert_cursor_position(21, 19)
+
+puts "\u2705 If tab-completing on second row completes below cursor".encode('utf-8')
+
+# When pressing enter on tab-comp on second row appends to cursor
+sleep 0.2
+@tty.send_keys(%(\n))
+@tty.assert_row(18, '/pshell ❱ ls')
+@tty.assert_row(19, '                 ../media/')
+@tty.assert_cursor_position(26, 19)
+
+puts "\u2705 When pressing enter on tab-comp on second row appends to cursor".encode('utf-8')
+
+# When on last line and shifts up when tab-completing on second row
+sleep 0.2
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(ls                                             ../))
+
+@tty.assert_row(22, '/pshell ❱ ls')
+@tty.assert_row(23, '                 ../media/')
+@tty.assert_cursor_position(20, 23)
+
+@tty.send_keys(TAB)
+@tty.assert_row(17, '/pshell ❱ ls')
+@tty.assert_row(18, '                 ../media/')
+@tty.assert_row(19, 'bin/     sys/     dev/     lib/')
+@tty.assert_cursor_position(20, 18)
+
+@tty.send_keys(%(\n))
+@tty.assert_row(17, '/pshell ❱ ls')
+@tty.assert_row(18, '                 ../bin/')
+@tty.assert_cursor_position(24, 18)
+
+puts "\u2705 When on last line and shifts up when tab-completing on second row".encode('utf-8')
 @tty.send_keys(%(q\n))

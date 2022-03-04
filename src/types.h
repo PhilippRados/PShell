@@ -43,6 +43,8 @@ typedef struct {
   int col_size;
   int row_size;
   int cursor_height_diff;
+  int cursor_row;
+  int line_row_count;
   coordinates* cursor_pos;
   coordinates terminal_size;
 } render_objects;

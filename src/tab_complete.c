@@ -83,24 +83,28 @@ autocomplete_array checkForAutocomplete(char* current_word, char* first_word, in
   return possible_autocomplete;
 }
 
-void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size) {
+void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size, int cursor_row) {
   if (cursor_height_diff <= row_size || cursor_height_diff == 0) {
-    cursor_pos->y = cursor_pos->y - (row_size - cursor_height_diff);
+    cursor_pos->y -= row_size - cursor_height_diff;
     moveCursor(*cursor_pos);
   } else {
     moveCursor(*cursor_pos);
   }
+  cursor_pos->y -= cursor_row;
 }
 
 void renderCompletion(autocomplete_array possible_tabcomplete, int tab_index, render_objects* render_data) {
-  render_data->cursor_pos->x = getCursorPos().x;
-  render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y;
+  *render_data->cursor_pos = getCursorPos();
+  render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y -
+                                    render_data->cursor_row + render_data->line_row_count;
 
-  moveCursor((coordinates){1000, render_data->cursor_pos->y}); // have to move cursor to end of
-                                                               // line to not cut off in middle
+  moveCursor((coordinates){1000, render_data->cursor_pos->y - render_data->cursor_row +
+                                     render_data->line_row_count}); // have to move cursor to end of
+                                                                    // line to not cut off in middle
   CLEAR_BELOW_CURSOR;
   tabRender(possible_tabcomplete.array, tab_index, render_data->col_size, render_data->format_width);
-  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size);
+  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size,
+                      render_data->cursor_row);
 }
 
 bool tooManyMatches(render_objects render_data, autocomplete_array possible_tabcomplete) {
@@ -112,7 +116,7 @@ bool tooManyMatches(render_objects render_data, autocomplete_array possible_tabc
            render_data.row_size);
     answer = getch();
 
-    moveCursorIfShifted(render_data.cursor_pos, render_data.cursor_height_diff, 1);
+    moveCursorIfShifted(render_data.cursor_pos, render_data.cursor_height_diff, 1, render_data.cursor_row);
 
     if (answer != 'y') {
       return true;
@@ -185,7 +189,7 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
 }
 
 render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_array possible_tabcomplete,
-                                       coordinates* cursor_pos) {
+                                       coordinates* cursor_pos, int cursor_row, int line_row_count) {
   int format_width = getLongestWordInArray(possible_tabcomplete.array) + 2;
   int col_size = terminal_size.x / format_width;
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
@@ -198,6 +202,8 @@ render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_a
       .cursor_height_diff = cursor_height_diff,
       .cursor_pos = cursor_pos,
       .terminal_size = terminal_size,
+      .cursor_row = cursor_row,
+      .line_row_count = line_row_count,
   };
 }
 
@@ -231,17 +237,18 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
-char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, const coordinates terminal_size,
-             int line_index) {
+char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PATH_BINS,
+             const coordinates terminal_size, int cursor_row, int line_row_count) {
   char* c = calloc(1, sizeof(char));
   *c = TAB;
   int tab_index = -1;
-  string_array splitted_line = splitString(line, ' ');
-  char* current_word = getCurrentWordFromLineIndex(splitted_line, line_index);
+  string_array splitted_line = splitString(line_info.line, ' ');
+  char* current_word = getCurrentWordFromLineIndex(splitted_line, *line_info.i);
   autocomplete_array possible_tabcomplete =
-      checkForAutocomplete(current_word, splitted_line.values[0], line_index, PATH_BINS);
+      checkForAutocomplete(current_word, splitted_line.values[0], *line_info.i, PATH_BINS);
   removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
-  render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos);
+  render_objects render_data =
+      initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, cursor_row, line_row_count);
   bool loop = true;
 
   if (possible_tabcomplete.array.len <= 0 || tooManyMatches(render_data, possible_tabcomplete)) {
@@ -251,7 +258,7 @@ char tabLoop(char* line, coordinates* cursor_pos, const string_array PATH_BINS, 
     return -1;
   }
   do {
-    if ((loop = updateCompletion(possible_tabcomplete, c, line, line_index, &tab_index))) {
+    if ((loop = updateCompletion(possible_tabcomplete, c, line_info.line, *line_info.i, &tab_index))) {
       renderCompletion(possible_tabcomplete, tab_index, &render_data);
     }
 
