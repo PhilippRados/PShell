@@ -94,7 +94,7 @@ void moveCursorIfShifted(render_objects* render_data) {
 }
 
 void renderCompletion(autocomplete_array possible_tabcomplete, int tab_index, render_objects* render_data) {
-  *render_data->cursor_pos = getCursorPos();
+  render_data->cursor_pos->y += render_data->cursor_row;
   int bottom_line_y = render_data->cursor_pos->y - render_data->cursor_row + render_data->line_row_count;
   render_data->cursor_height_diff = render_data->terminal_size.y - bottom_line_y;
 
@@ -112,7 +112,16 @@ bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tab
            render_data->row_size);
     answer = getch();
 
-    moveCursorIfShifted(render_data);
+    int prompt_row_count =
+        calculateCursorPos(
+            render_data->terminal_size, (coordinates){0, 0}, 0,
+            strlen("The list of possible matches is %d lines. Do you want to print all of them? (y/n) "))
+            .y +
+        1;
+    int diff = prompt_row_count + render_data->cursor_pos->y - render_data->terminal_size.y;
+    if (diff > 0) {
+      render_data->cursor_pos->y -= diff;
+    }
 
     if (answer != 'y') {
       return true;

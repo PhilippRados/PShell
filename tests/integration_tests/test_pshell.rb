@@ -415,4 +415,61 @@ sleep 0.2
 @tty.assert_cursor_position(24, 18)
 
 puts "\u2705 When on last line and shifts up when tab-completing on second row".encode('utf-8')
+
+# When user tab-completes and too many matches gets prompted
+sleep 0.2
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(m))
+@tty.assert_row(23, '/pshell ❱ make')
+@tty.assert_cursor_position(11, 23)
+
+@tty.send_keys(TAB)
+@tty.assert_row(20, '/pshell ❱ make')
+@tty.assert_row(21, 'The list of possible matches is 27 lines')
+@tty.assert_row(22, '. Do you want to print all of them? (y/n')
+@tty.assert_row(23, ')')
+@tty.assert_cursor_position(2, 23)
+
+puts "\u2705 When user tab-completes and too many matches gets prompted".encode('utf-8')
+
+# When user declines tab-prompt cursor jumps back to original line (even when prompt multiple lines)
+sleep 0.2
+@tty.send_keys(%(n))
+@tty.assert_row(20, '/pshell ❱ make')
+@tty.assert_row(21, '')
+@tty.assert_cursor_position(11, 20)
+
+puts "\u2705 When user declines tab-prompt cursor jumps back to original line (even when prompt multiple lines)".encode('utf-8')
+
+# When user accepts tab-prompt matches get shown below current line (even if autocomplete multil-ine)
+sleep 0.2
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(%(l))
+@tty.send_keys(TAB)
+@tty.send_keys(%(y))
+@tty.assert_row(7, '/pshell ❱ ls')
+@tty.assert_row(8, 'ldattach       lsattr')
+@tty.assert_cursor_position(11, 7)
+
+puts "\u2705 When user accepts tab-prompt matches get shown below current line (even if autocomplete multil-ine)".encode('utf-8')
+
+# When user presses enter on prompt completion replaces current line
+@tty.send_keys(%(\n))
+@tty.assert_row(7, '/pshell ❱ ldattach')
+@tty.assert_row(8, '')
+@tty.assert_cursor_position(18, 7)
+puts "\u2705 When user presses enter on prompt completion replaces current line".encode('utf-8')
+
+# When too many matches in multi-line-command and completing on first row
+sleep 0.2
+@tty.send_keys(%(                          l s))
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.assert_row(4, '/pshell ❱                           l')
+@tty.assert_row(5, 's')
+@tty.assert_cursor_position(12, 4)
+
+puts "\u2705 When too many matches in multi-line-command and completing on first row".encode('utf-8')
+
 @tty.send_keys(%(q\n))

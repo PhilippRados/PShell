@@ -391,3 +391,15 @@ autocomplete_array fileComp(char* current_word) {
                               .array.len = filtered.len,
                               .appending_index = strlen(file_strings.removed_sub)};
 }
+
+coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i) {
+  int line_pos = i + prompt_len;
+
+  if (line_pos < terminal_size.x) {
+    return (coordinates){.x = line_pos, .y = cursor_pos.y};
+  } else if (line_pos % terminal_size.x == 0) {
+    return (coordinates){.x = terminal_size.x, .y = cursor_pos.y + ((line_pos - 1) / terminal_size.x)};
+  } else {
+    return (coordinates){.x = line_pos % terminal_size.x, .y = cursor_pos.y + (line_pos / terminal_size.x)};
+  }
+}

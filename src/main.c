@@ -205,18 +205,6 @@ void printLine(string_array command_line) {
   free_string_array(&copy);
 }
 
-coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i) {
-  int line_pos = i + prompt_len;
-
-  if (line_pos < terminal_size.x) {
-    return (coordinates){.x = line_pos, .y = cursor_pos.y};
-  } else if (line_pos % terminal_size.x == 0) {
-    return (coordinates){.x = terminal_size.x, .y = cursor_pos.y + ((line_pos - 1) / terminal_size.x)};
-  } else {
-    return (coordinates){.x = line_pos % terminal_size.x, .y = cursor_pos.y + (line_pos / terminal_size.x)};
-  }
-}
-
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
             const string_array PATH_BINS, char* directories, coordinates* starting_cursor_pos,
             coordinates terminal_size) {
@@ -256,6 +244,7 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
       terminal_size, (coordinates){.x = 0, .y = starting_cursor_pos->y}, line_info->prompt_len, *line_info->i);
 
   moveCursor(new_cursor_pos);
+  starting_cursor_pos->x = new_cursor_pos.x;
 }
 
 void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size,
@@ -263,10 +252,7 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   if (strlen(line_info->line) <= 0)
     return;
 
-  int line_len = (autocomplete_info.autocomplete &&
-                  (strlen(autocomplete_info.possible_autocomplete) > strlen(line_info->line)))
-                     ? strlen(autocomplete_info.possible_autocomplete)
-                     : strlen(line_info->line);
+  int line_len = strlen(line_info->line);
   int line_row_count =
       calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, line_len).y;
   int cursor_row =

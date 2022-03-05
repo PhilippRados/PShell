@@ -12,4 +12,3 @@ line_data* lineDataConstructor(int directory_len);
 autocomplete_data* autocompleteDataConstructor();
 history_data* historyDataConstructor(string_array* command_history, string_array global_command_history);
 string_array concatenateArrays(const string_array one, const string_array two);
-coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i);
