@@ -83,47 +83,43 @@ autocomplete_array checkForAutocomplete(char* current_word, char* first_word, in
   return possible_autocomplete;
 }
 
-void moveCursorIfShifted(coordinates* cursor_pos, int cursor_height_diff, int row_size, int cursor_row) {
-  if (cursor_height_diff <= row_size || cursor_height_diff == 0) {
-    cursor_pos->y -= row_size - cursor_height_diff;
-    moveCursor(*cursor_pos);
+void moveCursorIfShifted(render_objects* render_data) {
+  if (render_data->cursor_height_diff <= render_data->row_size || render_data->cursor_height_diff == 0) {
+    render_data->cursor_pos->y -= render_data->row_size - render_data->cursor_height_diff;
+    moveCursor(*render_data->cursor_pos);
   } else {
-    moveCursor(*cursor_pos);
+    moveCursor(*render_data->cursor_pos);
   }
-  cursor_pos->y -= cursor_row;
+  render_data->cursor_pos->y -= render_data->cursor_row;
 }
 
 void renderCompletion(autocomplete_array possible_tabcomplete, int tab_index, render_objects* render_data) {
   *render_data->cursor_pos = getCursorPos();
-  render_data->cursor_height_diff = render_data->terminal_size.y - render_data->cursor_pos->y -
-                                    render_data->cursor_row + render_data->line_row_count;
+  int bottom_line_y = render_data->cursor_pos->y - render_data->cursor_row + render_data->line_row_count;
+  render_data->cursor_height_diff = render_data->terminal_size.y - bottom_line_y;
 
-  moveCursor((coordinates){1000, render_data->cursor_pos->y - render_data->cursor_row +
-                                     render_data->line_row_count}); // have to move cursor to end of
-                                                                    // line to not cut off in middle
+  moveCursor((coordinates){1000, bottom_line_y}); // have to move cursor to end of
+                                                  // line to not cut off in middle
   CLEAR_BELOW_CURSOR;
   tabRender(possible_tabcomplete.array, tab_index, render_data->col_size, render_data->format_width);
-  moveCursorIfShifted(render_data->cursor_pos, render_data->cursor_height_diff, render_data->row_size,
-                      render_data->cursor_row);
+  moveCursorIfShifted(render_data);
 }
 
-bool tooManyMatches(render_objects render_data, autocomplete_array possible_tabcomplete) {
+bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tabcomplete) {
   char answer;
-  if (render_data.row_size > 10 || render_data.row_size > render_data.terminal_size.y) {
-    printf("\nThe list of possible matches is %d "
-           "lines. Do you want to print "
-           "all of them? (y/n) ",
-           render_data.row_size);
+  if (render_data->row_size > 10 || render_data->row_size > render_data->terminal_size.y) {
+    printf("\nThe list of possible matches is %d lines. Do you want to print all of them? (y/n) ",
+           render_data->row_size);
     answer = getch();
 
-    moveCursorIfShifted(render_data.cursor_pos, render_data.cursor_height_diff, 1, render_data.cursor_row);
+    moveCursorIfShifted(render_data);
 
     if (answer != 'y') {
       return true;
-    } else if (render_data.row_size >= render_data.terminal_size.y) {
-      renderCompletion(possible_tabcomplete, -1, &render_data);
+    } else if (render_data->row_size >= render_data->terminal_size.y) {
+      renderCompletion(possible_tabcomplete, -1, render_data);
       printf("\n\n");
-      render_data.cursor_pos->y = render_data.terminal_size.y;
+      render_data->cursor_pos->y = render_data->terminal_size.y;
       return true;
     }
   }
@@ -251,7 +247,7 @@ char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PA
       initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, cursor_row, line_row_count);
   bool loop = true;
 
-  if (possible_tabcomplete.array.len <= 0 || tooManyMatches(render_data, possible_tabcomplete)) {
+  if (possible_tabcomplete.array.len <= 0 || tooManyMatches(&render_data, possible_tabcomplete)) {
     free_string_array(&(possible_tabcomplete.array));
     free_string_array(&splitted_line);
     free(current_word);

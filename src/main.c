@@ -469,7 +469,7 @@ string_array getAllHistoryCommands() {
   char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_read = fopen(file_path, "r");
   free(file_path);
-  char* buf = calloc(64, sizeof(char));
+  char* buf = calloc(512, sizeof(char));
   int line_len;
   unsigned long buf_size;
   int i = 0;
