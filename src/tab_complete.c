@@ -120,7 +120,8 @@ bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tab
             strlen("The list of possible matches is %d lines. Do you want to print all of them? (y/n) "))
             .y +
         1;
-    int diff = prompt_row_count + render_data->cursor_pos->y - render_data->terminal_size.y;
+    int diff = prompt_row_count + render_data->cursor_pos->y - render_data->cursor_row +
+               render_data->line_row_count - render_data->terminal_size.y;
     if (diff > 0) {
       render_data->cursor_pos->y -= diff;
     }

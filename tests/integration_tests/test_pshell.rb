@@ -452,9 +452,32 @@ sleep 0.2
 
 puts "    \u2705 When user declines tab-prompt cursor jumps back to original line (even when prompt multiple lines)".encode('utf-8')
 
-# When user accepts tab-prompt matches get shown below current line (even if autocomplete multil-ine)
+# When user declines tab-prompt on shifted multi-line cursor jumps back to original line
 sleep 0.2
-@tty.send_keys(BACKSPACE)
+@tty.send_keys(%(                             s))
+@tty.assert_row(20, '/pshell ❱ m')
+@tty.assert_row(21, 's')
+(0..29).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZD))
+end
+@tty.send_keys(TAB)
+@tty.send_keys(%(n))
+@tty.assert_row(19, '/pshell ❱ m')
+@tty.assert_row(20, 's')
+@tty.assert_cursor_position(11, 19)
+
+puts "    \u2705 When user declines tab-prompt on shifted multi-line cursor jumps back to original cursor".encode('utf-8')
+
+# When user accepts tab-prompt matches get shown below current line
+sleep 0.2
+(0..29).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZC))
+end
+(0..35).each do |_i|
+  @tty.send_keys(BACKSPACE)
+end
 @tty.send_keys(%(l))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))
@@ -462,7 +485,7 @@ sleep 0.2
 @tty.assert_row(8, 'ldattach       lsattr')
 @tty.assert_cursor_position(11, 7)
 
-puts "    \u2705 When user accepts tab-prompt matches get shown below current line (even if autocomplete multil-ine)".encode('utf-8')
+puts "    \u2705 When user accepts tab-prompt matches get shown below current line".encode('utf-8')
 
 # When user presses enter on prompt completion replaces current line
 @tty.send_keys(%(\n))
