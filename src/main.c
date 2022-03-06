@@ -1,4 +1,5 @@
 #include "main.h"
+#include "util.h"
 
 const int BUFFER = 256;
 
@@ -367,6 +368,13 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   }
   char* result = calloc(BUFFER, sizeof(char));
   strcpy(result, line_info->line);
+
+  moveCursor((coordinates){
+      1000,
+      cursor_pos->y -
+          calculateCursorPos(terminal_size, (coordinates){0, 0}, line_info->prompt_len, *line_info->i).y +
+          calculateCursorPos(terminal_size, (coordinates){0, 0}, line_info->prompt_len, strlen(line_info->line))
+              .y});
 
   free(autocomplete_info->possible_autocomplete);
   free(autocomplete_info);

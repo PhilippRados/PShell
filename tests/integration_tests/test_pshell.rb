@@ -122,7 +122,19 @@ sleep 0.2
 @tty.assert_cursor_position(11, 13)
 @tty.assert_row(12, '/ ❱ llllllllllllllllllllllllllllllllllll')
 @tty.assert_row(13, 'lllllllllll')
+
+puts "    \u2705 Cursor jumps down one row if line too long".encode('utf-8')
+
+# Output gets shown below line even when cursor on first row
+(0..19).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZD))
+end
 @tty.send_keys(%(\n))
+@tty.assert_row(12, '/ ❱ llllllllllllllllllllllllllllllllllll')
+@tty.assert_row(13, 'lllllllllll')
+@tty.assert_row(14, "couldn't find command llllllllllllllllll")
+@tty.assert_row(15, 'lllllllllllllllllllllllllllll')
 
 puts "    \u2705 Cursor jumps down one row if line too long".encode('utf-8')
 
