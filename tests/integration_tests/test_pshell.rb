@@ -475,6 +475,7 @@ sleep 0.2
   @tty.send_keys(%(\033))
   @tty.send_keys(%(ZC))
 end
+sleep 0.2
 (0..35).each do |_i|
   @tty.send_keys(BACKSPACE)
 end
@@ -541,5 +542,9 @@ end
 @tty.assert_cursor_position(11, 22)
 
 puts "    \u2705 When Multi-line tab-completion bigger than terminal-size prints all matches and exits Tab-comp".encode('utf-8')
+
+# Leaves one row above free when bigger than term-size
+@tty.assert_row(21, '')
+puts "    \u2705 Leaves one row above free when bigger than term-size".encode('utf-8')
 
 @tty.send_keys(%(q\n))
