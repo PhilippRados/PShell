@@ -130,7 +130,8 @@ bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tab
     } else if (render_data->row_size >= render_data->terminal_size.y) {
       renderCompletion(possible_tabcomplete, -1, render_data);
       printf("\n\n");
-      render_data->cursor_pos->y = render_data->terminal_size.y;
+      render_data->cursor_pos->y =
+          render_data->terminal_size.y + render_data->cursor_row - render_data->line_row_count;
       return true;
     }
   }

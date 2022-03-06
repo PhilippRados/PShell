@@ -484,6 +484,39 @@ end
 @tty.assert_row(9, 'The list of possible matches is 16 lines')
 @tty.assert_cursor_position(2, 11)
 
-puts "    \u2705 Tab-prompt always below complete line even when multi-line".encode('utf-8')
+# When Tab-completion bigger than terminal-size prints all matches and exits Tab-comp
+sleep 0.2
+@tty.send_keys(%(nn))
+@tty.send_keys(%(\n))
+@tty.assert_row(7, '/pshell ❱ lndattach')
+@tty.send_keys(%(s))
+@tty.send_keys(TAB)
+@tty.send_keys(%(y))
+@tty.assert_row(23, '/pshell ❱ some autocomplete')
+@tty.assert_cursor_position(11, 23)
+
+puts "    \u2705 When Tab-completion bigger than terminal-size prints all matches and exits Tab-comp".encode('utf-8')
+
+# When Multi-line tab-completion bigger than terminal-size prints all matches and exits Tab-comp
+sleep 0.2
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(%(m                                  src))
+@tty.assert_row(22, '/pshell ❱ m')
+@tty.assert_row(23, '     src')
+(0..36).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZD))
+end
+@tty.send_keys(TAB)
+@tty.assert_row(19, '/pshell ❱ m')
+@tty.assert_row(20, '     src')
+@tty.assert_row(21, 'The list of possible matches is 27 lines')
+
+@tty.send_keys(%(y))
+@tty.assert_row(22, '/pshell ❱ m')
+@tty.assert_row(23, '     src')
+@tty.assert_cursor_position(11, 22)
+
+puts "    \u2705 When Multi-line tab-completion bigger than terminal-size prints all matches and exits Tab-comp".encode('utf-8')
 
 @tty.send_keys(%(q\n))
