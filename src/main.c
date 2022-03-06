@@ -1,5 +1,4 @@
 #include "main.h"
-#include "util.h"
 
 const int BUFFER = 256;
 

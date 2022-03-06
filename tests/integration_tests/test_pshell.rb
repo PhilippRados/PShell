@@ -136,7 +136,7 @@ end
 @tty.assert_row(14, "couldn't find command llllllllllllllllll")
 @tty.assert_row(15, 'lllllllllllllllllllllllllllll')
 
-puts "    \u2705 Cursor jumps down one row if line too long".encode('utf-8')
+puts "    \u2705 Output gets shown below line even when cursor on first row".encode('utf-8')
 
 # When on last line and line too long it shifts term up accordingly
 sleep 0.2
