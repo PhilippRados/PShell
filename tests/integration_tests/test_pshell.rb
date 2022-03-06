@@ -461,15 +461,19 @@ puts "\u2705 When user accepts tab-prompt matches get shown below current line (
 @tty.assert_cursor_position(18, 7)
 puts "\u2705 When user presses enter on prompt completion replaces current line".encode('utf-8')
 
-# When too many matches in multi-line-command and completing on first row
+# Tab-prompt always below complete line even when multi-line
 sleep 0.2
-@tty.send_keys(%(                          l s))
-@tty.send_keys(%(\033))
-@tty.send_keys(%(ZD))
-@tty.assert_row(4, '/pshell ❱                           l')
-@tty.assert_row(5, 's')
-@tty.assert_cursor_position(12, 4)
+@tty.send_keys(%(                      s))
+(0..29).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZD))
+end
+@tty.send_keys(TAB)
+@tty.assert_row(7, '/pshell ❱ ldattach')
+@tty.assert_row(8, 's')
+@tty.assert_row(9, 'The list of possible matches is 16 lines')
+@tty.assert_cursor_position(2, 11)
 
-puts "\u2705 When too many matches in multi-line-command and completing on first row".encode('utf-8')
+puts "\u2705 Tab-prompt always below complete line even when multi-line".encode('utf-8')
 
 @tty.send_keys(%(q\n))
