@@ -146,11 +146,12 @@ sleep 0.2
 @tty.send_keys(%(make)) # arbitrary command to move to last line
 @tty.send_keys(%(\n))
 sleep 0.2
-@tty.send_keys(%(kajldasjlsdjalsjdaljdjldasjlasldslks))
+@tty.send_keys(%(kajldasjlsdjalsjdaljdjldasjlas))
 
-@tty.assert_cursor_position(6, 23)
+@tty.assert_cursor_position(0, 23)
 @tty.assert_row(22, '/pshell ❱ kajldasjlsdjalsjdaljdjldasjlas')
-@tty.assert_row(23, 'ldslks')
+
+# @tty.assert_row(23, 'ldslks')
 
 puts "    \u2705 When on last line and line too long it shifts term up accordingly".encode('utf-8')
 
@@ -491,6 +492,7 @@ sleep 0.2
 (0..35).each do |_i|
   @tty.send_keys(BACKSPACE)
 end
+sleep 0.2
 @tty.send_keys(%(l))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))
@@ -530,11 +532,16 @@ sleep 0.2
 @tty.send_keys(%(y))
 @tty.assert_row(23, '/pshell ❱ some autocomplete')
 @tty.assert_cursor_position(11, 23)
+@tty.send_keys(%(yy))
+@tty.assert_row(22, '  ')
+@tty.assert_row(23, '/pshell ❱ syy')
 
 puts "    \u2705 When Tab-completion bigger than terminal-size prints all matches and exits Tab-comp".encode('utf-8')
 
 # When Multi-line tab-completion bigger than terminal-size prints all matches and exits Tab-comp
 sleep 0.2
+@tty.send_keys(BACKSPACE)
+@tty.send_keys(BACKSPACE)
 @tty.send_keys(BACKSPACE)
 @tty.send_keys(%(m                                  src))
 @tty.assert_row(22, '/pshell ❱ m')
@@ -552,10 +559,19 @@ end
 @tty.assert_row(22, '/pshell ❱ m')
 @tty.assert_row(23, '     src')
 @tty.assert_cursor_position(11, 22)
+(0..36).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZC))
+end
+@tty.send_keys(%(yy))
+@tty.assert_row(21, '  ')
+@tty.assert_row(22, '/pshell ❱ m')
+@tty.assert_row(23, '     srcyy')
 
 puts "    \u2705 When Multi-line tab-completion bigger than terminal-size prints all matches and exits Tab-comp".encode('utf-8')
 
 # Leaves one row above free when bigger than term-size
+@tty.assert_row(20, 'mv')
 @tty.assert_row(21, '')
 puts "    \u2705 Leaves one row above free when bigger than term-size".encode('utf-8')
 

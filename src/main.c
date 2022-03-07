@@ -205,21 +205,22 @@ void printLine(string_array command_line) {
   free_string_array(&copy);
 }
 
+bool shiftLineIfOverlap(int current_cursor_height, int terminal_height, int line_row_count) {
+  if ((current_cursor_height + line_row_count) < terminal_height)
+    return false;
+
+  for (int i = terminal_height; i < (current_cursor_height + line_row_count); i++) {
+    printf("\n");
+  }
+  return true;
+}
+
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
             const string_array PATH_BINS, char* directories, coordinates* starting_cursor_pos,
             coordinates terminal_size) {
-  int height_diff =
-      (autocomplete_info->autocomplete)
-          ? calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len,
-                               strlen(autocomplete_info->possible_autocomplete))
-                .y
-          : calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, *line_info->i)
-                .y;
-  if (starting_cursor_pos->y + height_diff >= terminal_size.y) {
-    for (int i = 0; i < ((starting_cursor_pos->y + height_diff) - terminal_size.y); i++) {
-      printf("\n");
-    }
-    starting_cursor_pos->y -= (starting_cursor_pos->y + height_diff) - terminal_size.y;
+  if (shiftLineIfOverlap(starting_cursor_pos->y, terminal_size.y, line_info->line_row_count_with_autocomplete)) {
+    starting_cursor_pos->y -=
+        (starting_cursor_pos->y + line_info->line_row_count_with_autocomplete) - terminal_size.y;
   }
   moveCursor(*starting_cursor_pos);
 
@@ -252,13 +253,8 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   if (strlen(line_info->line) <= 0)
     return;
 
-  int line_len = strlen(line_info->line);
-  int line_row_count =
-      calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, line_len).y;
-  int cursor_row =
-      calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, line_info->prompt_len, *line_info->i).y;
   char temp;
-  if ((temp = tabLoop(*line_info, cursor_pos, PATH_BINS, terminal_size, cursor_row, line_row_count)) == -1) {
+  if ((temp = tabLoop(*line_info, cursor_pos, PATH_BINS, terminal_size)) == -1) {
     // failed completion
     line_info->c = temp;
   } else {
@@ -268,11 +264,10 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
 }
 
 void ctrlFPress(string_array all_time_command_history, char* line, int* i, coordinates terminal_size,
-                coordinates* cursor_pos, char* possible_autocomplete, int prompt_len) {
-  int line_len = (strlen(possible_autocomplete) > strlen(line)) ? strlen(possible_autocomplete) : strlen(line);
-  int line_row_count = calculateCursorPos(terminal_size, (coordinates){.x = 0, .y = 0}, prompt_len, line_len).y;
+                coordinates* cursor_pos, char* possible_autocomplete, int line_row_count) {
   fuzzy_result popup_result =
       popupFuzzyFinder(all_time_command_history, terminal_size, cursor_pos->y, line_row_count);
+
   if (strcmp(popup_result.line, "") != 0) {
     strcpy(line, popup_result.line);
   }
@@ -287,12 +282,20 @@ void ctrlFPress(string_array all_time_command_history, char* line, int* i, coord
   }
 }
 
+int calculateRowCount(coordinates terminal_size, int prompt_len, int i) {
+  return calculateCursorPos(terminal_size, (coordinates){0, 0}, prompt_len, i).y;
+}
+
 bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_data* history_info,
             coordinates terminal_size, string_array PATH_BINS, coordinates* cursor_pos) {
+
+  line_info->line_row_count = calculateRowCount(terminal_size, line_info->prompt_len, strlen(line_info->line));
+  line_info->cursor_row = calculateRowCount(terminal_size, line_info->prompt_len, *line_info->i);
 
   string_array all_time_command_history =
       concatenateArrays(history_info->sessions_command_history, history_info->global_command_history);
   bool loop = true;
+
   if (line_info->c == TAB) {
     tab(line_info, cursor_pos, PATH_BINS, terminal_size, *autocomplete_info);
   }
@@ -305,12 +308,16 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
     return false;
   } else if ((int)line_info->c == CONTROL_F) {
     ctrlFPress(all_time_command_history, line_info->line, line_info->i, terminal_size, cursor_pos,
-               autocomplete_info->possible_autocomplete, line_info->prompt_len);
+               autocomplete_info->possible_autocomplete, line_info->line_row_count_with_autocomplete);
   } else if (line_info->c != -1 && typedLetter(line_info)) {
     (*line_info->i)++;
   }
   autocomplete_info->autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, line_info->line,
                                                                          autocomplete_info->possible_autocomplete);
+  int line_len =
+      (autocomplete_info->autocomplete) ? strlen(autocomplete_info->possible_autocomplete) : *line_info->i;
+  line_info->line_row_count_with_autocomplete = calculateRowCount(terminal_size, line_info->prompt_len, line_len);
+
   free_string_array(&all_time_command_history);
 
   return loop;
@@ -322,6 +329,9 @@ line_data* lineDataConstructor(int directory_len) {
       .line = calloc(BUFFER, sizeof(char)),
       .i = calloc(1, sizeof(int)),
       .prompt_len = directory_len + 4,
+      .line_row_count = 0,
+      .line_row_count_with_autocomplete = 0,
+      .cursor_row = 0,
   };
   *line_info->i = 0;
 
@@ -368,12 +378,7 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   char* result = calloc(BUFFER, sizeof(char));
   strcpy(result, line_info->line);
 
-  moveCursor((coordinates){
-      1000,
-      cursor_pos->y -
-          calculateCursorPos(terminal_size, (coordinates){0, 0}, line_info->prompt_len, *line_info->i).y +
-          calculateCursorPos(terminal_size, (coordinates){0, 0}, line_info->prompt_len, strlen(line_info->line))
-              .y});
+  moveCursor((coordinates){1000, cursor_pos->y - line_info->cursor_row + line_info->line_row_count});
 
   free(autocomplete_info->possible_autocomplete);
   free(autocomplete_info);

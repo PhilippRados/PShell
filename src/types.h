@@ -54,6 +54,9 @@ typedef struct {
   char c;
   int* i;
   int prompt_len;
+  int cursor_row;
+  int line_row_count;
+  int line_row_count_with_autocomplete;
 } line_data;
 
 typedef struct {
