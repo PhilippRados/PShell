@@ -282,10 +282,6 @@ void ctrlFPress(string_array all_time_command_history, char* line, int* i, coord
   }
 }
 
-int calculateRowCount(coordinates terminal_size, int prompt_len, int i) {
-  return calculateCursorPos(terminal_size, (coordinates){0, 0}, prompt_len, i).y;
-}
-
 bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_data* history_info,
             coordinates terminal_size, string_array PATH_BINS, coordinates* cursor_pos) {
 

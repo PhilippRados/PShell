@@ -403,3 +403,7 @@ coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos
     return (coordinates){.x = line_pos % terminal_size.x, .y = cursor_pos.y + (line_pos / terminal_size.x)};
   }
 }
+
+int calculateRowCount(coordinates terminal_size, int prompt_len, int i) {
+  return calculateCursorPos(terminal_size, (coordinates){0, 0}, prompt_len, i).y;
+}

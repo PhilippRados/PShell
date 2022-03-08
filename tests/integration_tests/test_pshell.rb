@@ -575,4 +575,12 @@ puts "    \u2705 When Multi-line tab-completion bigger than terminal-size prints
 @tty.assert_row(21, '')
 puts "    \u2705 Leaves one row above free when bigger than term-size".encode('utf-8')
 
+# When on second row prompts below line
+@tty.send_keys(%( ../bin/))
+@tty.send_keys(TAB)
+@tty.assert_row(19, '/pshell ❱ m')
+@tty.assert_row(20, '     srcyy ../bin/')
+@tty.assert_row(21, 'The list of possible matches is 43 lines')
+puts "    \u2705 When cursor on second row prompts below line".encode('utf-8')
+
 @tty.send_keys(%(q\n))

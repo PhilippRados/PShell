@@ -59,5 +59,6 @@ void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_s
 int getAppendingIndex(char* line, char delimeter);
 file_string_tuple getFileStrings(char* current_word, char* current_path);
 coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i);
+int calculateRowCount(coordinates terminal_size, int prompt_len, int i);
 
 #endif // !UTIL_H

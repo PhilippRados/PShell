@@ -105,41 +105,45 @@ void renderCompletion(autocomplete_array possible_tabcomplete, int tab_index, re
   moveCursorIfShifted(render_data);
 }
 
+bool dontShowMatches(char answer, render_objects* render_data, autocomplete_array possible_tabcomplete) {
+  bool result = false;
+
+  if (answer != 'y') {
+    result = true;
+  } else if (render_data->row_size >= render_data->terminal_size.y) {
+    renderCompletion(possible_tabcomplete, -1, render_data);
+    printf("\n\n");
+
+    for (int i = 0; i < render_data->line_row_count; i++) {
+      printf("\n");
+    }
+    render_data->cursor_pos->y =
+        render_data->terminal_size.y + render_data->cursor_row - render_data->line_row_count;
+    result = true;
+  }
+  return result;
+}
+
 bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tabcomplete) {
   char answer;
-  int bottom_line_y = render_data->cursor_pos->y - render_data->cursor_row + render_data->line_row_count;
+  char* prompt_sentence = "\nThe list of possible matches is %d lines. Do you want to print all of them? (y/n) ";
+  int bottom_line_y = render_data->cursor_pos->y + render_data->line_row_count;
+
   moveCursor((coordinates){1000, bottom_line_y});
 
-  if (render_data->row_size > 10 || render_data->row_size > render_data->terminal_size.y) {
-    printf("\nThe list of possible matches is %d lines. Do you want to print all of them? (y/n) ",
-           render_data->row_size);
-    answer = getch();
+  if (!(render_data->row_size > 10 || render_data->row_size > render_data->terminal_size.y))
+    return false;
 
-    int prompt_row_count =
-        calculateCursorPos(
-            render_data->terminal_size, (coordinates){0, 0}, 0,
-            strlen("The list of possible matches is %d lines. Do you want to print all of them? (y/n) "))
-            .y +
-        1;
-    int diff = prompt_row_count + bottom_line_y - render_data->terminal_size.y;
-    if (diff > 0) {
-      render_data->cursor_pos->y -= diff;
-    }
+  printf(prompt_sentence, render_data->row_size);
+  answer = getch();
 
-    if (answer != 'y') {
-      return true;
-    } else if (render_data->row_size >= render_data->terminal_size.y) {
-      renderCompletion(possible_tabcomplete, -1, render_data);
-      printf("\n\n");
-      for (int i = 0; i < render_data->line_row_count; i++) {
-        printf("\n");
-      }
-      render_data->cursor_pos->y =
-          render_data->terminal_size.y + render_data->cursor_row - render_data->line_row_count;
-      return true;
-    }
+  int prompt_row_count = calculateRowCount(render_data->terminal_size, 0, strlen(prompt_sentence) - 1) + 1;
+  int diff = prompt_row_count + bottom_line_y - render_data->terminal_size.y;
+  if (diff > 0) {
+    render_data->cursor_pos->y -= diff;
   }
-  return false;
+
+  return dontShowMatches(answer, render_data, possible_tabcomplete);
 }
 
 bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index, char* line, int line_index) {
