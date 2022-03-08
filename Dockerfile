@@ -10,7 +10,7 @@ RUN sed 's/def assert_cursor_position(x:, y:)/def assert_cursor_position(x, y)/'
   matchers.rb > \
   matchers.rb.changed && \
   mv matchers.rb.changed matchers.rb
-RUN touch /home/very_long_filename_to_test_shell_behavior_and_tab_complete
+RUN touch /home/very_long_filename_to_test_shell_behavior
 RUN touch /home/short_file
 
 WORKDIR "/pshell"

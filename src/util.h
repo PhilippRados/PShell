@@ -60,5 +60,6 @@ int getAppendingIndex(char* line, char delimeter);
 file_string_tuple getFileStrings(char* current_word, char* current_path);
 coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i);
 int calculateRowCount(coordinates terminal_size, int prompt_len, int i);
+char* shortenIfTooLong(char* word, int terminal_width);
 
 #endif // !UTIL_H

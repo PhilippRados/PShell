@@ -407,3 +407,15 @@ coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos
 int calculateRowCount(coordinates terminal_size, int prompt_len, int i) {
   return calculateCursorPos(terminal_size, (coordinates){0, 0}, prompt_len, i).y;
 }
+
+char* shortenIfTooLong(char* word, int terminal_width) {
+  char* result = calloc(strlen(word) + 1, sizeof(char));
+  strcpy(result, word);
+  if (strlen(word) > terminal_width - 2) {
+    result[terminal_width - 2] = '\0';
+    for (int j = terminal_width - 3; j > (terminal_width - 6); j--) {
+      result[j] = '.';
+    }
+  }
+  return result;
+}

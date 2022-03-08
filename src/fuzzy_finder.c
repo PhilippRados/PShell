@@ -146,8 +146,9 @@ void clearFuzzyWindow(coordinates initial_cursor_pos, int box_width, int box_hei
 }
 
 void renderMatches(string_array matching_commands, coordinates initial_cursor_pos, int index,
-                   integer_tuple start_end) {
+                   integer_tuple start_end, int terminal_width) {
   int i = 0;
+  char* complete;
 
   for (int j = start_end.one; j < start_end.second; j++) {
     coordinates drawing_pos = {
@@ -156,11 +157,13 @@ void renderMatches(string_array matching_commands, coordinates initial_cursor_po
     };
     moveCursor(drawing_pos);
 
+    complete = shortenIfTooLong(matching_commands.values[j], terminal_width - 1);
     if (j == index) {
-      printColor(matching_commands.values[j], GREEN, reversed);
+      printColor(complete, GREEN, reversed);
     } else {
-      printf("%s", matching_commands.values[j]);
+      printf("%s", complete);
     }
+    free(complete);
     i++;
   }
 }
@@ -175,7 +178,7 @@ void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char*
   };
 
   integer_tuple display_ranges = findDisplayIndices(matching_commands.len, cursor_terminal_height_diff, index);
-  renderMatches(matching_commands, initial_cursor_pos, index, display_ranges);
+  renderMatches(matching_commands, initial_cursor_pos, index, display_ranges, terminal_width);
 
   moveCursor(end_of_line);
   printf("%d/%d", index + 1, matching_commands.len);
@@ -249,7 +252,7 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
   *fuzzy_index = 0;
   int* i = calloc(1, sizeof(int));
   *i = 0;
-  char* line = calloc(64, sizeof(char));
+  char* line = calloc(512, sizeof(char));
   coordinates fuzzy_cursor_height = {.x = 2, .y = terminal_size.y * 0.85};
   int cursor_terminal_height_diff = terminal_size.y - fuzzy_cursor_height.y;
   string_array matching_commands;
