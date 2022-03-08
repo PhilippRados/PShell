@@ -1,5 +1,4 @@
 #include "tab_complete.h"
-#include "util.h"
 
 int getLongestWordInArray(const string_array array) {
   int longest = 0;
@@ -253,6 +252,17 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
+void shortenCompletesLongerThanTerm(autocomplete_array* possible_tabcomplete, int terminal_width) {
+  for (int i = 0; i < possible_tabcomplete->array.len; i++) {
+    if (strlen(possible_tabcomplete->array.values[i]) > (terminal_width - 2)) {
+      possible_tabcomplete->array.values[i][terminal_width - 2] = '\0';
+      for (int j = terminal_width - 3; j > (terminal_width - 6); j--) {
+        possible_tabcomplete->array.values[i][j] = '.';
+      }
+    }
+  }
+}
+
 char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PATH_BINS,
              const coordinates terminal_size) {
   char* c = calloc(1, sizeof(char));
@@ -263,6 +273,7 @@ char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PA
   autocomplete_array possible_tabcomplete =
       checkForAutocomplete(current_word, splitted_line.values[0], *line_info.i, PATH_BINS);
   removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
+  shortenCompletesLongerThanTerm(&possible_tabcomplete, terminal_size.x);
   render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos,
                                                        line_info.cursor_row, line_info.line_row_count);
   bool loop = true;

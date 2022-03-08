@@ -390,6 +390,23 @@ sleep 0.2
 
 puts "    \u2705 Shows dotfiles if first char is dot".encode('utf-8')
 
+# When File in file-completion bigger than term shortens file-name
+sleep 0.2
+@tty.send_keys(%(  /home/))
+@tty.send_keys(TAB)
+
+@tty.assert_row(15, '/pshell ❱ ls ../root/. /home/')
+@tty.assert_row(16, 'short_file')
+@tty.assert_row(17, 'very_long_filename_to_test_shell_be...')
+@tty.assert_cursor_position(29, 15)
+
+(0..7).each do |_i|
+  @tty.send_keys(BACKSPACE)
+end
+@tty.send_keys(TAB)
+
+puts "    \u2705 When File in file-completion bigger than term shortens file-name".encode('utf-8')
+
 puts 'TAB-COMPLETION MULTI-LINES'
 # If tab-completing on second row completes below cursor
 sleep 0.2
