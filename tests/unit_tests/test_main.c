@@ -1,5 +1,4 @@
 #include "../../src/main.h"
-#include "criterion/assert.h"
 #include <criterion/criterion.h>
 
 // Unit Tests
@@ -122,8 +121,8 @@ Test(update, writing_normal_commands_works) {
   history_data* history_info = historyDataConstructor(sessions_command_history, global_command_history);
   coordinates* cursor_pos;
 
-  bool result =
-      update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  bool result = update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL},
+                       cursor_pos);
 
   cr_expect(result == true);
   cr_expect(strcmp(line_info->line, "l") == 0);
@@ -131,8 +130,8 @@ Test(update, writing_normal_commands_works) {
   cr_expect(autocomplete_info->autocomplete == false);
 
   line_info->c = 's';
-  bool result2 =
-      update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  bool result2 = update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL},
+                        cursor_pos);
   cr_expect(result == true);
   cr_expect(strcmp(line_info->line, "ls") == 0);
   cr_expect(*line_info->i == 2);
@@ -158,9 +157,9 @@ Test(update, moving_cursor_with_arrow_keys) {
 
   // type something to test
   line_info->c = 'l';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   line_info->c = 's';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
 
   int fds[2];
   if (pipe(fds) == 1) {
@@ -173,27 +172,27 @@ Test(update, moving_cursor_with_arrow_keys) {
   close(fds[1]);
 
   line_info->c = ESCAPE;
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "ls") == 0);
   cr_expect(*line_info->i == 1);
 
   line_info->c = ESCAPE;
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "ls") == 0);
   cr_expect(*line_info->i == 0);
 
   line_info->c = ESCAPE;
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "ls") == 0);
   cr_expect(*line_info->i == 0);
 
   line_info->c = ESCAPE;
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "ls") == 0);
   cr_expect(*line_info->i == 1);
 
   line_info->c = 'e';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "les") == 0);
   cr_expect(*line_info->i == 2);
 
@@ -223,9 +222,8 @@ Test(update, moving_through_history_with_cursor) {
 
   // type something to test
   line_info->c = 'l';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   line_info->c = 's';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
   cr_expect(history_info->history_index == 0);
 
   line_info->c = ESCAPE;
@@ -239,29 +237,29 @@ Test(update, moving_through_history_with_cursor) {
   write(fds[1], "ZAZAZAZBZB", sizeof("ZAZAZAZBZB")); // emulate key-press_sequence
   close(fds[1]);
 
-  bool result =
-      update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  bool result = update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL},
+                       cursor_pos);
   cr_expect(result == true);
   cr_expect(strcmp(line_info->line, "yeyeye") == 0);
   cr_expect(*line_info->i == strlen("yeyeye"));
   cr_expect(history_info->history_index == 1);
 
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "test") == 0);
   cr_expect(*line_info->i == strlen("test"));
   cr_expect(history_info->history_index == 2);
 
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "test") == 0);
   cr_expect(*line_info->i == strlen("test"));
   cr_expect(history_info->history_index == 2);
 
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "yeyeye") == 0);
   cr_expect(*line_info->i == strlen("yeyeye"));
   cr_expect(history_info->history_index == 1);
 
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "") == 0);
   cr_expect(*line_info->i == strlen(""));
   cr_expect(history_info->history_index == 0);
@@ -293,9 +291,9 @@ Test(update, moving_cursor_to_endofline_when_matching_complete_from_current_sess
 
   // type something to test
   line_info->c = 't';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   line_info->c = 'e';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(autocomplete_info->autocomplete == true);
   cr_expect(strcmp(autocomplete_info->possible_autocomplete, "test") == 0);
 
@@ -310,13 +308,13 @@ Test(update, moving_cursor_to_endofline_when_matching_complete_from_current_sess
   write(fds[1], "ZC", sizeof("ZC")); // emulate left-arrow-press
   close(fds[1]);
 
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "test") == 0);
   cr_expect(*line_info->i == strlen("test"));
   cr_expect(autocomplete_info->autocomplete == true);
 
   line_info->c = 'e';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(autocomplete_info->autocomplete == false);
   cr_expect(strcmp(line_info->line, "teste") == 0);
   cr_expect(*line_info->i == strlen("teste"));
@@ -348,20 +346,20 @@ Test(update, moving_cursor_to_endofline_when_matching_complete_from_global_histo
 
   // type something to test
   line_info->c = 't';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   line_info->c = 'e';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(autocomplete_info->autocomplete == true);
   cr_expect(strcmp(autocomplete_info->possible_autocomplete, "test") == 0);
 
   line_info->c = BACKSPACE;
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(strcmp(line_info->line, "t") == 0);
   cr_expect(*line_info->i == strlen("t"));
   cr_expect(autocomplete_info->autocomplete == true);
 
   line_info->c = 'i';
-  update(line_info, autocomplete_info, history_info, (coordinates){0, 0}, (string_array){0, NULL}, cursor_pos);
+  update(line_info, autocomplete_info, history_info, (coordinates){20, 40}, (string_array){0, NULL}, cursor_pos);
   cr_expect(autocomplete_info->autocomplete == true);
   cr_expect(strcmp(autocomplete_info->possible_autocomplete, "tig") == 0);
   cr_expect(strcmp(line_info->line, "ti") == 0);
