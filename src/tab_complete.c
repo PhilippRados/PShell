@@ -270,8 +270,9 @@ char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PA
   autocomplete_array possible_tabcomplete =
       checkForAutocomplete(current_word, splitted_line.values[0], *line_info.i, PATH_BINS);
   removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
-  render_objects render_data = initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos,
-                                                       line_info.cursor_row, line_info.line_row_count);
+  render_objects render_data =
+      initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, line_info.cursor_row,
+                              line_info.line_row_count_with_autocomplete);
   bool loop = true;
 
   if (possible_tabcomplete.array.len <= 0 || tooManyMatches(&render_data, possible_tabcomplete)) {

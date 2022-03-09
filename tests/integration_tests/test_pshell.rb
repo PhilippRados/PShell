@@ -528,17 +528,18 @@ sleep 0.2
 @tty.send_keys(%(l))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))
-@tty.assert_row(7, '/pshell ❱ ls')
+@tty.assert_row(6, '/pshell ❱ ls')
+@tty.assert_row(7, '                 ../bin/')
 @tty.assert_row(8, 'ldattach       lsattr')
-@tty.assert_cursor_position(11, 7)
+@tty.assert_cursor_position(11, 6)
 
 puts "    \u2705 When user accepts tab-prompt matches get shown below current line".encode('utf-8')
 
 # When user presses enter on prompt completion replaces current line
 @tty.send_keys(%(\n))
-@tty.assert_row(7, '/pshell ❱ ldattach')
-@tty.assert_row(8, '')
-@tty.assert_cursor_position(18, 7)
+@tty.assert_row(6, '/pshell ❱ ldattach')
+@tty.assert_row(7, '')
+@tty.assert_cursor_position(18, 6)
 puts "    \u2705 When user presses enter on prompt completion replaces current line".encode('utf-8')
 
 # Tab-prompt always below complete line even when multi-line
@@ -549,16 +550,16 @@ sleep 0.2
   @tty.send_keys(%(ZD))
 end
 @tty.send_keys(TAB)
-@tty.assert_row(7, '/pshell ❱ ldattach')
-@tty.assert_row(8, 's')
-@tty.assert_row(9, 'The list of possible matches is 16 lines')
-@tty.assert_cursor_position(2, 11)
+@tty.assert_row(6, '/pshell ❱ ldattach')
+@tty.assert_row(7, 's')
+@tty.assert_row(8, 'The list of possible matches is 16 lines')
+@tty.assert_cursor_position(2, 10)
 
 # When Tab-completion bigger than terminal-size prints all matches and exits Tab-comp
 sleep 0.2
 @tty.send_keys(%(nn))
 @tty.send_keys(%(\n))
-@tty.assert_row(7, '/pshell ❱ lndattach')
+@tty.assert_row(6, '/pshell ❱ lndattach')
 @tty.send_keys(%(s))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))

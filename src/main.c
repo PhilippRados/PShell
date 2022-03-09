@@ -310,8 +310,8 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
   }
   autocomplete_info->autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, line_info->line,
                                                                          autocomplete_info->possible_autocomplete);
-  int line_len =
-      (autocomplete_info->autocomplete) ? strlen(autocomplete_info->possible_autocomplete) : *line_info->i;
+  int line_len = (autocomplete_info->autocomplete) ? strlen(autocomplete_info->possible_autocomplete)
+                                                   : strlen(line_info->line);
   line_info->line_row_count_with_autocomplete = calculateRowCount(terminal_size, line_info->prompt_len, line_len);
 
   free_string_array(&all_time_command_history);
