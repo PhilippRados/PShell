@@ -615,4 +615,61 @@ puts "    \u2705 Leaves one row above free when bigger than term-size".encode('u
 @tty.assert_row(21, 'The list of possible matches is 43 lines')
 puts "    \u2705 When cursor on second row prompts below line".encode('utf-8')
 
+puts 'COMMAND NOT STARTING INDEX 0 - TAB-COMP'
+# When command not at beginning of line tab-comps anyway
+sleep 0.2
+@tty.send_keys(%(n))
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(cd ..))
+@tty.send_keys(%(\n))
+@tty.send_keys(%(clear))
+@tty.send_keys(%(\n))
+@tty.send_keys(%(    ls))
+@tty.assert_cursor_position(10, 1)
+
+@tty.send_keys(TAB)
+@tty.assert_row(1, '/ ❱     ls')
+@tty.assert_row(2, 'lsattr    lsns      lsmem     lslogins')
+puts "    \u2705 When command not at beginning of line tab-comps anyway".encode('utf-8')
+
+# When cursor on start of command doesnt autocomplete
+sleep 0.2
+@tty.send_keys(%(n))
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.assert_cursor_position(8, 1)
+
+@tty.send_keys(TAB)
+@tty.assert_row(1, '/ ❱     ls')
+@tty.assert_row(2, '')
+puts "    \u2705 When cursor on start of command doesnt autocomplete".encode('utf-8')
+
+# When Cursor before command doesnt autocomplete
+sleep 0.2
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZD))
+@tty.assert_cursor_position(7, 1)
+
+@tty.send_keys(TAB)
+@tty.assert_row(1, '/ ❱     ls')
+@tty.assert_row(2, '')
+puts "    \u2705 When Cursor before command doesnt autocomplete".encode('utf-8')
+
+# When Cursor after command autocompletes for files
+sleep 0.2
+(0..3).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZC))
+end
+@tty.send_keys(%( ))
+@tty.assert_cursor_position(11, 1)
+
+@tty.send_keys(TAB)
+@tty.assert_row(1, '/ ❱     ls ')
+@tty.assert_row(2, 'bin/     sys/     dev/     lib/')
+puts "    \u2705 When Cursor after command autocompletes for files".encode('utf-8')
+
 @tty.send_keys(%(q\n))

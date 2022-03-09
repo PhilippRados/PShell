@@ -48,10 +48,11 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
   }
 }
 
-char* getCurrentWordFromLineIndex(string_array command_line, int line_index) {
+char* getCurrentWordFromLineIndex(string_array command_line, int line_index, int starting_index) {
+  line_index -= starting_index;
   int current_pos = 0;
   char* result;
-  for (int i = 0; i < command_line.len; i++) {
+  for (int i = starting_index; i < command_line.len; i++) {
     if (line_index >= current_pos && line_index <= (current_pos + strlen(command_line.values[i]))) {
       int index_in_word = line_index - current_pos;
       result = calloc(strlen(command_line.values[i]) + 1, sizeof(char));
@@ -262,15 +263,30 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
+int firstNonDelimeterIndex(string_array splitted_line) {
+  for (int i = 0; i < splitted_line.len; i++) {
+    if (strcmp(splitted_line.values[i], "") != 0) {
+      return i;
+    }
+  }
+  return 0;
+}
+
 char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PATH_BINS,
              const coordinates terminal_size) {
+  string_array splitted_line = splitString(line_info.line, ' ');
+  int starting_index = firstNonDelimeterIndex(splitted_line);
+  if (*line_info.i <= starting_index) {
+    free_string_array(&splitted_line);
+    return -1;
+  }
+
   char* c = calloc(1, sizeof(char));
   *c = TAB;
   int tab_index = -1;
-  string_array splitted_line = splitString(line_info.line, ' ');
-  char* current_word = getCurrentWordFromLineIndex(splitted_line, *line_info.i);
-  autocomplete_array possible_tabcomplete =
-      checkForAutocomplete(current_word, splitted_line.values[0], *line_info.i, PATH_BINS);
+  char* current_word = getCurrentWordFromLineIndex(splitted_line, *line_info.i, starting_index);
+  autocomplete_array possible_tabcomplete = checkForAutocomplete(
+      current_word, splitted_line.values[starting_index], (*line_info.i) - starting_index, PATH_BINS);
   removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
   render_objects render_data =
       initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, line_info.cursor_row,

@@ -8,11 +8,11 @@ Test(getCurrentWordFromLineIndex, cursor_in_middle_of_word) {
 
   string_array arr1 = {.len = 2, .values = addr_one};
 
-  char* result = getCurrentWordFromLineIndex(arr1, 6);
+  char* result = getCurrentWordFromLineIndex(arr1, 6, 0);
   cr_expect(strcmp(result, "tw") == 0);
 }
 
-Test(getCurrentWordFromLineIndex, cursor_at_beginning_of_line) {
+Test(getCurrentWordFromLineIndex, cursor_at_end_of_word) {
   char* one = "one";
   char* two = "two";
   char* three = "three";
@@ -20,19 +20,34 @@ Test(getCurrentWordFromLineIndex, cursor_at_beginning_of_line) {
 
   string_array arr1 = {.len = 3, .values = addr_one};
 
-  char* result = getCurrentWordFromLineIndex(arr1, 3);
+  char* result = getCurrentWordFromLineIndex(arr1, 3, 0);
   cr_expect(strcmp(result, "one") == 0);
 }
 
-Test(getCurrentWordFromLineIndex, cursor_at_end_of_line) {
-  char* one = "one";
-  char* two = "two";
-  char* addr_one[] = {one, two};
+Test(getCurrentWordFromLineIndex, when_leading_whitespace_takes_first_word_after) {
+  char* one = "";
+  char* two = "";
+  char* three = "three";
+  char* four = "four";
+  char* addr_one[] = {one, two, three, four};
 
-  string_array arr1 = {.len = 2, .values = addr_one};
+  string_array arr1 = {.len = 4, .values = addr_one};
 
-  char* result = getCurrentWordFromLineIndex(arr1, 6);
-  cr_expect(strcmp(result, "tw") == 0);
+  char* result = getCurrentWordFromLineIndex(arr1, 3, 0);
+  cr_expect(strcmp(result, "t") == 0);
+}
+
+Test(getCurrentWordFromLineIndex, when_line_index_on_whitespace_should_return_whitespace) {
+  char* one = "";
+  char* two = "";
+  char* three = "three";
+  char* four = "four";
+  char* addr_one[] = {one, two, three, four};
+
+  string_array arr1 = {.len = 4, .values = addr_one};
+
+  char* result = getCurrentWordFromLineIndex(arr1, 2, 0);
+  cr_expect(strcmp(result, "") == 0);
 }
 
 Test(removeSlice, remove_end_if_cursor_middle) {
@@ -264,4 +279,28 @@ Test(getCurrentWordFromLineIndex, should_not_remove_if_current_word_starts_with_
   cr_expect(autocomplete.appending_index == 0);
 
   free_string_array(&autocomplete.array);
+}
+
+Test(firstNonDelimeterIndex, returns_index_of_splitted_array_where_not_delimeter) {
+  char* one = "";
+  char* two = "";
+  char* three = "com";
+  char* four = "uwe";
+  char* addr_one[] = {one, two, three, four};
+
+  string_array arr1 = {.len = 4, .values = addr_one};
+  int result = firstNonDelimeterIndex(arr1);
+
+  cr_expect(result == 2);
+}
+
+Test(firstNonDelimeterIndex, if_first_elem_not_delim_returns_zero) {
+  char* three = "com";
+  char* four = "uwe";
+  char* addr_one[] = {three, four};
+
+  string_array arr1 = {.len = 2, .values = addr_one};
+  int result = firstNonDelimeterIndex(arr1);
+
+  cr_expect(result == 0);
 }
