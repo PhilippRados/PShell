@@ -100,7 +100,8 @@ void moveCursorIfShifted(render_objects* render_data) {
 
 void renderCompletion(autocomplete_array possible_tabcomplete, int tab_index, render_objects* render_data) {
   render_data->cursor_pos->y += render_data->cursor_row;
-  int bottom_line_y = render_data->cursor_pos->y - render_data->cursor_row + render_data->line_row_count;
+  int bottom_line_y =
+      render_data->cursor_pos->y - render_data->cursor_row + render_data->line_row_count_with_autocomplete;
   render_data->cursor_height_diff = render_data->terminal_size.y - bottom_line_y;
 
   moveCursor((coordinates){1000, bottom_line_y}); // have to move cursor to end of
@@ -120,11 +121,11 @@ bool dontShowMatches(char answer, render_objects* render_data, autocomplete_arra
     renderCompletion(possible_tabcomplete, -1, render_data);
     printf("\n\n");
 
-    for (int i = 0; i < render_data->line_row_count; i++) {
+    for (int i = 0; i < render_data->line_row_count_with_autocomplete; i++) {
       printf("\n");
     }
     render_data->cursor_pos->y =
-        render_data->terminal_size.y + render_data->cursor_row - render_data->line_row_count;
+        render_data->terminal_size.y + render_data->cursor_row - render_data->line_row_count_with_autocomplete;
     result = true;
   }
   return result;
@@ -133,7 +134,7 @@ bool dontShowMatches(char answer, render_objects* render_data, autocomplete_arra
 bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tabcomplete) {
   char answer;
   char* prompt_sentence = "\nThe list of possible matches is %d lines. Do you want to print all of them? (y/n) ";
-  int bottom_line_y = render_data->cursor_pos->y + render_data->line_row_count;
+  int bottom_line_y = render_data->cursor_pos->y + render_data->line_row_count_with_autocomplete;
 
   moveCursor((coordinates){1000, bottom_line_y});
 
@@ -212,7 +213,8 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
 }
 
 render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_array possible_tabcomplete,
-                                       coordinates* cursor_pos, int cursor_row, int line_row_count) {
+                                       coordinates* cursor_pos, int cursor_row,
+                                       int line_row_count_with_autocomplete) {
   int format_width = getLongestWordInArray(possible_tabcomplete.array, terminal_size.x) + 2;
   int col_size = terminal_size.x / format_width;
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
@@ -226,7 +228,7 @@ render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_a
       .cursor_pos = cursor_pos,
       .terminal_size = terminal_size,
       .cursor_row = cursor_row,
-      .line_row_count = line_row_count,
+      .line_row_count_with_autocomplete = line_row_count_with_autocomplete,
   };
 }
 

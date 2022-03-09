@@ -44,7 +44,7 @@ typedef struct {
   int row_size;
   int cursor_height_diff;
   int cursor_row;
-  int line_row_count;
+  int line_row_count_with_autocomplete;
   coordinates* cursor_pos;
   coordinates terminal_size;
 } render_objects;
@@ -55,7 +55,6 @@ typedef struct {
   int* i;
   int prompt_len;
   int cursor_row;
-  int line_row_count;
   int line_row_count_with_autocomplete;
 } line_data;
 

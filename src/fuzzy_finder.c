@@ -187,19 +187,21 @@ void renderFuzzyFinder(coordinates initial_cursor_pos, int terminal_width, char*
   printf("\u2771 %s", line);
 }
 
-bool shiftPromptIfOverlap(int current_cursor_height, int fuzzy_popup_height, int line_row_count) {
-  if ((current_cursor_height + line_row_count) < fuzzy_popup_height)
+bool shiftPromptIfOverlap(int current_cursor_height, int fuzzy_popup_height,
+                          int line_row_count_with_autocomplete) {
+  if ((current_cursor_height + line_row_count_with_autocomplete) < fuzzy_popup_height)
     return false;
 
-  for (int i = fuzzy_popup_height; i <= (current_cursor_height + line_row_count); i++) {
+  for (int i = fuzzy_popup_height; i <= (current_cursor_height + line_row_count_with_autocomplete); i++) {
     printf("\n");
   }
   return true;
 }
 
 bool drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos, int terminal_width,
-                    int line_row_count) {
-  bool shifted = shiftPromptIfOverlap(current_cursor_height, initial_cursor_pos.y - 2, line_row_count);
+                    int line_row_count_with_autocomplete) {
+  bool shifted =
+      shiftPromptIfOverlap(current_cursor_height, initial_cursor_pos.y - 2, line_row_count_with_autocomplete);
   moveCursor((coordinates){initial_cursor_pos.x, initial_cursor_pos.y - 2});
 
   for (int i = 0; i < terminal_width - 1; i++) {
@@ -246,7 +248,7 @@ bool updateFuzzyfinder(char* line, char c, string_array matching_commands, int* 
 }
 
 fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,
-                              int current_cursor_height, int line_row_count) {
+                              int current_cursor_height, int line_row_count_with_autocomplete) {
   char c;
   int* fuzzy_index = calloc(1, sizeof(int));
   *fuzzy_index = 0;
@@ -262,7 +264,8 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
 
   moveCursor(terminal_size); // moving Cursor to bottom so that newline
                              // character shifts line up
-  bool shifted = drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x, line_row_count);
+  bool shifted = drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x,
+                                line_row_count_with_autocomplete);
 
   while (loop && (c = getch())) {
     loop = updateFuzzyfinder(line, c, matching_commands, fuzzy_index, i);
