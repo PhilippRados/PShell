@@ -124,7 +124,7 @@ void downArrowPress(char* line, history_data* history_info) {
 
 bool typedLetter(line_data* line_info) {
   bool cursor_moved = false;
-  if (strlen(line_info->line) == 0 && (line_info->c == 32 || line_info->c == TAB)) {
+  if (strlen(line_info->line) == 0 && line_info->c == TAB) {
     return false;
   }
 

@@ -23,11 +23,25 @@ void printColor(const char* string, color color, enum color_decorations color_de
   printf("%s", command);
 }
 
+bool isOnlyDelimeter(const char* string, char delimeter) {
+  for (int i = 0; i < strlen(string); i++) {
+    if (string[i] != delimeter) {
+      return false;
+    }
+  }
+  return true;
+}
+
 string_array splitString(const char* string_to_split, char delimeter) {
   int start = 0;
   int j = 0;
   char** splitted_strings = (char**)calloc(strlen(string_to_split), sizeof(char*));
   string_array result;
+  if (isOnlyDelimeter(string_to_split, delimeter)) {
+    splitted_strings[0] = calloc(strlen(string_to_split) + 1, sizeof(char));
+    strcpy(splitted_strings[0], string_to_split);
+    return (string_array){.len = 1, .values = splitted_strings};
+  }
 
   for (int i = 0;; i++) {
     if (string_to_split[i] == delimeter || string_to_split[i] == '\0') {

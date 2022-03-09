@@ -33,6 +33,13 @@ Test(Split_func, only_command_len) {
   cr_expect(result.len == 1);
 }
 
+Test(Split_func, only_whitespace) {
+  string_array result = splitString("    ", ' ');
+
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.values[0], "    ") == 0);
+}
+
 Test(insertStringAtPos, insert_string_at_end) {
   char* line = calloc(24, sizeof(char));
   strcpy(line, "testing the waters");
@@ -137,4 +144,18 @@ Test(calculateCursorPos, when_line_expands_over_many_rows_and_cursor_shouldnt_ju
 
   cr_expect(result.x == 45);
   cr_expect(result.y == 2);
+}
+
+Test(isOnlyDelimeter, true_if_just_white_space) {
+  char* string = "                  ";
+  bool result = isOnlyDelimeter(string, ' ');
+
+  cr_expect(result == true);
+}
+
+Test(isOnlyDelimeter, false_if_even_single_char) {
+  char* string = "                  l";
+  bool result = isOnlyDelimeter(string, ' ');
+
+  cr_expect(result == false);
 }

@@ -20,7 +20,6 @@ sleep 0.2
 puts "    \u2705 Basic I/O".encode('utf-8')
 
 puts 'ARROW-KEYS AND COMMAND-HISTORY'
-
 # Arrow upwards moves through history
 sleep 0.2
 @tty.send_keys(%(ls))
