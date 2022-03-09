@@ -35,7 +35,7 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
         printColor(complete, GREEN, reversed);
         printf("%-*s", diff_len, "");
       } else {
-        if (complete[strlen(complete) - 1] == '/') {
+        if (possible_tabcomplete.values[j][strlen(possible_tabcomplete.values[j]) - 1] == '/') {
           printColor(complete, CYAN, bold);
           printf("%-*s", diff_len, "");
         } else {
