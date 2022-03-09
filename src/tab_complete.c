@@ -204,6 +204,7 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
     loop = false;
 
   } else {
+    *c = -1;
     loop = false;
   }
 

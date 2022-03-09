@@ -258,9 +258,13 @@ sleep 0.2
 
 puts "    \u2705 When pressing Tab in middle of word looks for matches until cursor-pos".encode('utf-8')
 
-# When Tab-completing on last row should shift up and cursor too
+# When exiting tab-prompt without selecting comp cursor should be at same pos as before
 sleep 0.2
 @tty.send_keys(%(a))
+@tty.assert_cursor_position(12, 4)
+puts "    \u2705 When exiting tab-prompt without selecting comp cursor should be at same pos as before".encode('utf-8')
+
+# When Tab-completing on last row should shift up and cursor too
 @tty.send_keys(%(\n))
 sleep 0.1
 @tty.send_keys(%(make))
