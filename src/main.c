@@ -357,6 +357,7 @@ history_data* historyDataConstructor(string_array* command_history, string_array
 
   return history_info;
 }
+
 char* readLine(string_array PATH_BINS, char* directories, string_array* command_history,
                const string_array global_command_history) {
 
@@ -374,8 +375,11 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
     render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
            cursor_pos, terminal_size);
   }
-  char* result = calloc(BUFFER, sizeof(char));
-  strcpy(result, line_info->line);
+  int i = 0;
+  for (; i < strlen(line_info->line) && line_info->line[i] == ' '; i++)
+    ;
+  char* result = calloc(strlen(line_info->line) - i + 1, sizeof(char));
+  strcpy(result, &line_info->line[i]);
 
   moveCursor((coordinates){
       1000, cursor_pos->y + calculateRowCount(terminal_size, line_info->prompt_len, strlen(line_info->line))});

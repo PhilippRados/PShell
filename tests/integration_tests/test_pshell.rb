@@ -672,4 +672,35 @@ end
 @tty.assert_row(2, 'bin/     sys/     dev/     lib/')
 puts "    \u2705 When Cursor after command autocompletes for files".encode('utf-8')
 
+puts 'COMMAND NOT STARTING INDEX 0 - EXECUTION'
+# Executes line even if command doesnt start at index 0
+sleep 0.2
+@tty.send_keys(TAB)
+@tty.send_keys(TAB)
+@tty.send_keys(%(\n))
+@tty.assert_cursor_position(15, 1)
+@tty.send_keys(%(\n))
+
+@tty.assert_row(1, '/ ❱     ls dev/')
+@tty.assert_row(2, 'console  mqueue  random  stdout')
+@tty.assert_row(7, '/ ❱   ')
+
+puts "    \u2705 Executes line even if command doesnt start at index 0".encode('utf-8')
+
+# Doesnt add whitespace to command-history
+sleep 0.2
+@tty.send_keys(CTRLF)
+@tty.send_keys(%(l))
+@tty.assert_cursor_position(4, 19)
+
+@tty.assert_row(19, ' ❱ l                           1/18')
+@tty.assert_row(20, '   ls dev/')
+
+sleep 0.2
+@tty.send_keys(%(\n))
+@tty.assert_row(7, '/ ❱ ls dev/')
+@tty.assert_cursor_position(11, 7)
+
+puts "    \u2705 Doesnt add whitespace to command-history".encode('utf-8')
+
 @tty.send_keys(%(q\n))
