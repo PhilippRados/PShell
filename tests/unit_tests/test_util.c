@@ -159,3 +159,27 @@ Test(isOnlyDelimeter, false_if_even_single_char) {
 
   cr_expect(result == false);
 }
+
+Test(firstNonDelimeterIndex, returns_index_of_splitted_array_where_not_delimeter) {
+  char* one = "";
+  char* two = "";
+  char* three = "com";
+  char* four = "uwe";
+  char* addr_one[] = {one, two, three, four};
+
+  string_array arr1 = {.len = 4, .values = addr_one};
+  int result = firstNonDelimeterIndex(arr1);
+
+  cr_expect(result == 2);
+}
+
+Test(firstNonDelimeterIndex, if_first_elem_not_delim_returns_zero) {
+  char* three = "com";
+  char* four = "uwe";
+  char* addr_one[] = {three, four};
+
+  string_array arr1 = {.len = 2, .values = addr_one};
+  int result = firstNonDelimeterIndex(arr1);
+
+  cr_expect(result == 0);
+}

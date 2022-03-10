@@ -263,15 +263,6 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
-int firstNonDelimeterIndex(string_array splitted_line) {
-  for (int i = 0; i < splitted_line.len; i++) {
-    if (strcmp(splitted_line.values[i], "") != 0) {
-      return i;
-    }
-  }
-  return 0;
-}
-
 char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PATH_BINS,
              const coordinates terminal_size) {
   string_array splitted_line = splitString(line_info.line, ' ');

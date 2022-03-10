@@ -433,3 +433,12 @@ char* shortenIfTooLong(char* word, int terminal_width) {
   }
   return result;
 }
+
+int firstNonDelimeterIndex(string_array splitted_line) {
+  for (int i = 0; i < splitted_line.len; i++) {
+    if (strcmp(splitted_line.values[i], "") != 0) {
+      return i;
+    }
+  }
+  return 0;
+}

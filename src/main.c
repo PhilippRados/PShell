@@ -189,10 +189,11 @@ bool filterHistoryForMatchingAutoComplete(const string_array all_time_commands, 
   return false;
 }
 
-void printLine(string_array command_line) {
+void printLine(string_array command_line, int starting_index) {
   string_array copy = copyStringArray(command_line);
   replaceAliases(&copy);
-  for (int i = 1; i < command_line.len; i++) {
+
+  for (int i = starting_index + 1; i < command_line.len; i++) {
     autocomplete_array autocomplete = fileComp(command_line.values[i]);
     if (autocomplete.array.len > 0) {
       printf(" ");
@@ -231,10 +232,15 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
 
   if (strlen(line_info->line) > 0) {
     string_array command_line = splitString(line_info->line, ' ');
+    int starting_index = firstNonDelimeterIndex(command_line);
 
-    isInPath(command_line.values[0], PATH_BINS) ? printColor(command_line.values[0], GREEN, standard)
-                                                : printColor(command_line.values[0], RED, bold);
-    printLine(command_line);
+    for (int j = 0; j < starting_index; j++) {
+      printf(" ");
+    }
+    isInPath(command_line.values[starting_index], PATH_BINS)
+        ? printColor(command_line.values[starting_index], GREEN, standard)
+        : printColor(command_line.values[starting_index], RED, bold);
+    printLine(command_line, starting_index);
     free_string_array(&command_line);
 
     if (autocomplete_info->autocomplete) {

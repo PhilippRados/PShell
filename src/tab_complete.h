@@ -7,4 +7,3 @@ string_array filterMatching(char* line, const string_array PATH_BINS);
 bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* line, int line_index,
                       int* tab_index);
 void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_tabcomplete);
-int firstNonDelimeterIndex(string_array possible_tabcomplete);

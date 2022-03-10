@@ -62,5 +62,6 @@ coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos
 int calculateRowCount(coordinates terminal_size, int prompt_len, int i);
 char* shortenIfTooLong(char* word, int terminal_width);
 bool isOnlyDelimeter(const char* string, char delimeter);
+int firstNonDelimeterIndex(string_array splitted_line);
 
 #endif // !UTIL_H
