@@ -216,9 +216,18 @@ bool shiftLineIfOverlap(int current_cursor_height, int terminal_height, int line
   return true;
 }
 
+int isBuiltin(char* command, builtins_array builtins) {
+  for (int i = 0; i < builtins.len; i++) {
+    if (strcmp(command, builtins.array[i].name) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
             const string_array PATH_BINS, char* directories, coordinates* starting_cursor_pos,
-            coordinates terminal_size) {
+            coordinates terminal_size, builtins_array BUILTINS) {
   if (shiftLineIfOverlap(starting_cursor_pos->y, terminal_size.y, line_info->line_row_count_with_autocomplete)) {
     starting_cursor_pos->y -=
         (starting_cursor_pos->y + line_info->line_row_count_with_autocomplete) - terminal_size.y;
@@ -237,9 +246,10 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
     for (int j = 0; j < starting_index; j++) {
       printf(" ");
     }
-    isInPath(command_line.values[starting_index], PATH_BINS)
-        ? printColor(command_line.values[starting_index], GREEN, standard)
-        : printColor(command_line.values[starting_index], RED, bold);
+    bool highlight = isInPath(command_line.values[starting_index], PATH_BINS) ||
+                     isBuiltin(command_line.values[starting_index], BUILTINS);
+    highlight ? printColor(command_line.values[starting_index], GREEN, standard)
+              : printColor(command_line.values[starting_index], RED, bold);
     printLine(command_line, starting_index);
     free_string_array(&command_line);
 
@@ -359,7 +369,7 @@ history_data* historyDataConstructor(string_array* command_history, string_array
 }
 
 char* readLine(string_array PATH_BINS, char* directories, string_array* command_history,
-               const string_array global_command_history) {
+               const string_array global_command_history, builtins_array BUILTINS) {
 
   const coordinates terminal_size = getTerminalSize();
   line_data* line_info = lineDataConstructor(strlen(directories));
@@ -373,7 +383,7 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
     loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
 
     render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
-           cursor_pos, terminal_size);
+           cursor_pos, terminal_size, BUILTINS);
   }
   int i = 0;
   for (; i < strlen(line_info->line) && line_info->line[i] == ' '; i++)
@@ -531,15 +541,6 @@ void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char
   }
 }
 
-int isBuiltin(char* command, function_by_name builtins[], int len) {
-  for (int i = 0; i < len; i++) {
-    if (strcmp(command, builtins[i].name) == 0) {
-      return i;
-    }
-  }
-  return -1;
-}
-
 void callBuiltin(string_array splitted_line, function_by_name builtins[], int function_index) {
   (*builtins[function_index].func)(splitted_line);
 }
@@ -566,11 +567,14 @@ int main(int argc, char* argv[]) {
 
   char* current_dir = getcwd(dir, sizeof(dir));
   char* last_two_dirs = getLastTwoDirs(current_dir);
-  function_by_name builtins[] = {
+  function_by_name builtin_funcs[] = {
       {"cd", cd},
       {"exit", exit},
   };
-  int builtin_len = sizeof(builtins) / sizeof(builtins[0]);
+  builtins_array BUILTINS = {
+      .array = builtin_funcs,
+      .len = sizeof(builtin_funcs) / sizeof(builtin_funcs[0]),
+  };
 
   CLEAR_SCREEN;
 
@@ -578,12 +582,12 @@ int main(int argc, char* argv[]) {
     printf("\n");
     printPrompt(last_two_dirs, CYAN);
 
-    line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history);
+    line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
     if (strlen(line) > 0) {
       splitted_line = splitString(line, ' ');
       int builtin_index;
-      if ((builtin_index = isBuiltin(splitted_line.values[0], builtins, builtin_len)) != -1) {
-        callBuiltin(splitted_line, builtins, builtin_index);
+      if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
+        callBuiltin(splitted_line, BUILTINS.array, builtin_index);
         current_dir = getcwd(dir, sizeof(dir));
         free(last_two_dirs);
         last_two_dirs = getLastTwoDirs(current_dir);

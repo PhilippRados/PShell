@@ -78,3 +78,8 @@ typedef struct {
   const char* name;
   void (*func)();
 } function_by_name;
+
+typedef struct {
+  int len;
+  function_by_name* array;
+} builtins_array;
