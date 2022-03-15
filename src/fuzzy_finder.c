@@ -214,20 +214,23 @@ bool drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos, i
   return shifted;
 }
 
-bool updateFuzzyfinder(char* line, char c, string_array matching_commands, int* fuzzy_index, int* i) {
+bool updateFuzzyfinder(char** line, char c, string_array matching_commands, int* fuzzy_index, int* i) {
   bool loop = true;
   if (c == '\n') {
     if (matching_commands.len > 0) {
-      memset(line, 0, strlen(line));
-      strcpy(line, matching_commands.values[*fuzzy_index]);
+      memset(*line, 0, strlen(*line));
+      if (strlen(matching_commands.values[*fuzzy_index]) > BUFFER) {
+        *line = realloc(*line, (strlen(matching_commands.values[*fuzzy_index]) + 1) * sizeof(char));
+      }
+      strcpy(*line, matching_commands.values[*fuzzy_index]);
     }
     loop = false;
   } else if (c == BACKSPACE) {
-    backspaceLogic(line, i);
+    backspaceLogic(*line, i);
     *fuzzy_index = 0;
   } else if (c == ESCAPE) {
     if (getch() == ESCAPE) {
-      strcpy(line, "");
+      strcpy(*line, "");
       return false;
     }
     int value = getch();
@@ -238,9 +241,9 @@ bool updateFuzzyfinder(char* line, char c, string_array matching_commands, int* 
       (*fuzzy_index < matching_commands.len - 1) ? (*fuzzy_index)++ : *fuzzy_index;
     }
   } else {
-    if (strlen(line) < 63 && c > 0 && c < 127) {
+    if (strlen(*line) < 63 && c > 0 && c < 127) {
       *fuzzy_index = 0;
-      line[*i] = c;
+      (*line)[*i] = c;
       (*i)++;
     }
   }
@@ -254,7 +257,7 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
   *fuzzy_index = 0;
   int* i = calloc(1, sizeof(int));
   *i = 0;
-  char* line = calloc(512, sizeof(char));
+  char* line = calloc(BUFFER, sizeof(char));
   coordinates fuzzy_cursor_height = {.x = 2, .y = terminal_size.y * 0.85};
   int cursor_terminal_height_diff = terminal_size.y - fuzzy_cursor_height.y;
   string_array matching_commands;
@@ -268,7 +271,7 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
                                 line_row_count_with_autocomplete);
 
   while (loop && (c = getch())) {
-    loop = updateFuzzyfinder(line, c, matching_commands, fuzzy_index, i);
+    loop = updateFuzzyfinder(&line, c, matching_commands, fuzzy_index, i);
 
     if (loop) {
       string_array filtered_history = filterHistory(all_time_command_history, line);

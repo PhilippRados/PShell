@@ -1,7 +1,4 @@
 #include "main.h"
-#include <sys/syslimits.h>
-
-const int BUFFER = 256;
 
 bool isInPath(char* line, string_array PATH_BINS) {
   bool result = false;
@@ -125,13 +122,14 @@ void downArrowPress(char* line, history_data* history_info) {
 
 bool typedLetter(line_data* line_info) {
   bool cursor_moved = false;
-  if (strlen(line_info->line) == 0 && line_info->c == TAB) {
+  if ((line_info->c < 27 || line_info->c > 127) || (strlen(line_info->line) == 0 && line_info->c == TAB)) {
     return false;
+  } else if ((strlen(line_info->line) * sizeof(char)) >= line_info->size) {
+    line_info->line = realloc(line_info->line, 1.5 * line_info->size);
+    line_info->size *= 1.5;
   }
 
-  if (line_info->c < 27 || line_info->c > 127) {
-    return false;
-  } else if (*line_info->i == strlen(line_info->line)) {
+  if (*line_info->i == strlen(line_info->line)) {
     (line_info->line)[*line_info->i] = line_info->c;
     cursor_moved = true;
   } else if (insertCharAtPos(line_info->line, *line_info->i, line_info->c)) {
@@ -177,11 +175,16 @@ void arrowPress(line_data* line_info, history_data* history_info, autocomplete_d
 }
 
 bool filterHistoryForMatchingAutoComplete(const string_array all_time_commands, char* line,
-                                          char* possible_autocomplete) {
+                                          autocomplete_data* autocomplete_info) {
 
   for (int i = 0; i < all_time_commands.len; i++) {
     if (strlen(line) > 0 && (strncmp(line, all_time_commands.values[i], strlen(line)) == 0)) {
-      strcpy(possible_autocomplete, all_time_commands.values[i]);
+      if (strlen(all_time_commands.values[i]) >= autocomplete_info->size) {
+        autocomplete_info->possible_autocomplete = realloc(
+            autocomplete_info->possible_autocomplete, (strlen(all_time_commands.values[i]) + 1) * sizeof(char));
+        autocomplete_info->size = strlen(all_time_commands.values[i]) + 1;
+      }
+      strcpy(autocomplete_info->possible_autocomplete, all_time_commands.values[i]);
 
       return true;
     }
@@ -280,19 +283,23 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   }
 }
 
-void ctrlFPress(string_array all_time_command_history, char* line, int* i, coordinates terminal_size,
-                coordinates* cursor_pos, char* possible_autocomplete, int line_row_count_with_autocomplete) {
-  fuzzy_result popup_result =
-      popupFuzzyFinder(all_time_command_history, terminal_size, cursor_pos->y, line_row_count_with_autocomplete);
+void ctrlFPress(string_array all_time_command_history, coordinates terminal_size, coordinates* cursor_pos,
+                char* possible_autocomplete, line_data* line_info) {
+  fuzzy_result popup_result = popupFuzzyFinder(all_time_command_history, terminal_size, cursor_pos->y,
+                                               line_info->line_row_count_with_autocomplete);
 
   if (strcmp(popup_result.line, "") != 0) {
-    strcpy(line, popup_result.line);
+    if (((strlen(popup_result.line) + 1) * sizeof(char)) >= line_info->size) {
+      line_info->line = realloc(line_info->line, (strlen(popup_result.line) + 1) * sizeof(char));
+      line_info->size = (strlen(popup_result.line) + 1) * sizeof(char);
+    }
+    strcpy(line_info->line, popup_result.line);
+    free(popup_result.line);
+    *line_info->i = strlen(line_info->line);
   }
-  free(popup_result.line);
-  *i = strlen(line);
 
   if (popup_result.shifted) {
-    cursor_pos->y = (terminal_size.y * 0.85) - 3 - line_row_count_with_autocomplete;
+    cursor_pos->y = (terminal_size.y * 0.85) - 3 - line_info->line_row_count_with_autocomplete;
     moveCursor(*cursor_pos);
   } else {
     moveCursor(*cursor_pos);
@@ -317,13 +324,13 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
     free_string_array(&all_time_command_history);
     return false;
   } else if ((int)line_info->c == CONTROL_F) {
-    ctrlFPress(all_time_command_history, line_info->line, line_info->i, terminal_size, cursor_pos,
-               autocomplete_info->possible_autocomplete, line_info->line_row_count_with_autocomplete);
+    ctrlFPress(all_time_command_history, terminal_size, cursor_pos, autocomplete_info->possible_autocomplete,
+               line_info);
   } else if (line_info->c != -1 && typedLetter(line_info)) {
     (*line_info->i)++;
   }
-  autocomplete_info->autocomplete = filterHistoryForMatchingAutoComplete(all_time_command_history, line_info->line,
-                                                                         autocomplete_info->possible_autocomplete);
+  autocomplete_info->autocomplete =
+      filterHistoryForMatchingAutoComplete(all_time_command_history, line_info->line, autocomplete_info);
   int line_len = (autocomplete_info->autocomplete) ? strlen(autocomplete_info->possible_autocomplete)
                                                    : strlen(line_info->line);
   line_info->line_row_count_with_autocomplete = calculateRowCount(terminal_size, line_info->prompt_len, line_len);
@@ -342,6 +349,7 @@ line_data* lineDataConstructor(int directory_len) {
       .prompt_len = directory_len + 4,
       .line_row_count_with_autocomplete = 0,
       .cursor_row = 0,
+      .size = BUFFER * sizeof(char),
   };
   *line_info->i = 0;
 
@@ -353,6 +361,7 @@ autocomplete_data* autocompleteDataConstructor() {
   *autocomplete_info = (autocomplete_data){
       .possible_autocomplete = calloc(BUFFER, sizeof(char)),
       .autocomplete = false,
+      .size = BUFFER * sizeof(char),
   };
 
   return autocomplete_info;
@@ -478,24 +487,24 @@ bool arrCmp(string_array arr1, string_array arr2) {
 }
 
 string_array getAllHistoryCommands() {
+  size_t size = 512 * sizeof(char*);
   string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
   char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_read = fopen(file_path, "r");
   free(file_path);
-  char* buf = calloc(512, sizeof(char));
+  char* buf = NULL;
   int line_len;
   unsigned long buf_size;
   int i = 0;
-  int realloc_index = 1;
 
   if (file_to_read == NULL) {
     return result;
   }
 
   while ((line_len = getline(&buf, &buf_size, file_to_read)) != -1) {
-    if (i >= (realloc_index * 512)) {
-      realloc_index++;
-      result.values = realloc(result.values, realloc_index * 512 * sizeof(char*));
+    if ((i * sizeof(char*)) >= size) {
+      result.values = realloc(result.values, size * 1.5);
+      size *= 1.5;
     }
 
     result.values[i] = calloc(strlen(buf), sizeof(char));

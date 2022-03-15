@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 enum cursor_direction { cursor_up, cursor_down, cursor_left, cursor_right };
 
 enum logger_type {
@@ -56,6 +58,7 @@ typedef struct {
   int prompt_len;
   int cursor_row;
   int line_row_count_with_autocomplete;
+  size_t size;
 } line_data;
 
 typedef struct {
@@ -67,6 +70,7 @@ typedef struct {
 typedef struct {
   char* possible_autocomplete;
   int autocomplete;
+  size_t size;
 } autocomplete_data;
 
 typedef struct {

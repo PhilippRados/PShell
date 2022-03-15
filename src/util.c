@@ -193,21 +193,18 @@ coordinates getCursorPos() {
 string_array getAllFilesInDir(string_array* directory_array) {
   struct dirent* file;
   string_array all_path_files;
-  char** files = (char**)calloc(1024, sizeof(char*));
+  char** files = calloc(BUFFER, sizeof(char*));
   int j = 0;
-  int realloc_index = 1;
+  size_t size = BUFFER * sizeof(char*);
 
   for (int i = 0; i < directory_array->len; i++) {
     if (isDirectory(directory_array->values[i])) {
       DIR* dr = opendir(directory_array->values[i]);
 
       while ((file = readdir(dr)) != NULL) {
-        if (j >= (1024 * realloc_index)) {
-          realloc_index++;
-          files = (char**)realloc(files, realloc_index * (1024 * (sizeof(char) * 24)));
-          if (files == NULL) {
-            exit(0);
-          }
+        if ((j * sizeof(char*)) >= size) {
+          files = (char**)realloc(files, size * 1.5);
+          size *= 1.5;
         }
         files[j] = (char*)calloc(strlen(file->d_name) + 1, sizeof(char));
         strcpy(files[j], file->d_name);
@@ -224,17 +221,17 @@ string_array getAllFilesInDir(string_array* directory_array) {
 }
 
 string_array filterMatching(char* line, const string_array PATH_BINS) {
-  int buf_size = 24;
-  int realloc_index = 1;
+  int buf_size = 64;
+  size_t size = buf_size * sizeof(char*);
   char** matching_binaries = calloc(buf_size, sizeof(char*));
   string_array result;
   int j = 0;
 
   for (int i = 0; i < PATH_BINS.len; i++) {
     if (strncmp(PATH_BINS.values[i], line, strlen(line)) == 0) {
-      if (j >= (realloc_index * buf_size)) {
-        realloc_index++;
-        matching_binaries = realloc(matching_binaries, realloc_index * buf_size * sizeof(char*));
+      if ((j * sizeof(char*)) >= size) {
+        matching_binaries = realloc(matching_binaries, size * 1.5);
+        size *= 1.5;
       }
       matching_binaries[j] = calloc(strlen(PATH_BINS.values[i]) + 1, sizeof(char));
       strcpy(matching_binaries[j], PATH_BINS.values[i]);

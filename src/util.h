@@ -6,6 +6,7 @@
 
 #include <dirent.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <locale.h>
 #include <math.h>
 #include <stdbool.h>
@@ -29,6 +30,7 @@
 #define CLEAR_SCREEN printf(" \e[1;1H\e[2J");
 
 enum { HISTORY_SIZE = 512 };
+#define BUFFER 256
 
 // ======= util.c functions ========
 

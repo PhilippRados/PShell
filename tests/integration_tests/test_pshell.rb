@@ -520,7 +520,7 @@ sleep 0.2
   @tty.send_keys(%(ZC))
 end
 sleep 0.2
-(0..35).each do |_i|
+(0..40).each do |_i|
   @tty.send_keys(BACKSPACE)
 end
 sleep 0.2
