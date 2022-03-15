@@ -73,3 +73,8 @@ typedef struct {
   char* line;
   int shifted;
 } fuzzy_result;
+
+typedef struct {
+  const char* name;
+  void (*func)();
+} function_by_name;

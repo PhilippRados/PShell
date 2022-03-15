@@ -519,12 +519,43 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history) {
   free_string_array(&history_commands);
 }
 
+void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char* dir) {
+  if (splitted_line.len == 2) {
+    if (chdir(splitted_line.values[1]) == -1) {
+      printf("cd: %s: No such file or directory\n", splitted_line.values[1]);
+    }
+  } else if (splitted_line.len > 2) {
+    printf("Too many arguments\n");
+  } else {
+    printf("Usage: cd [path]\n");
+  }
+}
+
+int isBuiltin(char* command, function_by_name builtins[], int len) {
+  for (int i = 0; i < len; i++) {
+    if (strcmp(command, builtins[i].name) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void callBuiltin(string_array splitted_line, function_by_name builtins[], int function_index) {
+  (*builtins[function_index].func)(splitted_line);
+}
+
+void pushToCommandHistory(char* line, string_array* command_history) {
+  if (command_history->len == 0 || strcmp(command_history->values[0], line) != 0) {
+    push(line, command_history);
+  }
+}
+
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
   char* line;
   string_array splitted_line;
-  char cd[512];
+  char dir[512];
   string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
   string_array PATH_ARR = splitString(getenv("PATH"), ':');
   string_array all_files_in_dir = getAllFilesInDir(&PATH_ARR);
@@ -533,8 +564,13 @@ int main(int argc, char* argv[]) {
   string_array PATH_BINS = removeDuplicates(&removed_dots);
   string_array global_command_history = getAllHistoryCommands();
 
-  char* current_dir = getcwd(cd, sizeof(cd));
+  char* current_dir = getcwd(dir, sizeof(dir));
   char* last_two_dirs = getLastTwoDirs(current_dir);
+  function_by_name builtins[] = {
+      {"cd", cd},
+      {"exit", exit},
+  };
+  int builtin_len = sizeof(builtins) / sizeof(builtins[0]);
 
   CLEAR_SCREEN;
 
@@ -543,22 +579,17 @@ int main(int argc, char* argv[]) {
     printPrompt(last_two_dirs, CYAN);
 
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history);
-    if (strcmp(line, "q") == 0) {
-      free(line);
-      break;
-    }
     if (strlen(line) > 0) {
       splitted_line = splitString(line, ' ');
-      if (strcmp(splitted_line.values[0], "cd") == 0) {
-        chdir(splitted_line.values[1]);
-        current_dir = getcwd(cd, sizeof(cd));
+      int builtin_index;
+      if ((builtin_index = isBuiltin(splitted_line.values[0], builtins, builtin_len)) != -1) {
+        callBuiltin(splitted_line, builtins, builtin_index);
+        current_dir = getcwd(dir, sizeof(dir));
         free(last_two_dirs);
         last_two_dirs = getLastTwoDirs(current_dir);
 
-        if (command_history.len == 0 || strcmp(command_history.values[0], line) != 0) {
-          push(line, &command_history);
-        }
-        free_string_array(&splitted_line);
+        pushToCommandHistory(line, &command_history);
+
       } else {
         pid_t child;
         int wstatus;
@@ -569,9 +600,7 @@ int main(int argc, char* argv[]) {
           exit(EXIT_FAILURE);
         }
 
-        if (command_history.len == 0 || strcmp(command_history.values[0], line) != 0) {
-          push(line, &command_history);
-        }
+        pushToCommandHistory(line, &command_history);
       }
       free_string_array(&splitted_line);
     }
@@ -582,7 +611,7 @@ int main(int argc, char* argv[]) {
   free_string_array(&command_history);
   free_string_array(&PATH_BINS);
   free(last_two_dirs);
-  // free_string_array(&global_command_history);
+
   int chunk_size = (global_command_history.len / 512) + 1;
   int j = 0;
   for (int i = 0; i < chunk_size; i++) {
