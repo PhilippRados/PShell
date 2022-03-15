@@ -1,4 +1,5 @@
 #include "main.h"
+#include <sys/syslimits.h>
 
 const int BUFFER = 256;
 
@@ -246,10 +247,10 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
     for (int j = 0; j < starting_index; j++) {
       printf(" ");
     }
-    bool highlight = isInPath(command_line.values[starting_index], PATH_BINS) ||
-                     isBuiltin(command_line.values[starting_index], BUILTINS);
-    highlight ? printColor(command_line.values[starting_index], GREEN, standard)
-              : printColor(command_line.values[starting_index], RED, bold);
+    bool in_path = isInPath(command_line.values[starting_index], PATH_BINS);
+    bool is_builtin = isBuiltin(command_line.values[starting_index], BUILTINS) != -1 ? true : false;
+    in_path || is_builtin ? printColor(command_line.values[starting_index], GREEN, standard)
+                          : printColor(command_line.values[starting_index], RED, bold);
     printLine(command_line, starting_index);
     free_string_array(&command_line);
 
@@ -556,7 +557,7 @@ void pushToCommandHistory(char* line, string_array* command_history) {
 int main(int argc, char* argv[]) {
   char* line;
   string_array splitted_line;
-  char dir[512];
+  char dir[PATH_MAX];
   string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
   string_array PATH_ARR = splitString(getenv("PATH"), ':');
   string_array all_files_in_dir = getAllFilesInDir(&PATH_ARR);
