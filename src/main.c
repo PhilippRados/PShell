@@ -159,6 +159,11 @@ void arrowPress(line_data* line_info, history_data* history_info, autocomplete_d
     if (autocomplete_info->autocomplete &&
         strncmp(line_info->line, autocomplete_info->possible_autocomplete, strlen(line_info->line)) == 0) {
       memset(line_info->line, 0, strlen(line_info->line));
+      if (((strlen(autocomplete_info->possible_autocomplete) + 1) * sizeof(char)) >= line_info->size) {
+        line_info->line =
+            realloc(line_info->line, (strlen(autocomplete_info->possible_autocomplete) + 1) * sizeof(char));
+        line_info->size = (strlen(autocomplete_info->possible_autocomplete) + 1) * sizeof(char);
+      }
       strcpy(line_info->line, autocomplete_info->possible_autocomplete);
       *line_info->i = strlen(line_info->line);
     } else {
@@ -487,8 +492,8 @@ bool arrCmp(string_array arr1, string_array arr2) {
 }
 
 string_array getAllHistoryCommands() {
-  size_t size = 512 * sizeof(char*);
-  string_array result = {.len = 0, .values = calloc(512, sizeof(char*))};
+  size_t size = BUFFER * sizeof(char*);
+  string_array result = {.len = 0, .values = calloc(BUFFER, sizeof(char*))};
   char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_read = fopen(file_path, "r");
   free(file_path);

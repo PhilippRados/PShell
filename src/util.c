@@ -329,8 +329,8 @@ file_string_tuple getFileStrings(char* current_word, char* current_path) {
     char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
     strcpy(home_path_copy, home_path);
 
-    char* current_path = strcat(home_path_copy, "/");       // Users/username/
-    current_dir = strcat(current_path, &(current_word[1])); // Users/username/documents
+    char* home_path_slash = strcat(home_path_copy, "/");       // Users/username/
+    current_dir = strcat(home_path_slash, &(current_word[1])); // Users/username/documents
     removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir, '/')]); // documents
     break;
   }
@@ -355,9 +355,10 @@ int getAppendingIndex(char* line, char delimeter) {
 }
 
 void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub) {
-  char* current_dir_sub_copy = calloc(strlen(current_dir_sub) + 256, sizeof(char));
+  char* current_dir_sub_copy =
+      calloc(strlen(current_dir_sub) + getLongestWordInArray(*filtered) + 2, sizeof(char));
   char* temp;
-  char copy[512];
+  char copy[strlen(current_dir_sub) + getLongestWordInArray(*filtered) + 2];
   strcat(current_dir_sub, "/");
 
   for (int i = 0; i < filtered->len; i++) {
@@ -388,7 +389,7 @@ int getCurrentWordPosInLine(string_array command_line, char* word) {
   return -1;
 }
 autocomplete_array fileComp(char* current_word) {
-  char cd[256];
+  char cd[PATH_MAX];
   file_string_tuple file_strings = getFileStrings(current_word, strcat(getcwd(cd, sizeof(cd)), "/"));
 
   char* current_dir_sub = calloc(strlen(file_strings.current_dir) + 2, sizeof(char));
@@ -438,4 +439,18 @@ int firstNonDelimeterIndex(string_array splitted_line) {
     }
   }
   return 0;
+}
+
+int getLongestWordInArray(const string_array array) {
+  int longest = 0;
+  int current_len = 0;
+
+  for (int i = 0; i < array.len; i++) {
+    current_len = strlen(array.values[i]);
+    if (current_len > longest) {
+      longest = current_len;
+    }
+  }
+
+  return longest;
 }

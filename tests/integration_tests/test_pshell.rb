@@ -703,4 +703,36 @@ sleep 0.2
 
 puts "    \u2705 Doesnt add whitespace to command-history".encode('utf-8')
 
-@tty.send_keys(%(q\n))
+puts 'REPLACING ALIASES'
+# Replaces ~ with home-path
+sleep 0.2
+(0..7).each do |_i|
+  @tty.send_keys(BACKSPACE)
+end
+@tty.send_keys(%(touch /root/some_file /root/another))
+@tty.send_keys(%(\n))
+
+sleep 0.2
+@tty.send_keys(%(ls ~))
+@tty.assert_cursor_position(8, 9)
+@tty.send_keys(%(\n))
+@tty.assert_row(9, '/ ❱ ls ~')
+@tty.assert_row(10, 'another  some_file')
+
+puts "    \u2705 Replaces ~ with home-path".encode('utf-8')
+
+# Tab-completes ~ with home-path
+sleep 0.2
+@tty.send_keys(%(ls ~/))
+@tty.send_keys(TAB)
+@tty.assert_row(12, '/ ❱ ls ~/')
+@tty.assert_row(13, 'some_file  another')
+
+sleep 0.2
+@tty.send_keys(%(\n))
+@tty.assert_row(12, '/ ❱ ls ~/some_file')
+@tty.assert_cursor_position(18, 12)
+
+puts "    \u2705 Tab-completes ~ with home-path".encode('utf-8')
+
+@tty.send_keys(%(exit\n))

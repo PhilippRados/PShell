@@ -1,20 +1,10 @@
 #include "tab_complete.h"
 
-int getLongestWordInArray(const string_array array, int terminal_width) {
-  int longest = 0;
-  int current_len = 0;
-
-  for (int i = 0; i < array.len; i++) {
-    current_len = strlen(array.values[i]);
-    if (current_len > longest) {
-      longest = current_len;
-    }
+int maxWidthTerm(int width, int terminal_width) {
+  if (width > terminal_width - 2) {
+    width = terminal_width - 2;
   }
-  if (longest > terminal_width - 2) {
-    longest = terminal_width - 2;
-  }
-
-  return longest;
+  return width;
 }
 
 void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, int format_width,
@@ -216,7 +206,7 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
 render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_array possible_tabcomplete,
                                        coordinates* cursor_pos, int cursor_row,
                                        int line_row_count_with_autocomplete) {
-  int format_width = getLongestWordInArray(possible_tabcomplete.array, terminal_size.x) + 2;
+  int format_width = maxWidthTerm(getLongestWordInArray(possible_tabcomplete.array), terminal_size.x) + 2;
   int col_size = terminal_size.x / format_width;
   int row_size = ceil(possible_tabcomplete.array.len / (float)col_size);
   int cursor_height_diff = terminal_size.y - cursor_pos->y;
