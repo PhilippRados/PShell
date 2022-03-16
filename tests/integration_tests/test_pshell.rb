@@ -693,7 +693,7 @@ sleep 0.2
 @tty.send_keys(%(l))
 @tty.assert_cursor_position(4, 19)
 
-@tty.assert_row(19, ' ❱ l                           1/18')
+@tty.assert_row(19, ' ❱ l                           1/19')
 @tty.assert_row(20, '   ls dev/')
 
 sleep 0.2
@@ -732,7 +732,44 @@ sleep 0.2
 @tty.send_keys(%(\n))
 @tty.assert_row(12, '/ ❱ ls ~/some_file')
 @tty.assert_cursor_position(18, 12)
+@tty.send_keys(%(\n))
 
 puts "    \u2705 Tab-completes ~ with home-path".encode('utf-8')
 
+puts 'TESTING WITH VERY BIG INPUTS'
+# With very big command in command-history still shows up as autocomplete
+sleep 0.2
+@tty.send_keys(%(jjjjj))
+@tty.assert_row(15, '/ ❱ jjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkkkkk')
+@tty.assert_row(16, 'kkkkkkkkjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkk')
+@tty.assert_cursor_position(9, 15)
+
+puts "    \u2705 With very big command in command-history still shows up as autocomplete".encode('utf-8')
+
+# When pressing arrow right copies autocomplete in current line
+sleep 0.2
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZC))
+@tty.assert_row(15, '/ ❱ jjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkkkkk')
+@tty.assert_row(16, 'kkkkkkkkjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkk')
+@tty.assert_cursor_position(22, 21)
+
+puts "    \u2705 When pressing arrow right copies autocomplete in current line".encode('utf-8')
+
+# Fuzzy-finder still works
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(CTRLF)
+@tty.send_keys(%(jjjj))
+@tty.assert_row(16, '/ ❱    ')
+@tty.assert_row(19, ' ❱ jjjj                        1/1')
+@tty.assert_row(20, '   jjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkkk...')
+@tty.assert_cursor_position(7, 19)
+
+@tty.send_keys(%(\n))
+@tty.assert_row(16, '/ ❱ jjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkkkkk')
+@tty.assert_row(17, 'kkkkkkkkjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkk')
+@tty.assert_cursor_position(22, 22)
+
+puts "    \u2705 Fuzzy-finder still works".encode('utf-8')
 @tty.send_keys(%(exit\n))
