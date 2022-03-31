@@ -124,13 +124,19 @@ bool typedLetter(line_data* line_info) {
   bool cursor_moved = false;
   if ((line_info->c < 27 || line_info->c > 127) || (strlen(line_info->line) == 0 && line_info->c == TAB)) {
     return false;
-  } else if ((strlen(line_info->line) * sizeof(char)) >= line_info->size) {
-    line_info->line = realloc(line_info->line, 1.5 * line_info->size);
-    line_info->size *= 1.5;
+  } else if ((strlen(line_info->line) * sizeof(char) + 1) >= line_info->size) {
+    char* tmp;
+    if ((tmp = realloc(line_info->line, 1.5 * line_info->size)) == NULL) {
+      perror("realloc");
+    } else {
+      line_info->line = tmp;
+      line_info->size *= 1.5;
+    }
   }
 
   if (*line_info->i == strlen(line_info->line)) {
     (line_info->line)[*line_info->i] = line_info->c;
+    (line_info->line)[*line_info->i + 1] = '\0';
     cursor_moved = true;
   } else if (insertCharAtPos(line_info->line, *line_info->i, line_info->c)) {
     cursor_moved = true;

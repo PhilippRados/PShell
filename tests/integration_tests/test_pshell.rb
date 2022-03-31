@@ -612,7 +612,7 @@ puts "    \u2705 Leaves one row above free when bigger than term-size".encode('u
 @tty.send_keys(TAB)
 @tty.assert_row(19, '/pshell ❱ m')
 @tty.assert_row(20, '     srcyy ../bin/')
-@tty.assert_row(21, 'The list of possible matches is 43 lines')
+@tty.assert_row(21, 'The list of possible matches is 86 lines')
 puts "    \u2705 When cursor on second row prompts below line".encode('utf-8')
 
 puts 'COMMAND NOT STARTING INDEX 0 - TAB-COMP'
@@ -772,4 +772,23 @@ sleep 0.2
 @tty.assert_cursor_position(22, 22)
 
 puts "    \u2705 Fuzzy-finder still works".encode('utf-8')
+
+# Tab-completing with multiple big-completions
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(v))
+(0..4).each do |_i|
+  @tty.send_keys(TAB)
+end
+@tty.assert_row(18, '/ ❱ v')
+@tty.assert_row(19, 'vigr')
+@tty.assert_row(23, 'very_very_very_very_very_very_very_...')
+@tty.assert_cursor_position(5,18)
+@tty.send_keys(%(\n))
+
+@tty.assert_row(18, '/ ❱ very_very_very_very_very_very_very_v')
+@tty.assert_row(21, 'ong_filename_to_test_shell_behavior')
+@tty.assert_cursor_position(35,21)
+
+puts "    \u2705 Tab-completing with multiple big-completions".encode('utf-8')
 @tty.send_keys(%(exit\n))
