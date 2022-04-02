@@ -280,7 +280,7 @@ void insertStringAtPos(char** line, char* insert_string, int position) {
   if (strcmp(insert_string, "") == 0)
     return;
   char* tmp;
-  if ((tmp = realloc(*line, (strlen(*line) + strlen(insert_string) + 1) * sizeof(char))) == NULL) {
+  if ((tmp = realloc(*line, (strlen(*line) + strlen(insert_string) + 2) * sizeof(char))) == NULL) {
     perror("realloc");
   } else {
     *line = tmp;
@@ -339,8 +339,7 @@ file_string_tuple getFileStrings(char* current_word, char* current_path) {
     char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
     strcpy(home_path_copy, home_path);
 
-    char* home_path_slash = strcat(home_path_copy, "/");       // Users/username/
-    current_dir = strcat(home_path_slash, &(current_word[1])); // Users/username/documents
+    current_dir = strcat(home_path_copy, &(current_word[1])); // Users/username/documents
     removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir, '/')]); // documents
     break;
   }
