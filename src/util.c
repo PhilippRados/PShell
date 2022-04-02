@@ -1,5 +1,12 @@
 #include "util.h"
 
+void clean_stdin(void) {
+  int stdin_copy = dup(STDIN_FILENO);
+  tcdrain(stdin_copy);
+  tcflush(stdin_copy, TCIFLUSH);
+  close(stdin_copy);
+}
+
 int getch() {
   struct termios oldattr, newattr;
   int ch;
@@ -69,10 +76,7 @@ void free_string_array(string_array* arr) {
   arr->values = NULL;
 }
 
-void moveCursor(coordinates new_pos) {
-  printf("\033[%d;%dH", new_pos.y, new_pos.x);
-  fflush(stdin);
-}
+void moveCursor(coordinates new_pos) { printf("\033[%d;%dH", new_pos.y, new_pos.x); }
 
 coordinates getTerminalSize() {
   coordinates size;
@@ -155,7 +159,7 @@ void logger(enum logger_type type, void* message) {
 
 coordinates getCursorPos() {
   char buf[1];
-  char data[50];
+  char data[64];
   int y, x;
   char cmd[] = "\033[6n";
   coordinates cursor_pos = {.x = -1, .y = -1};

@@ -66,5 +66,6 @@ char* shortenIfTooLong(char* word, int terminal_width);
 bool isOnlyDelimeter(const char* string, char delimeter);
 int firstNonDelimeterIndex(string_array splitted_line);
 int getLongestWordInArray(const string_array array);
+void clean_stdin(void);
 
 #endif // !UTIL_H

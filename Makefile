@@ -1,6 +1,7 @@
 # -*- Makefile -*-
 
 CC = gcc-11
+FUZZ_CC = afl-clang-fast
 CFLAGS = -g -fsanitize=address -fsanitize=leak
 OBJECTS = src/bin/main.o src/bin/util.o src/bin/tab_complete.o src/bin/fuzzy_finder.o
 SOURCES = src/main.c src/util.c src/tab_complete.c src/fuzzy_finder.c
@@ -21,6 +22,13 @@ tests/bin/%.o: tests/%.c
 .SILENT:
 shell: ${OBJECTS} ## Compile the shell
 	${CC} ${CFLAGS} ${OBJECTS} -o src/bin/pshell -ldl -lm
+
+.SILENT:
+fuzzing_shell: ${SOURCES}
+	${FUZZ_CC} ${SOURCES} -o src/bin/pshell -ldl -lm
+
+start_fuzzer: fuzzing_shell fuzzing
+	afl-fuzz -i fuzzing/inputs -o fuzzing/outputs src/bin/pshell
 
 docker_shell:
 	gcc src/main.c src/util.c src/fuzzy_finder.c src/tab_complete.c -o src/bin/pshell -ldl -lm
