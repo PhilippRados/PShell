@@ -276,15 +276,21 @@ bool insertCharAtPos(char* line, int index, char c) {
   return true;
 }
 
-void insertStringAtPos(char* line, char* insert_string, int position) {
+void insertStringAtPos(char** line, char* insert_string, int position) {
   if (strcmp(insert_string, "") == 0)
     return;
-  insertCharAtPos(line, position, '%');
-  insertCharAtPos(line, position + 1, 's');
+  char* tmp;
+  if ((tmp = realloc(*line, (strlen(*line) + strlen(insert_string) + 1) * sizeof(char))) == NULL) {
+    perror("realloc");
+  } else {
+    *line = tmp;
+  }
+  insertCharAtPos(*line, position, '%');
+  insertCharAtPos(*line, position + 1, 's');
 
-  char* new_line = calloc(strlen(line) + strlen(insert_string) + 1, sizeof(char));
-  sprintf(new_line, line, insert_string);
-  strcpy(line, new_line);
+  char* new_line = calloc(strlen(*line) + strlen(insert_string) + 1, sizeof(char));
+  sprintf(new_line, *line, insert_string);
+  strcpy(*line, new_line);
   free(new_line);
 }
 

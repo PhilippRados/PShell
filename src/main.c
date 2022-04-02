@@ -285,7 +285,7 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
     return;
 
   char temp;
-  if ((temp = tabLoop(*line_info, cursor_pos, PATH_BINS, terminal_size)) == -1) {
+  if ((temp = tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size)) == -1) {
     // failed completion
     line_info->c = temp;
   } else {
@@ -451,7 +451,7 @@ void replaceAliases(string_array* splitted_line) {
         splitted_line->values[i] =
             realloc(splitted_line->values[i], strlen(home_path) + strlen(splitted_line->values[i]) + 10);
         strcpy(splitted_line->values[i], prior_line);
-        insertStringAtPos(splitted_line->values[i], home_path, j);
+        insertStringAtPos(&(splitted_line->values[i]), home_path, j);
       }
     }
   }

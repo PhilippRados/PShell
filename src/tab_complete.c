@@ -144,12 +144,14 @@ bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tab
   return dontShowMatches(answer, render_data, possible_tabcomplete);
 }
 
-bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index, char* line, int line_index) {
+bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index, line_data* line_info) {
   if (possible_tabcomplete.array.len == 1) {
-    removeSlice(&line, line_index);
-    insertStringAtPos(line, &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],
-                      line_index);
+    removeSlice(&line_info->line, *line_info->i);
+    insertStringAtPos(&line_info->line,
+                      &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],
+                      *line_info->i);
 
+    line_info->size = (strlen(line_info->line) + 1) * sizeof(char);
     return true;
   } else if (possible_tabcomplete.array.len > 1) {
     if (*tab_index < possible_tabcomplete.array.len - 1) {
@@ -172,17 +174,19 @@ void shiftTabPress(autocomplete_array possible_tabcomplete, int* tab_index) {
   }
 }
 
-void enterPress(autocomplete_array possible_tabcomplete, char* line, int line_index, int tab_index) {
-  removeSlice(&line, line_index);
-  insertStringAtPos(line, &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index],
-                    line_index);
+void enterPress(autocomplete_array possible_tabcomplete, line_data* line_info, int tab_index) {
+  removeSlice(&line_info->line, *line_info->i);
+  insertStringAtPos(&line_info->line,
+                    &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index],
+                    *line_info->i);
+
+  line_info->size = (strlen(line_info->line) + 1) * sizeof(char);
 }
 
-bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* line, int line_index,
-                      int* tab_index) {
+bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, line_data* line_info, int* tab_index) {
   bool loop = true;
   if (*c == TAB) {
-    if (tabPress(possible_tabcomplete, tab_index, line, line_index)) {
+    if (tabPress(possible_tabcomplete, tab_index, line_info)) {
       *c = 0;
       loop = false;
     }
@@ -191,7 +195,7 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, char* li
     shiftTabPress(possible_tabcomplete, tab_index);
 
   } else if (*c == '\n') {
-    enterPress(possible_tabcomplete, line, line_index, *tab_index);
+    enterPress(possible_tabcomplete, line_info, *tab_index);
     *c = 0;
     loop = false;
 
@@ -253,11 +257,11 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
-char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PATH_BINS,
+char tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array PATH_BINS,
              const coordinates terminal_size) {
-  string_array splitted_line = splitString(line_info.line, ' ');
+  string_array splitted_line = splitString(line_info->line, ' ');
   int starting_index = firstNonDelimeterIndex(splitted_line);
-  if (*line_info.i <= starting_index) {
+  if (*line_info->i <= starting_index) {
     free_string_array(&splitted_line);
     return -1;
   }
@@ -265,13 +269,13 @@ char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PA
   char* c = calloc(1, sizeof(char));
   *c = TAB;
   int tab_index = -1;
-  char* current_word = getCurrentWordFromLineIndex(splitted_line, *line_info.i, starting_index);
+  char* current_word = getCurrentWordFromLineIndex(splitted_line, *line_info->i, starting_index);
   autocomplete_array possible_tabcomplete = checkForAutocomplete(
-      current_word, splitted_line.values[starting_index], (*line_info.i) - starting_index, PATH_BINS);
+      current_word, splitted_line.values[starting_index], (*line_info->i) - starting_index, PATH_BINS);
   removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
   render_objects render_data =
-      initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, line_info.cursor_row,
-                              line_info.line_row_count_with_autocomplete);
+      initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, line_info->cursor_row,
+                              line_info->line_row_count_with_autocomplete);
   bool loop = true;
 
   if (possible_tabcomplete.array.len <= 0 || tooManyMatches(&render_data, possible_tabcomplete)) {
@@ -281,7 +285,7 @@ char tabLoop(line_data line_info, coordinates* cursor_pos, const string_array PA
     return -1;
   }
   do {
-    if ((loop = updateCompletion(possible_tabcomplete, c, line_info.line, *line_info.i, &tab_index))) {
+    if ((loop = updateCompletion(possible_tabcomplete, c, line_info, &tab_index))) {
       renderCompletion(possible_tabcomplete, tab_index, &render_data);
     }
 
