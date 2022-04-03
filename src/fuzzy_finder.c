@@ -3,6 +3,8 @@
 #define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 
 int levenshtein(const char* s1, char* s2, int s1_len) {
+  if (s1_len == 0)
+    return 0;
   char* s2_substring = calloc(strlen(s1) + 1, sizeof(char));
   s2_substring = strncpy(s2_substring, &s2[0], strlen(s1));
 
