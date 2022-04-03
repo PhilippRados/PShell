@@ -92,8 +92,8 @@ Test(updateCompletion, exit_out_if_random_letter_press) {
   int* tab_index;
   line_data* line_info;
 
-  bool result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
-  cr_expect(result == false);
+  tab_completion result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  cr_expect(result.continue_loop == false);
   free(c);
 }
 
@@ -126,10 +126,10 @@ Test(updateCompletion, test_tabpress_when_single_command_match) {
   strcpy(line_info->line, "tesuwe");
   *line_info->i = 3;
 
-  bool result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
-  cr_expect(result == false);
+  tab_completion result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  cr_expect(result.continue_loop == false);
   cr_expect(strcmp(line_info->line, "testing") == 0);
-  cr_expect(*c == 0);
+  cr_expect(result.successful);
 
   free(tab_index);
   free(line_info->line);
@@ -151,15 +151,15 @@ Test(updateCompletion, resets_tabindex_when_no_more_matches) {
   strcpy(line_info->line, "tre");
   *line_info->i = strlen(line_info->line);
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
-  cr_expect(result1 == true);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  cr_expect(result1.continue_loop == true);
   cr_expect(strcmp(line_info->line, "tre") == 0);
-  cr_expect(*c == TAB);
+  cr_expect(result1.successful == false);
   cr_expect(*tab_index == 0);
 
-  bool result2 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result2 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(*tab_index == 1);
-  bool result3 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result3 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(*tab_index == 0);
 
   free(tab_index);
@@ -182,10 +182,10 @@ Test(updateCompletion, copies_current_tabindex_on_enter) {
   strcpy(line_info->line, "tre");
   *line_info->i = strlen(line_info->line);
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
-  cr_expect(result1 == false);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  cr_expect(result1.continue_loop == false);
   cr_expect(strcmp(line_info->line, "trey") == 0);
-  cr_expect(*c == 0);
+  cr_expect(result1.successful);
   cr_expect(*tab_index == 1);
 
   free(tab_index);
@@ -209,10 +209,10 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs) {
   strcpy(line_info->line, "ls test/dir/why/tr");
   *line_info->i = strlen(line_info->line);
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
-  cr_expect(result1 == false);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  cr_expect(result1.continue_loop == false);
   cr_expect(strcmp(line_info->line, "ls test/dir/why/tree") == 0);
-  cr_expect(*c == 0);
+  cr_expect(result1.successful);
   cr_expect(*tab_index == 0);
 
   free(tab_index);
@@ -235,10 +235,10 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs_when_cursor_m
   strcpy(line_info->line, "ls test/dir/why/tr");
   *line_info->i = strlen("ls test/dir/");
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
-  cr_expect(result1 == false);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  cr_expect(result1.continue_loop == false);
+  cr_expect(result1.successful);
   cr_expect(strcmp(line_info->line, "ls test/dir/tree") == 0);
-  cr_expect(*c == 0);
   cr_expect(*tab_index == -1);
 
   free(tab_index);
