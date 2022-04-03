@@ -214,7 +214,8 @@ bool drawFuzzyPopup(int current_cursor_height, coordinates initial_cursor_pos, i
   return shifted;
 }
 
-bool updateFuzzyfinder(char** line, char c, string_array matching_commands, int* fuzzy_index, int* i) {
+bool updateFuzzyfinder(char** line, char c, string_array matching_commands, int* fuzzy_index, int* i,
+                       int max_input_len) {
   bool loop = true;
   if (c == '\n') {
     if (matching_commands.len > 0) {
@@ -241,7 +242,7 @@ bool updateFuzzyfinder(char** line, char c, string_array matching_commands, int*
       (*fuzzy_index < matching_commands.len - 1) ? (*fuzzy_index)++ : *fuzzy_index;
     }
   } else {
-    if (strlen(*line) < 63 && c > 0 && c < 127) {
+    if (strlen(*line) < max_input_len - 1 && c > 0 && c < 127) {
       *fuzzy_index = 0;
       (*line)[*i] = c;
       (*i)++;
@@ -257,7 +258,8 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
   *fuzzy_index = 0;
   int* i = calloc(1, sizeof(int));
   *i = 0;
-  char* line = calloc(BUFFER, sizeof(char));
+  int max_input_len = terminal_size.x - 15;
+  char* line = calloc(max_input_len, sizeof(char));
   coordinates fuzzy_cursor_height = {.x = 2, .y = terminal_size.y * 0.85};
   int cursor_terminal_height_diff = terminal_size.y - fuzzy_cursor_height.y;
   string_array matching_commands;
@@ -271,7 +273,7 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
                                 line_row_count_with_autocomplete);
 
   while (loop && (c = getch())) {
-    loop = updateFuzzyfinder(&line, c, matching_commands, fuzzy_index, i);
+    loop = updateFuzzyfinder(&line, c, matching_commands, fuzzy_index, i, max_input_len);
 
     if (loop) {
       string_array filtered_history = filterHistory(all_time_command_history, line);
