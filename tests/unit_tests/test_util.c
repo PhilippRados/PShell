@@ -45,7 +45,7 @@ Test(insertStringAtPos, insert_string_at_end) {
   strcpy(line, "testing the waters");
   char* insert_string = " here";
 
-  insertStringAtPos(line, insert_string, strlen(line));
+  insertStringAtPos(&line, insert_string, strlen(line));
   cr_expect(strcmp(line, "testing the waters here") == 0);
 
   free(line);
@@ -56,7 +56,7 @@ Test(insertStringAtPos, insert_string_in_middle) {
   strcpy(line, "testing the waters");
   char* insert_string = "cold ";
 
-  insertStringAtPos(line, insert_string, 12);
+  insertStringAtPos(&line, insert_string, 12);
 
   cr_expect(strcmp(line, "testing the cold waters") == 0);
 
@@ -69,7 +69,7 @@ Test(insertStringAtPos, insert_string_at_start) {
   char* insert_string = "/Users";
 
   removeCharAtPos(line, 1);
-  insertStringAtPos(line, insert_string, 0);
+  insertStringAtPos(&line, insert_string, 0);
 
   cr_expect(strcmp(line, "/Users/testing") == 0);
 

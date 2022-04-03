@@ -89,12 +89,27 @@ Test(updateCompletion, exit_out_if_random_letter_press) {
   char* c = calloc(1, sizeof(char));
   *c = 'l';
   char* line;
-  int line_index;
   int* tab_index;
+  line_data* line_info;
 
-  bool result = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(result == false);
   free(c);
+}
+
+line_data* lineDataConstructor_for_testing(int directory_len) {
+  line_data* line_info = calloc(1, sizeof(line_data));
+  *line_info = (line_data){
+      .line = calloc(BUFFER, sizeof(char)),
+      .i = calloc(1, sizeof(int)),
+      .prompt_len = directory_len + 4,
+      .line_row_count_with_autocomplete = 0,
+      .cursor_row = 0,
+      .size = BUFFER * sizeof(char),
+  };
+  *line_info->i = 0;
+
+  return line_info;
 }
 
 Test(updateCompletion, test_tabpress_when_single_command_match) {
@@ -105,19 +120,19 @@ Test(updateCompletion, test_tabpress_when_single_command_match) {
   autocomplete_array possible_tab_complete = {.array = arr1, .appending_index = 3};
   char* c = calloc(1, sizeof(char));
   *c = TAB;
-  char* line = calloc(10, sizeof(char));
-  strcpy(line, "tesuwe");
-  int line_index = 3;
   int* tab_index = calloc(1, sizeof(int*));
   *tab_index = -1;
+  line_data* line_info = lineDataConstructor_for_testing(4);
+  strcpy(line_info->line, "tesuwe");
+  *line_info->i = 3;
 
-  bool result = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(result == false);
-  cr_expect(strcmp(line, "testing") == 0);
+  cr_expect(strcmp(line_info->line, "testing") == 0);
   cr_expect(*c == 0);
 
   free(tab_index);
-  free(line);
+  free(line_info->line);
   free(c);
 }
 
@@ -130,25 +145,25 @@ Test(updateCompletion, resets_tabindex_when_no_more_matches) {
   autocomplete_array possible_tab_complete = {.array = arr1, .appending_index = 2};
   char* c = calloc(1, sizeof(char));
   *c = TAB;
-  char* line = calloc(10, sizeof(char));
-  strcpy(line, "tre");
-  int line_index = strlen(line);
   int* tab_index = calloc(1, sizeof(int*));
   *tab_index = -1;
+  line_data* line_info = lineDataConstructor_for_testing(4);
+  strcpy(line_info->line, "tre");
+  *line_info->i = strlen(line_info->line);
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(result1 == true);
-  cr_expect(strcmp(line, "tre") == 0);
+  cr_expect(strcmp(line_info->line, "tre") == 0);
   cr_expect(*c == TAB);
   cr_expect(*tab_index == 0);
 
-  bool result2 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result2 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(*tab_index == 1);
-  bool result3 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result3 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(*tab_index == 0);
 
   free(tab_index);
-  free(line);
+  free(line_info->line);
   free(c);
 }
 
@@ -161,20 +176,20 @@ Test(updateCompletion, copies_current_tabindex_on_enter) {
   autocomplete_array possible_tab_complete = {.array = arr1, .appending_index = 3};
   char* c = calloc(1, sizeof(char));
   *c = '\n';
-  char* line = calloc(10, sizeof(char));
-  strcpy(line, "tre");
-  int line_index = strlen(line);
   int* tab_index = calloc(1, sizeof(int*));
   *tab_index = 1;
+  line_data* line_info = lineDataConstructor_for_testing(4);
+  strcpy(line_info->line, "tre");
+  *line_info->i = strlen(line_info->line);
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(result1 == false);
-  cr_expect(strcmp(line, "trey") == 0);
+  cr_expect(strcmp(line_info->line, "trey") == 0);
   cr_expect(*c == 0);
   cr_expect(*tab_index == 1);
 
   free(tab_index);
-  free(line);
+  free(line_info->line);
   free(c);
 }
 
@@ -188,20 +203,20 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs) {
 
   char* c = calloc(1, sizeof(char));
   *c = '\n';
-  char* line = calloc(32, sizeof(char));
-  strcpy(line, "ls test/dir/why/tr");
-  int line_index = strlen(line);
   int* tab_index = calloc(1, sizeof(int*));
   *tab_index = 0;
+  line_data* line_info = lineDataConstructor_for_testing(5);
+  strcpy(line_info->line, "ls test/dir/why/tr");
+  *line_info->i = strlen(line_info->line);
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(result1 == false);
-  cr_expect(strcmp(line, "ls test/dir/why/tree") == 0);
+  cr_expect(strcmp(line_info->line, "ls test/dir/why/tree") == 0);
   cr_expect(*c == 0);
   cr_expect(*tab_index == 0);
 
   free(tab_index);
-  free(line);
+  free(line_info->line);
   free(c);
 }
 
@@ -214,20 +229,20 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs_when_cursor_m
 
   char* c = calloc(1, sizeof(char));
   *c = TAB;
-  char* line = calloc(32, sizeof(char));
-  strcpy(line, "ls test/dir/why/tr");
-  int line_index = strlen("ls test/dir/");
   int* tab_index = calloc(1, sizeof(int*));
   *tab_index = -1;
+  line_data* line_info = lineDataConstructor_for_testing(4);
+  strcpy(line_info->line, "ls test/dir/why/tr");
+  *line_info->i = strlen("ls test/dir/");
 
-  bool result1 = updateCompletion(possible_tab_complete, c, line, line_index, tab_index);
+  bool result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
   cr_expect(result1 == false);
-  cr_expect(strcmp(line, "ls test/dir/tree") == 0);
+  cr_expect(strcmp(line_info->line, "ls test/dir/tree") == 0);
   cr_expect(*c == 0);
   cr_expect(*tab_index == -1);
 
   free(tab_index);
-  free(line);
+  free(line_info->line);
   free(c);
 }
 
