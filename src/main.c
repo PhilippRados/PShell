@@ -302,9 +302,9 @@ void ctrlFPress(string_array all_time_command_history, coordinates terminal_size
       line_info->size = (strlen(popup_result.line) + 1) * sizeof(char);
     }
     strcpy(line_info->line, popup_result.line);
-    free(popup_result.line);
     *line_info->i = strlen(line_info->line);
   }
+  free(popup_result.line);
 
   if (popup_result.shifted) {
     cursor_pos->y = (terminal_size.y * 0.85) - 3 - line_info->line_row_count_with_autocomplete;
