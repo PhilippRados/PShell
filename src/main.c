@@ -611,6 +611,8 @@ int main(int argc, char* argv[]) {
       int builtin_index;
       if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
         if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
+          free_string_array(&splitted_line);
+          free(line);
           break;
         }
         current_dir = getcwd(dir, sizeof(dir));
