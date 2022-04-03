@@ -45,7 +45,7 @@ char* removeWhitespace(char* s1) {
 }
 
 string_array filterHistory(const string_array concatenated, char* line) {
-  char** possible_matches = calloc(512, sizeof(char*));
+  char** possible_matches = calloc(concatenated.len, sizeof(char*));
   int matches_num = 0;
   char* line_no_whitespace = removeWhitespace(line);
 
