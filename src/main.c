@@ -284,13 +284,10 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   if (strlen(line_info->line) <= 0)
     return;
 
-  char temp;
-  if ((temp = tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size)) == -1) {
-    // failed completion
-    line_info->c = temp;
-  } else {
-    line_info->c = -1;
+  if (tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size)) {
+    // successful completion
     *line_info->i = getWordEndIndex(line_info->line, *line_info->i);
+    line_info->c = -1;
   }
 }
 

@@ -87,3 +87,8 @@ typedef struct {
   int len;
   function_by_name* array;
 } builtins_array;
+
+typedef struct {
+  int successful;
+  int continue_loop;
+} tab_completion;

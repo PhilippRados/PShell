@@ -260,7 +260,7 @@ puts "    \u2705 When pressing Tab in middle of word looks for matches until cur
 # When exiting tab-prompt without selecting comp cursor should be at same pos as before
 sleep 0.2
 @tty.send_keys(%(a))
-@tty.assert_cursor_position(12, 4)
+@tty.assert_cursor_position(13, 4)
 puts "    \u2705 When exiting tab-prompt without selecting comp cursor should be at same pos as before".encode('utf-8')
 
 # When Tab-completing on last row should shift up and cursor too
@@ -289,6 +289,7 @@ puts 'FUZZY-FINDER'
 # When pressing Fuzzy-finder on last row should shift prior commands up
 sleep 0.2
 @tty.send_keys(%(a))
+@tty.send_keys(BACKSPACE)
 @tty.send_keys(CTRLF)
 
 @tty.assert_row(16, '/pshell ❱ lsl')
@@ -362,6 +363,7 @@ puts "    \u2705 File-completes shows all matching files/dirs".encode('utf-8')
 # When only one matching file autocompletes immediately
 sleep 0.2
 @tty.send_keys(%(a)) # random key to exit out of tab-matches
+@tty.send_keys(BACKSPACE) # random key to exit out of tab-matches
 @tty.send_keys(%(ro))
 @tty.send_keys(TAB)
 
@@ -395,7 +397,7 @@ puts "    \u2705 Shows dotfiles if first char is dot".encode('utf-8')
 
 # When File in file-completion bigger than term shortens file-name
 sleep 0.2
-@tty.send_keys(%(  /home/))
+@tty.send_keys(%( /home/))
 @tty.send_keys(TAB)
 
 @tty.assert_row(15, '/pshell ❱ ls ../root/. /home/')
@@ -636,6 +638,7 @@ puts "    \u2705 When command not at beginning of line tab-comps anyway".encode(
 # When cursor on start of command doesnt autocomplete
 sleep 0.2
 @tty.send_keys(%(n))
+@tty.send_keys(BACKSPACE)
 @tty.send_keys(%(\033))
 @tty.send_keys(%(ZD))
 @tty.send_keys(%(\033))
@@ -783,12 +786,12 @@ end
 @tty.assert_row(18, '/ ❱ v')
 @tty.assert_row(19, 'vigr')
 @tty.assert_row(23, 'very_very_very_very_very_very_very_...')
-@tty.assert_cursor_position(5,18)
+@tty.assert_cursor_position(5, 18)
 @tty.send_keys(%(\n))
 
 @tty.assert_row(18, '/ ❱ very_very_very_very_very_very_very_v')
 @tty.assert_row(21, 'ong_filename_to_test_shell_behavior')
-@tty.assert_cursor_position(35,21)
+@tty.assert_cursor_position(35, 21)
 
 puts "    \u2705 Tab-completing with multiple big-completions".encode('utf-8')
 @tty.send_keys(%(exit\n))

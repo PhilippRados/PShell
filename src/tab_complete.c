@@ -183,12 +183,13 @@ void enterPress(autocomplete_array possible_tabcomplete, line_data* line_info, i
   line_info->size = (strlen(line_info->line) + 1) * sizeof(char);
 }
 
-bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, line_data* line_info, int* tab_index) {
-  bool loop = true;
+tab_completion updateCompletion(autocomplete_array possible_tabcomplete, char* c, line_data* line_info,
+                                int* tab_index) {
+  tab_completion result = {.successful = false, .continue_loop = true};
   if (*c == TAB) {
     if (tabPress(possible_tabcomplete, tab_index, line_info)) {
-      *c = 0;
-      loop = false;
+      result.successful = true;
+      result.continue_loop = false;
     }
 
   } else if (*c == ESCAPE) {
@@ -196,15 +197,15 @@ bool updateCompletion(autocomplete_array possible_tabcomplete, char* c, line_dat
 
   } else if (*c == '\n') {
     enterPress(possible_tabcomplete, line_info, *tab_index);
-    *c = 0;
-    loop = false;
+    result.successful = true;
+    result.continue_loop = false;
 
   } else {
-    *c = -1;
-    loop = false;
+    result.successful = false;
+    result.continue_loop = false;
   }
 
-  return loop;
+  return result;
 }
 
 render_objects initializeRenderObjects(coordinates terminal_size, autocomplete_array possible_tabcomplete,
@@ -257,17 +258,15 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
-char tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array PATH_BINS,
+bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array PATH_BINS,
              const coordinates terminal_size) {
   string_array splitted_line = splitString(line_info->line, ' ');
   int starting_index = firstNonDelimeterIndex(splitted_line);
   if (*line_info->i <= starting_index) {
     free_string_array(&splitted_line);
-    return -1;
+    return false;
   }
 
-  char* c = calloc(1, sizeof(char));
-  *c = TAB;
   int tab_index = -1;
   char* current_word = getCurrentWordFromLineIndex(splitted_line, *line_info->i, starting_index);
   autocomplete_array possible_tabcomplete = checkForAutocomplete(
@@ -276,24 +275,25 @@ char tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array P
   render_objects render_data =
       initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, line_info->cursor_row,
                               line_info->line_row_count_with_autocomplete);
-  bool loop = true;
+  tab_completion completion_result;
 
   if (possible_tabcomplete.array.len <= 0 || tooManyMatches(&render_data, possible_tabcomplete)) {
     free_string_array(&(possible_tabcomplete.array));
     free_string_array(&splitted_line);
     free(current_word);
-    return -1;
+    return false;
   }
   do {
-    if ((loop = updateCompletion(possible_tabcomplete, c, line_info, &tab_index))) {
+    if ((completion_result = updateCompletion(possible_tabcomplete, &line_info->c, line_info, &tab_index))
+            .continue_loop) {
       renderCompletion(possible_tabcomplete, tab_index, &render_data);
     }
 
-  } while (loop && (*c = getch()));
+  } while (completion_result.continue_loop && (line_info->c = getch()));
 
   free_string_array(&(possible_tabcomplete.array));
   free_string_array(&splitted_line);
   free(current_word);
 
-  return *c;
+  return completion_result.successful;
 }

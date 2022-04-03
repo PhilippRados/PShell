@@ -45,7 +45,7 @@ string_array removeDuplicates(string_array* matching_commands);
 void backspaceLogic(char* line, int* i);
 char* removeCharAtPos(char* line, int x_pos);
 void logger(enum logger_type type, void* message);
-char tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array PATH_BINS,
+bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array PATH_BINS,
              const coordinates terminal_size);
 coordinates getCursorPos();
 void free_string_array(string_array* arr);
