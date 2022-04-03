@@ -47,17 +47,15 @@ string_array filterHistory(const string_array concatenated, char* line) {
   int matches_num = 0;
   char* line_no_whitespace = removeWhitespace(line);
 
-  if (strlen(line) > 0) {
-    for (int i = 0; i < concatenated.len; i++) {
-      char* values_no_whitespace = removeWhitespace(concatenated.values[i]);
+  for (int i = 0; i < concatenated.len; i++) {
+    char* values_no_whitespace = removeWhitespace(concatenated.values[i]);
 
-      if (levenshtein(line_no_whitespace, values_no_whitespace, strlen(line_no_whitespace)) < 2) {
-        possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
-        strcpy(possible_matches[matches_num], concatenated.values[i]);
-        matches_num++;
-      }
-      free(values_no_whitespace);
+    if (levenshtein(line_no_whitespace, values_no_whitespace, strlen(line_no_whitespace)) < 2) {
+      possible_matches[matches_num] = calloc(strlen(concatenated.values[i]) + 1, sizeof(char));
+      strcpy(possible_matches[matches_num], concatenated.values[i]);
+      matches_num++;
     }
+    free(values_no_whitespace);
   }
   free(line_no_whitespace);
   string_array result = {.values = possible_matches, .len = matches_num};
@@ -253,7 +251,7 @@ bool updateFuzzyfinder(char** line, char c, string_array matching_commands, int*
 
 fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const coordinates terminal_size,
                               int current_cursor_height, int line_row_count_with_autocomplete) {
-  char c;
+  char c = -1;
   int* fuzzy_index = calloc(1, sizeof(int));
   *fuzzy_index = 0;
   int* i = calloc(1, sizeof(int));
@@ -272,7 +270,7 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
   bool shifted = drawFuzzyPopup(current_cursor_height, fuzzy_cursor_height, terminal_size.x,
                                 line_row_count_with_autocomplete);
 
-  while (loop && (c = getch())) {
+  do {
     loop = updateFuzzyfinder(&line, c, matching_commands, fuzzy_index, i, max_input_len);
 
     if (loop) {
@@ -283,7 +281,8 @@ fuzzy_result popupFuzzyFinder(const string_array all_time_command_history, const
       renderFuzzyFinder(fuzzy_cursor_height, terminal_size.x, line, *fuzzy_index, matching_commands,
                         cursor_terminal_height_diff);
     }
-  }
+  } while (loop && (c = getch()));
+
   free_string_array(&matching_commands);
   free(fuzzy_index);
   free(i);

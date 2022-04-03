@@ -326,7 +326,7 @@ sleep 0.2
 @tty.assert_row(15, '/pshell ❱ llllllllllllllllllllllllllllll')
 @tty.assert_row(16, 'lllllllllllllllll')
 @tty.assert_row(17, ' ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-@tty.assert_row(19, ' ❱')
+@tty.assert_row(19, ' ❱                             1/13')
 
 puts "    \u2705 When line longer than term fuzzy-finder should still shift bottom of line up".encode('utf-8')
 

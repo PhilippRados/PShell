@@ -107,7 +107,7 @@ Test(updateFuzzyFinder, when_pressing_enter_copies_current_match_to_line) {
   *index = 1;
   int* i;
 
-  bool result = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result == false);
   cr_expect(strcmp(line, "two") == 0);
   free(line);
@@ -127,7 +127,7 @@ Test(updateFuzzyFinder, when_pressing_backspace_deletes_last_char) {
   int* i = calloc(1, sizeof(int));
   *i = strlen(line);
 
-  bool result = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result == true);
   cr_expect(strcmp(line, "not thi") == 0);
   cr_expect(*index == 0);
@@ -164,7 +164,7 @@ Test(updateFuzzyFinder, when_escape_twice_exits_finder) {
   *index = 1;
   int* i;
 
-  bool result = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result == false);
   cr_expect(strcmp(line, "") == 0);
   free(line);
@@ -198,17 +198,17 @@ Test(updateFuzzyFinder, when_up_arrowpress_dec_index) {
   *index = 2;
   int* i;
 
-  bool result1 = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result1 = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result1 == true);
   cr_expect(strcmp(line, "not this") == 0);
   cr_expect(*index == 1);
 
-  bool result2 = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result2 = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result2 == true);
   cr_expect(strcmp(line, "not this") == 0);
   cr_expect(*index == 0);
 
-  bool result3 = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result3 = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result3 == true);
   cr_expect(strcmp(line, "not this") == 0);
   cr_expect(*index == 0);
@@ -241,12 +241,12 @@ Test(updateFuzzyFinder, when_up_downarrow_inc_index_if_not_bottom) {
   *index = 1;
   int* i;
 
-  bool result1 = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result1 = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result1 == true);
   cr_expect(strcmp(line, "not this") == 0);
   cr_expect(*index == 2);
 
-  bool result2 = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result2 = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result2 == true);
   cr_expect(strcmp(line, "not this") == 0);
   cr_expect(*index == 2);
@@ -268,7 +268,7 @@ Test(updateFuzzyFinder, when_typing_char_appends_to_line) {
   int* i = calloc(1, sizeof(int));
   *i = strlen(line);
 
-  bool result = updateFuzzyfinder(&line, c, arr1, index, i);
+  bool result = updateFuzzyfinder(&line, c, arr1, index, i, 12);
   cr_expect(result == true);
   cr_expect(strcmp(line, "not thiss") == 0);
   cr_expect(*index == 0);
