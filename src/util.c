@@ -336,10 +336,9 @@ file_string_tuple getFileStrings(char* current_word, char* current_path) {
   }
   case '~': {
     char* home_path = getenv("HOME"); // Users/username
-    char* home_path_copy = calloc(strlen(home_path) + strlen(current_word) + 2, sizeof(char));
-    strcpy(home_path_copy, home_path);
+    strcpy(current_path, home_path);
 
-    current_dir = strcat(home_path_copy, &(current_word[1])); // Users/username/documents
+    current_dir = strcat(current_path, &(current_word[1])); // Users/username/documents
     removed_sub = &(current_dir[strlen(current_dir) - getAppendingIndex(current_dir, '/')]); // documents
     break;
   }
