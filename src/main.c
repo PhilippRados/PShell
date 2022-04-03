@@ -560,8 +560,12 @@ void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char
   }
 }
 
-void callBuiltin(string_array splitted_line, function_by_name builtins[], int function_index) {
+bool callBuiltin(string_array splitted_line, function_by_name builtins[], int function_index) {
+  if (strcmp(splitted_line.values[0], "exit") == 0) {
+    return false;
+  }
   (*builtins[function_index].func)(splitted_line);
+  return true;
 }
 
 void pushToCommandHistory(char* line, string_array* command_history) {
@@ -587,8 +591,8 @@ int main(int argc, char* argv[]) {
   char* current_dir = getcwd(dir, sizeof(dir));
   char* last_two_dirs = getLastTwoDirs(current_dir);
   function_by_name builtin_funcs[] = {
+      {"exit", NULL},
       {"cd", cd},
-      {"exit", exit},
   };
   builtins_array BUILTINS = {
       .array = builtin_funcs,
@@ -606,7 +610,9 @@ int main(int argc, char* argv[]) {
       splitted_line = splitString(line, ' ');
       int builtin_index;
       if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
-        callBuiltin(splitted_line, BUILTINS.array, builtin_index);
+        if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
+          break;
+        }
         current_dir = getcwd(dir, sizeof(dir));
         free(last_two_dirs);
         last_two_dirs = getLastTwoDirs(current_dir);
