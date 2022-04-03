@@ -456,7 +456,6 @@ void replaceAliases(string_array* splitted_line) {
 }
 
 int runChildProcess(string_array splitted_line) {
-  replaceAliases(&splitted_line);
   pid_t pid = fork();
 
   if (pid == 0) {
@@ -608,6 +607,7 @@ int main(int argc, char* argv[]) {
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
     if (strlen(line) > 0) {
       splitted_line = splitString(line, ' ');
+      replaceAliases(&splitted_line);
       int builtin_index;
       if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
         if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
