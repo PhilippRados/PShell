@@ -207,8 +207,13 @@ string_array getAllFilesInDir(string_array* directory_array) {
 
       while ((file = readdir(dr)) != NULL) {
         if ((j * sizeof(char*)) >= size) {
-          files = (char**)realloc(files, size * 1.5);
-          size *= 1.5;
+          char** tmp;
+          if ((tmp = realloc(files, size * 1.5)) == NULL) {
+            perror("realloc");
+          } else {
+            files = tmp;
+            size *= 1.5;
+          }
         }
         files[j] = (char*)calloc(strlen(file->d_name) + 1, sizeof(char));
         strcpy(files[j], file->d_name);
@@ -234,8 +239,13 @@ string_array filterMatching(char* line, const string_array PATH_BINS) {
   for (int i = 0; i < PATH_BINS.len; i++) {
     if (strncmp(PATH_BINS.values[i], line, strlen(line)) == 0) {
       if ((j * sizeof(char*)) >= size) {
-        matching_binaries = realloc(matching_binaries, size * 1.5);
-        size *= 1.5;
+        char** tmp;
+        if ((tmp = realloc(matching_binaries, size * 1.5)) == NULL) {
+          perror("realloc");
+        } else {
+          matching_binaries = tmp;
+          size *= 1.5;
+        }
       }
       matching_binaries[j] = calloc(strlen(PATH_BINS.values[i]) + 1, sizeof(char));
       strcpy(matching_binaries[j], PATH_BINS.values[i]);
