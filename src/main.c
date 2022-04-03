@@ -527,8 +527,8 @@ string_array getAllHistoryCommands() {
   return result;
 }
 
-void writeSessionCommandsToGlobalHistoryFile(string_array command_history) {
-  string_array history_commands = getAllHistoryCommands();
+void writeSessionCommandsToGlobalHistoryFile(string_array command_history, string_array global_history) {
+  // string_array history_commands = getAllHistoryCommands();
   char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_write = fopen(file_path, "a");
   free(file_path);
@@ -539,13 +539,13 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history) {
   }
 
   for (int i = 0; i < command_history.len; i++) {
-    if (!inArray(command_history.values[i], history_commands)) {
+    if (!inArray(command_history.values[i], global_history)) {
       fprintf(file_to_write, "%s\n", command_history.values[i]);
     }
   }
 
   fclose(file_to_write);
-  free_string_array(&history_commands);
+  free_string_array(&global_history);
 }
 
 void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char* dir) {
@@ -636,25 +636,10 @@ int main(int argc, char* argv[]) {
     free(line);
   }
 
-  writeSessionCommandsToGlobalHistoryFile(command_history);
+  writeSessionCommandsToGlobalHistoryFile(command_history, global_command_history);
   free_string_array(&command_history);
   free_string_array(&PATH_BINS);
   free(last_two_dirs);
-
-  int chunk_size = (global_command_history.len / 512) + 1;
-  int j = 0;
-  for (int i = 0; i < chunk_size; i++) {
-    for (int k = 0; k < 512; k++) {
-      free(global_command_history.values[j]);
-      global_command_history.values[j] = NULL;
-      j++;
-    }
-  }
-  free(global_command_history.values);
-
-  /* free(splitted_line.values); */
-  /* free(line); */
-  /* free(PATH_ARR.values); */
 }
 
 #endif /* !TEST */
