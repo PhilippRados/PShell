@@ -372,3 +372,25 @@ Test(update, moving_cursor_to_endofline_when_matching_complete_from_global_histo
   free(line_info->i);
   free(line_info);
 }
+
+Test(tokenizer, tokenizes_splitted_line) {
+  char* line = "ls arg arg";
+  string_array splitted = splitString(line, ' ');
+  enum token* result = tokenize(splitted);
+  cr_expect(result[0] == cmd);
+  cr_expect(result[1] == arg);
+  cr_expect(result[2] == arg);
+  free(result);
+  free_string_array(&splitted);
+}
+
+Test(tokenizer, tokenizes_splitted_line_with_ampamp) {
+  char* line = "ls arg &&";
+  string_array splitted = splitString(line, ' ');
+  enum token* result = tokenize(splitted);
+  cr_expect(result[0] == cmd);
+  cr_expect(result[1] == arg);
+  cr_expect(result[2] == ampamp);
+  free(result);
+  free_string_array(&splitted);
+}

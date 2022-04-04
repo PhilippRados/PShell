@@ -452,15 +452,17 @@ puts "    \u2705 When pressing enter on tab-comp on second row appends to cursor
 sleep 0.2
 @tty.send_keys(%(\n))
 sleep 0.2
+@tty.send_keys(%(make\n))
+sleep 0.2
 @tty.send_keys(%(ls                                             ../))
 
 @tty.assert_row(22, '/pshell ❱ ls')
-@tty.assert_row(23, '                 ../media/')
+@tty.assert_row(23, '                 ../')
 @tty.assert_cursor_position(20, 23)
 
 @tty.send_keys(TAB)
 @tty.assert_row(17, '/pshell ❱ ls')
-@tty.assert_row(18, '                 ../media/')
+@tty.assert_row(18, '                 ../')
 @tty.assert_row(19, 'bin/     sys/     dev/     lib/')
 @tty.assert_cursor_position(20, 18)
 
@@ -529,18 +531,17 @@ sleep 0.2
 @tty.send_keys(%(l))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))
-@tty.assert_row(6, '/pshell ❱ ls')
-@tty.assert_row(7, '                 ../bin/')
+@tty.assert_row(7, '/pshell ❱ ls ../bin/')
 @tty.assert_row(8, 'ldattach       lsattr')
-@tty.assert_cursor_position(11, 6)
+@tty.assert_cursor_position(11, 7)
 
 puts "    \u2705 When user accepts tab-prompt matches get shown below current line".encode('utf-8')
 
 # When user presses enter on prompt completion replaces current line
 @tty.send_keys(%(\n))
-@tty.assert_row(6, '/pshell ❱ ldattach')
-@tty.assert_row(7, '')
-@tty.assert_cursor_position(18, 6)
+@tty.assert_row(7, '/pshell ❱ ldattach')
+@tty.assert_row(8, '')
+@tty.assert_cursor_position(18, 7)
 puts "    \u2705 When user presses enter on prompt completion replaces current line".encode('utf-8')
 
 # Tab-prompt always below complete line even when multi-line
@@ -551,16 +552,16 @@ sleep 0.2
   @tty.send_keys(%(ZD))
 end
 @tty.send_keys(TAB)
-@tty.assert_row(6, '/pshell ❱ ldattach')
-@tty.assert_row(7, 's')
-@tty.assert_row(8, 'The list of possible matches is 16 lines')
-@tty.assert_cursor_position(2, 10)
+@tty.assert_row(7, '/pshell ❱ ldattach')
+@tty.assert_row(8, 's')
+@tty.assert_row(9, 'The list of possible matches is 16 lines')
+@tty.assert_cursor_position(2, 11)
 
 # When Tab-completion bigger than terminal-size prints all matches and exits Tab-comp
 sleep 0.2
 @tty.send_keys(%(nn))
 @tty.send_keys(%(\n))
-@tty.assert_row(6, '/pshell ❱ lndattach')
+@tty.assert_row(7, '/pshell ❱ lndattach')
 @tty.send_keys(%(s))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))
@@ -794,4 +795,25 @@ end
 @tty.assert_cursor_position(35, 21)
 
 puts "    \u2705 Tab-completing with multiple big-completions".encode('utf-8')
+
+puts 'REMOVES ALL ERRONEOUS WHITESPACE'
+# Lines with too many whitespaces get stripped for execution
+sleep 0.2
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(  ls   /root\n))
+@tty.assert_row(20, '/ ❱   ls   /root')
+@tty.assert_row(21, 'another  some_file')
+
+puts "    \u2705 Lines with too many whitespaces get stripped for execution".encode('utf-8')
+
+# Command-history lins are also stripped
+sleep 0.2
+@tty.assert_row(23, '/ ❱ ')
+@tty.send_keys(%(\033))
+@tty.send_keys(%(ZA))
+@tty.assert_row(23, '/ ❱ ls /root')
+
+puts "    \u2705 Command-history lins are also stripped".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

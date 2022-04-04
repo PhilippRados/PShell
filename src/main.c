@@ -403,11 +403,6 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
     render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
            cursor_pos, terminal_size, BUILTINS);
   }
-  int i = 0;
-  for (; i < strlen(line_info->line) && line_info->line[i] == ' '; i++)
-    ;
-  char* result = calloc(strlen(line_info->line) - i + 1, sizeof(char));
-  strcpy(result, &line_info->line[i]);
 
   moveCursor((coordinates){
       1000, cursor_pos->y + calculateRowCount(terminal_size, line_info->prompt_len, strlen(line_info->line))});
@@ -416,6 +411,8 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   free(autocomplete_info);
   free(history_info);
   free(cursor_pos);
+  char* result = calloc(strlen(line_info->line) + 1, sizeof(char));
+  strcpy(result, line_info->line);
   free(line_info->line);
   free(line_info->i);
   free(line_info);
@@ -547,6 +544,39 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history, strin
   free_string_array(&global_history);
 }
 
+enum token* tokenize(string_array splitted_line) {
+  enum token* tokened_array = calloc(splitted_line.len, sizeof(enum token));
+  bool is_cmd = false;
+  for (int j = 0; j < splitted_line.len; j++) {
+    if (j == 0 || is_cmd) {
+      tokened_array[j] = cmd;
+    } else {
+      if (strcmp(splitted_line.values[j], PIPE) == 0) {
+        tokened_array[j] = pipe_cmd;
+        is_cmd = true;
+      } else if (strcmp(splitted_line.values[j], AMPAMP) == 0) {
+        tokened_array[j] = ampamp;
+        is_cmd = true;
+      } else if (strcmp(splitted_line.values[j], GREAT) == 0) {
+        tokened_array[j] = great;
+        is_cmd = false;
+      } else if (strcmp(splitted_line.values[j], GREATGREAT) == 0) {
+        tokened_array[j] = greatgreat;
+        is_cmd = false;
+      } else if (strcmp(splitted_line.values[j], LESS) == 0) {
+        tokened_array[j] = less;
+        is_cmd = false;
+      } else if (strcmp(splitted_line.values[j], LESSLESS) == 0) {
+        tokened_array[j] = lessless;
+        is_cmd = false;
+      } else {
+        tokened_array[j] = arg;
+      }
+    }
+  }
+  return tokened_array;
+}
+
 void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char* dir) {
   if (splitted_line.len == 2) {
     if (chdir(splitted_line.values[1]) == -1) {
@@ -605,6 +635,7 @@ int main(int argc, char* argv[]) {
     printPrompt(last_two_dirs, CYAN);
 
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
+    line = removeMultipleWhitespaces(line);
     if (strlen(line) > 0) {
       splitted_line = splitString(line, ' ');
       replaceAliases(&splitted_line);

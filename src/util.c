@@ -39,6 +39,28 @@ bool isOnlyDelimeter(const char* string, char delimeter) {
   return true;
 }
 
+char* removeMultipleWhitespaces(char* string) {
+  int i = 0;
+  for (; i < strlen(string) && string[i] == ' '; i++)
+    ;
+  char* new_string = calloc(strlen(string) + 1, sizeof(char));
+  strcpy(new_string, &string[i]);
+  free(string);
+  bool is_first = true;
+  for (int j = 0; j < strlen(new_string);) {
+    if (new_string[j] == ' ' && is_first) {
+      is_first = false;
+      j++;
+    } else if (new_string[j] == ' ' && !is_first) {
+      new_string = removeCharAtPos(new_string, j);
+    } else {
+      is_first = true;
+      j++;
+    }
+  }
+  return new_string;
+}
+
 string_array splitString(const char* string_to_split, char delimeter) {
   int start = 0;
   int j = 0;

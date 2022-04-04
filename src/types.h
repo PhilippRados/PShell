@@ -1,6 +1,15 @@
 #include <stdlib.h>
 
 enum cursor_direction { cursor_up, cursor_down, cursor_left, cursor_right };
+enum token { pipe_cmd, great, greatgreat, less, lessless, ampamp, star, question, cmd, arg };
+#define PIPE "|"
+#define GREAT ">"
+#define GREATGREAT ">>"
+#define LESS "<"
+#define LESSLESS "<<"
+#define AMPAMP "&&"
+// #define STAR "*"
+// #define QUESTION '?'
 
 enum logger_type {
   integer,

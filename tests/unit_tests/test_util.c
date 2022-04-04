@@ -33,11 +33,29 @@ Test(Split_func, only_command_len) {
   cr_expect(result.len == 1);
 }
 
-Test(Split_func, only_whitespace) {
-  string_array result = splitString("    ", ' ');
+Test(removeMultipleWhitespace, removes_any_extraneous_whitespace) {
+  char* line = calloc(64, sizeof(char));
+  strcpy(line, "    uwe   ist cool");
+  char* result = removeMultipleWhitespaces(line);
+  cr_expect(strcmp(result, "uwe ist cool") == 0);
+  free(result);
+}
 
-  cr_expect(result.len == 1);
-  cr_expect(strcmp(result.values[0], "    ") == 0);
+Test(removeMultipleWhitespace, only_whitespace) {
+  char* empty = calloc(5, sizeof(char));
+  strcpy(empty, "    ");
+  char* result = removeMultipleWhitespaces(empty);
+
+  cr_expect(strcmp(result, "") == 0);
+  free(result);
+}
+
+Test(removeMultipleWhitespace, when_everything_fine_nothing_changs) {
+  char* line = calloc(64, sizeof(char));
+  strcpy(line, "ls .");
+  char* result = removeMultipleWhitespaces(line);
+  cr_expect(strcmp(result, "ls .") == 0);
+  free(result);
 }
 
 Test(insertStringAtPos, insert_string_at_end) {

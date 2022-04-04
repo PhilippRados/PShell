@@ -12,3 +12,4 @@ line_data* lineDataConstructor(int directory_len);
 autocomplete_data* autocompleteDataConstructor();
 history_data* historyDataConstructor(string_array* command_history, string_array global_command_history);
 string_array concatenateArrays(const string_array one, const string_array two);
+enum token* tokenize(string_array splitted_line);
