@@ -218,7 +218,7 @@ token_index_arr tokenizeLine(char* line) {
   regex_t re;
   int group_nums = ENUM_LEN;
   regmatch_t rm[group_nums];
-  char* line_token_regex = "^[ ]*([_A-Za-z0-9]+)|\\|[ ]*([_A-Za-z0-9]+)|(\\|)|([ ]+)";
+  char* line_token_regex = "^[ ]*([_A-Za-z0-9.-\\/]+)|\\|[ ]*([_A-Za-z0-9.-\\/]+)|(\\|)|([ ]+)";
   char* only_args = "([^ \t]+)";
 
   if (regcomp(&re, line_token_regex, REG_EXTENDED) != 0) {
@@ -313,7 +313,8 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
     case (CMD): {
       bool in_path = isInPath(substring, PATH_BINS);
       bool is_builtin = isBuiltin(substring, BUILTINS) != -1 ? true : false;
-      in_path || is_builtin ? printColor(substring, GREEN, standard) : printColor(substring, RED, bold);
+      bool is_exec = isExec(substring);
+      in_path || is_builtin || is_exec ? printColor(substring, GREEN, standard) : printColor(substring, RED, bold);
       break;
     }
     case (ARG): {

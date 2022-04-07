@@ -494,3 +494,10 @@ int getLongestWordInArray(const string_array array) {
 
   return longest;
 }
+
+bool isExec(char* file) {
+  if (access(file, F_OK | X_OK) == 0 && !isDirectory(file)) {
+    return true;
+  }
+  return false;
+}
