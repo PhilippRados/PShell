@@ -13,3 +13,5 @@ autocomplete_data* autocompleteDataConstructor();
 history_data* historyDataConstructor(string_array* command_history, string_array global_command_history);
 string_array concatenateArrays(const string_array one, const string_array two);
 token_index_arr tokenizeLine(char* line);
+void removeWhitespaceTokens(token_index_arr* tokenized_line);
+bool isValidSyntax(token_index_arr tokenized_line);

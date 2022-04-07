@@ -682,6 +682,47 @@ void pushToCommandHistory(char* line, string_array* command_history) {
   }
 }
 
+void removeWhitespaceTokens(token_index_arr* tokenized_line) {
+  for (int i = 0; i < tokenized_line->len;) {
+    if (tokenized_line->arr[i].token == WHITESPACE) {
+      for (int j = i; j < tokenized_line->len - 1; j++) {
+        tokenized_line->arr[j] = tokenized_line->arr[j + 1];
+      }
+      tokenized_line->len--;
+    } else {
+      i++;
+    }
+  }
+}
+char* convertTokenToString(token_index_arr tokenized_line) {
+  char* result = calloc(tokenized_line.len + 1, sizeof(char));
+  for (int i = 0; i < tokenized_line.len; i++) {
+    result[i] = tokenized_line.arr[i].token + '0';
+  }
+  return result;
+}
+
+bool isValidSyntax(token_index_arr tokenized_line) {
+  removeWhitespaceTokens(&tokenized_line);
+  char* string_rep = convertTokenToString(tokenized_line);
+  bool result = false;
+  regex_t re;
+  regmatch_t rm[1];
+  char* valid_syntax = "^1[5]*((32)*5*)*"; // nums represent enum tokens
+
+  if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
+    perror("error in compiling regex\n");
+  }
+  if (regexec(&re, string_rep, 1, rm, 0) == 0 && rm->rm_eo - rm->rm_so == strlen(string_rep)) {
+    result = true;
+  } else {
+    result = false;
+  }
+
+  free(string_rep);
+  return result;
+}
+
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
@@ -715,7 +756,8 @@ int main(int argc, char* argv[]) {
 
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
     line = removeMultipleWhitespaces(line);
-    if (strlen(line) > 0) {
+    token_index_arr tokenized_line = tokenizeLine(line);
+    if (strlen(line) > 0 && isValidSyntax(tokenized_line)) {
       splitted_line = splitString(line, ' ');
       replaceAliases(&splitted_line);
       int builtin_index;
@@ -744,6 +786,8 @@ int main(int argc, char* argv[]) {
         pushToCommandHistory(line, &command_history);
       }
       free_string_array(&splitted_line);
+    } else {
+      printf("Syntax Error\n");
     }
     free(line);
   }

@@ -484,3 +484,75 @@ Test(tokenizeLine, command_and_pipe_cmd_multiple_args) {
   cr_expect(result_arr[2].start == 3);
   cr_expect(result_arr[2].end == 11);
 }
+
+Test(removeWhitespacetokens, removes_whitetoken) {
+  token_index arr1 = {.token = WHITESPACE, .start = 0, .end = 2};
+  token_index arr2 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2};
+  token_index_arr token = {.arr = arr, .len = 2};
+
+  removeWhitespaceTokens(&token);
+  cr_expect(token.arr[0].token == CMD);
+  cr_expect(token.len == 1);
+}
+
+Test(removeWhitespacetokens, removes_whitetoken_when_multiple_args) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = WHITESPACE, .start = 0, .end = 2};
+  token_index arr3 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr4 = {.token = WHITESPACE, .start = 0, .end = 2};
+  token_index arr5 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5};
+  token_index_arr token = {.arr = arr, .len = 5};
+
+  removeWhitespaceTokens(&token);
+  cr_expect(token.len == 3);
+  cr_expect(token.arr[0].token == CMD);
+  cr_expect(token.arr[1].token == ARG);
+  cr_expect(token.arr[2].token == ARG);
+  cr_expect(token.len == 3);
+}
+
+Test(isValidSyntax, valid_when_normal_syntax) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr3 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr4 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4};
+  token_index_arr token = {.arr = arr, .len = 4};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, not_valid_when_multiple_pipes_successively) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr3 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr4 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4};
+  token_index_arr token = {.arr = arr, .len = 4};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == false);
+}
+
+Test(isValidSyntax, not_valid_when_last_char_pipe) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2};
+  token_index_arr token = {.arr = arr, .len = 2};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == false);
+}
+
+Test(isValidSyntax, not_valid_when_starts_with_pipe) {
+  token_index arr1 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr2 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2};
+  token_index_arr token = {.arr = arr, .len = 2};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == false);
+}
