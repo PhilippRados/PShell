@@ -373,24 +373,114 @@ Test(update, moving_cursor_to_endofline_when_matching_complete_from_global_histo
   free(line_info);
 }
 
-Test(tokenizer, tokenizes_splitted_line) {
-  char* line = "ls arg arg";
-  string_array splitted = splitString(line, ' ');
-  enum token* result = tokenize(splitted);
-  cr_expect(result[0] == cmd);
-  cr_expect(result[1] == arg);
-  cr_expect(result[2] == arg);
-  free(result);
-  free_string_array(&splitted);
+Test(tokenizeLine, tokenizes_simple_command) {
+  char* line = "ls arg";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 6);
 }
 
-Test(tokenizer, tokenizes_splitted_line_with_ampamp) {
-  char* line = "ls arg &&";
-  string_array splitted = splitString(line, ' ');
-  enum token* result = tokenize(splitted);
-  cr_expect(result[0] == cmd);
-  cr_expect(result[1] == arg);
-  cr_expect(result[2] == ampamp);
-  free(result);
-  free_string_array(&splitted);
+Test(tokenizeLine, tokenizes_command_with_too_much_whitespace) {
+  char* line = "   ls  arg_s   ";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 5);
+  cr_expect(result_arr[0].token == WHITESPACE);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 3);
+  cr_expect(result_arr[1].token == CMD);
+  cr_expect(result_arr[1].start == 3);
+  cr_expect(result_arr[1].end == 5);
+  cr_expect(result_arr[2].token == WHITESPACE);
+  cr_expect(result_arr[2].start == 5);
+  cr_expect(result_arr[2].end == 7);
+  cr_expect(result_arr[3].token == ARG);
+  cr_expect(result_arr[3].start == 7);
+  cr_expect(result_arr[3].end == 12);
+  cr_expect(result_arr[4].token == WHITESPACE);
+  cr_expect(result_arr[4].start == 12);
+  cr_expect(result_arr[4].end == 15);
+}
+
+Test(tokenizeLine, tokenizes_command_with_too_much_whitespace_and_pipe) {
+  char* line = "   ls  arg_s   | next_cmd  flag=some";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 10);
+  cr_expect(result_arr[0].token == WHITESPACE);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 3);
+  cr_expect(result_arr[1].token == CMD);
+  cr_expect(result_arr[1].start == 3);
+  cr_expect(result_arr[1].end == 5);
+  cr_expect(result_arr[2].token == WHITESPACE);
+  cr_expect(result_arr[2].start == 5);
+  cr_expect(result_arr[2].end == 7);
+  cr_expect(result_arr[3].token == ARG);
+  cr_expect(result_arr[3].start == 7);
+  cr_expect(result_arr[3].end == 12);
+  cr_expect(result_arr[4].token == WHITESPACE);
+  cr_expect(result_arr[4].start == 12);
+  cr_expect(result_arr[4].end == 15);
+  cr_expect(result_arr[5].token == PIPE);
+  cr_expect(result_arr[5].start == 15);
+  cr_expect(result_arr[5].end == 16);
+  cr_expect(result_arr[6].token == WHITESPACE);
+  cr_expect(result_arr[6].start == 16);
+  cr_expect(result_arr[6].end == 17);
+  cr_expect(result_arr[7].token == PIPE_CMD);
+  cr_expect(result_arr[7].start == 17);
+  cr_expect(result_arr[7].end == 25);
+  cr_expect(result_arr[8].token == WHITESPACE);
+  cr_expect(result_arr[8].start == 25);
+  cr_expect(result_arr[8].end == 27);
+  cr_expect(result_arr[9].token == ARG);
+  cr_expect(result_arr[9].start == 27);
+  cr_expect(result_arr[9].end == 36);
+}
+
+Test(tokenizeLine, only_command_and_pipe_cmd) {
+  char* line = "ls|next_cmd";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == PIPE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == PIPE_CMD);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 11);
+}
+
+Test(tokenizeLine, command_and_pipe_cmd_multiple_args) {
+  char* line = "ls|next_cmd uwe test";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 7);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == PIPE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == PIPE_CMD);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 11);
 }

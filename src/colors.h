@@ -33,3 +33,9 @@ static const color HIGHLIGHT = {
     .fg = 37,
     .bg = 42,
 };
+
+static const color YELLOW = {
+    .attr = 0,
+    .fg = 33,
+    .bg = 10,
+};

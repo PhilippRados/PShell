@@ -204,21 +204,152 @@ bool filterHistoryForMatchingAutoComplete(const string_array all_time_commands, 
   return false;
 }
 
-void printLine(string_array command_line, int starting_index) {
-  string_array copy = copyStringArray(command_line);
-  replaceAliases(&copy);
+int tokenCmp(const void* a, const void* b) {
+  token_index cast_a = *(token_index*)a;
+  token_index cast_b = *(token_index*)b;
+  return cast_a.start - cast_b.start;
+}
 
-  for (int i = starting_index + 1; i < command_line.len; i++) {
-    autocomplete_array autocomplete = fileComp(command_line.values[i]);
-    if (autocomplete.array.len > 0) {
-      printf(" ");
-      printColor(command_line.values[i], WHITE, underline);
-    } else {
-      printf(" %s", command_line.values[i]);
-    }
-    free_string_array(&autocomplete.array);
+token_index_arr tokenizeLine(char* line) {
+  char* copy = calloc(strlen(line) + 1, sizeof(char));
+  strcpy(copy, line);
+
+  int retval = 0;
+  regex_t re;
+  int group_nums = ENUM_LEN;
+  regmatch_t rm[group_nums];
+  char* line_token_regex = "^[ ]*([_A-Za-z0-9]+)|\\|[ ]*([_A-Za-z0-9]+)|(\\|)|([ ]+)";
+  char* only_args = "([^ \t]+)";
+
+  if (regcomp(&re, line_token_regex, REG_EXTENDED) != 0) {
+    perror("error in compiling regex\n");
   }
-  free_string_array(&copy);
+  char* start;
+  char* end;
+
+  token_index* result_arr = calloc(strlen(line), sizeof(token_index));
+
+  int j;
+  for (j = 0; j < strlen(copy); j++) {
+    if ((retval = regexec(&re, copy, group_nums, rm, 0)) == 0) {
+      for (int i = 1; i < group_nums; i++) {
+        if (rm[i].rm_so != -1) { // only quit when in every group .so == -1
+          start = copy + rm[i].rm_so;
+          end = copy + rm[i].rm_eo;
+          result_arr[j].start = rm[i].rm_so; // [i] i matches group index
+          result_arr[j].end = rm[i].rm_eo;
+          result_arr[j].token = i; // depending on which group matched assign token
+          while (start < end) {
+            *start++ = '\t';
+          }
+          break;
+        }
+      }
+    } else {
+      break;
+    }
+  }
+  if (regcomp(&re, only_args, REG_EXTENDED) != 0) {
+    perror("error in compiling regex\n");
+  }
+  for (; j < strlen(copy); j++) {
+    if ((retval = regexec(&re, copy, group_nums, rm, 0)) == 0) {
+      if (rm[1].rm_so != -1) {
+        start = copy + rm[1].rm_so;
+        end = copy + rm[1].rm_eo;
+        result_arr[j].start = rm[1].rm_so;
+        result_arr[j].end = rm[1].rm_eo;
+        result_arr[j].token = ARG;
+        while (start < end) {
+          *start++ = '\t';
+        }
+      }
+    } else {
+      break;
+    }
+  }
+  free(copy);
+
+  qsort(result_arr, j, sizeof(token_index), tokenCmp);
+  token_index_arr result = {.arr = result_arr, .len = j};
+
+  return result;
+}
+
+int isBuiltin(char* command, builtins_array builtins) {
+  for (int i = 0; i < builtins.len; i++) {
+    if (strcmp(command, builtins.array[i].name) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void replaceAliasesString(char** line) {
+  for (int j = 0; j < strlen(*line); j++) {
+    if (**line == '~') {
+      char* home_path = getenv("HOME");
+      char* prior_line = calloc(strlen(*line) + 1, sizeof(char));
+      strcpy(prior_line, *line);
+      removeCharAtPos(prior_line, j + 1);
+      *line = realloc(*line, strlen(home_path) + strlen(*line) + 10);
+      strcpy(*line, prior_line);
+      insertStringAtPos(line, home_path, j);
+      free(prior_line);
+    }
+  }
+}
+
+void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_array BUILTINS,
+                        string_array PATH_BINS) {
+  for (int i = 0; i < tokenized_line.len; i++) {
+    int token_start = tokenized_line.arr[i].start;
+    int token_end = tokenized_line.arr[i].end;
+    char* substring = calloc(token_end - token_start + 1, sizeof(char));
+    strncpy(substring, &line[token_start], token_end - token_start);
+
+    switch (tokenized_line.arr[i].token) {
+    case (PIPE_CMD):
+    case (CMD): {
+      bool in_path = isInPath(substring, PATH_BINS);
+      bool is_builtin = isBuiltin(substring, BUILTINS) != -1 ? true : false;
+      in_path || is_builtin ? printColor(substring, GREEN, standard) : printColor(substring, RED, bold);
+      break;
+    }
+    case (ARG): {
+      char* copy_sub = calloc(strlen(substring) + 1, sizeof(char));
+      strcpy(copy_sub, substring);
+      replaceAliasesString(&copy_sub);
+
+      int autocomplete = fileComp(copy_sub).array.len;
+      if (autocomplete > 0) {
+        printColor(substring, WHITE, underline);
+      } else {
+        printf("%s", substring);
+      }
+      free(copy_sub);
+      break;
+    }
+    case (WHITESPACE): {
+      printf("%s", substring);
+      break;
+    }
+    case (PIPE): {
+      printColor("|", YELLOW, standard);
+      break;
+    }
+    default: {
+      perror("invalid input\n");
+      break;
+    }
+    }
+    free(substring);
+  }
+}
+
+void printLine(char* line, builtins_array BUILTINS, string_array PATH_BINS) {
+  token_index_arr tokenized_line = tokenizeLine(line);
+  printTokenizedLine(line, tokenized_line, BUILTINS, PATH_BINS);
 }
 
 bool shiftLineIfOverlap(int current_cursor_height, int terminal_height, int line_row_count_with_autocomplete) {
@@ -229,15 +360,6 @@ bool shiftLineIfOverlap(int current_cursor_height, int terminal_height, int line
     printf("\n");
   }
   return true;
-}
-
-int isBuiltin(char* command, builtins_array builtins) {
-  for (int i = 0; i < builtins.len; i++) {
-    if (strcmp(command, builtins.array[i].name) == 0) {
-      return i;
-    }
-  }
-  return -1;
 }
 
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
@@ -255,18 +377,7 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
   printPrompt(directories, CYAN);
 
   if (strlen(line_info->line) > 0) {
-    string_array command_line = splitString(line_info->line, ' ');
-    int starting_index = firstNonDelimeterIndex(command_line);
-
-    for (int j = 0; j < starting_index; j++) {
-      printf(" ");
-    }
-    bool in_path = isInPath(command_line.values[starting_index], PATH_BINS);
-    bool is_builtin = isBuiltin(command_line.values[starting_index], BUILTINS) != -1 ? true : false;
-    in_path || is_builtin ? printColor(command_line.values[starting_index], GREEN, standard)
-                          : printColor(command_line.values[starting_index], RED, bold);
-    printLine(command_line, starting_index);
-    free_string_array(&command_line);
+    printLine(line_info->line, BUILTINS, PATH_BINS);
 
     if (autocomplete_info->autocomplete) {
       printf("%s", &autocomplete_info->possible_autocomplete[strlen(line_info->line)]);
@@ -542,39 +653,6 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history, strin
 
   fclose(file_to_write);
   free_string_array(&global_history);
-}
-
-enum token* tokenize(string_array splitted_line) {
-  enum token* tokened_array = calloc(splitted_line.len, sizeof(enum token));
-  bool is_cmd = false;
-  for (int j = 0; j < splitted_line.len; j++) {
-    if (j == 0 || is_cmd) {
-      tokened_array[j] = cmd;
-    } else {
-      if (strcmp(splitted_line.values[j], PIPE) == 0) {
-        tokened_array[j] = pipe_cmd;
-        is_cmd = true;
-      } else if (strcmp(splitted_line.values[j], AMPAMP) == 0) {
-        tokened_array[j] = ampamp;
-        is_cmd = true;
-      } else if (strcmp(splitted_line.values[j], GREAT) == 0) {
-        tokened_array[j] = great;
-        is_cmd = false;
-      } else if (strcmp(splitted_line.values[j], GREATGREAT) == 0) {
-        tokened_array[j] = greatgreat;
-        is_cmd = false;
-      } else if (strcmp(splitted_line.values[j], LESS) == 0) {
-        tokened_array[j] = less;
-        is_cmd = false;
-      } else if (strcmp(splitted_line.values[j], LESSLESS) == 0) {
-        tokened_array[j] = lessless;
-        is_cmd = false;
-      } else {
-        tokened_array[j] = arg;
-      }
-    }
-  }
-  return tokened_array;
 }
 
 void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char* dir) {

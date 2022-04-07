@@ -1,15 +1,18 @@
 #include <stdlib.h>
 
 enum cursor_direction { cursor_up, cursor_down, cursor_left, cursor_right };
-enum token { pipe_cmd, great, greatgreat, less, lessless, ampamp, star, question, cmd, arg };
-#define PIPE "|"
-#define GREAT ">"
-#define GREATGREAT ">>"
-#define LESS "<"
-#define LESSLESS "<<"
-#define AMPAMP "&&"
-// #define STAR "*"
-// #define QUESTION '?'
+enum token { CMD = 1, PIPE_CMD, PIPE, WHITESPACE, ARG, ENUM_LEN };
+
+typedef struct token_index {
+  int start;
+  int end;
+  enum token token;
+} token_index;
+
+typedef struct token_index_arr {
+  token_index* arr;
+  int len;
+} token_index_arr;
 
 enum logger_type {
   integer,
