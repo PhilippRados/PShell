@@ -771,6 +771,7 @@ int main(int argc, char* argv[]) {
   char* line;
   string_array splitted_line;
   char dir[PATH_MAX];
+  bool loop = true;
   string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
   string_array PATH_ARR = splitString(getenv("PATH"), ':');
   string_array all_files_in_dir = getAllFilesInDir(&PATH_ARR);
@@ -792,12 +793,11 @@ int main(int argc, char* argv[]) {
 
   CLEAR_SCREEN;
 
-  while (1) {
+  while (loop) {
     printf("\n");
     printPrompt(last_two_dirs, CYAN);
 
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
-    // line = removeMultipleWhitespaces(line);
     token_index_arr tokenized_line = tokenizeLine(line);
     removeWhitespaceTokens(&tokenized_line);
 
@@ -818,8 +818,8 @@ int main(int argc, char* argv[]) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
             free_string_array(&simple_commands_arr);
             free_string_array(&splitted_line);
-            free(line);
-            goto AFTER_LOOP;
+            loop = false;
+            break;
           }
           current_dir = getcwd(dir, sizeof(dir));
           free(last_two_dirs);
@@ -829,7 +829,7 @@ int main(int argc, char* argv[]) {
 
         } else {
           pid_t child;
-          // int wstatus;
+          int w_status;
 
           dup2(fdin, STDIN_FILENO);
           close(fdin);
@@ -850,9 +850,8 @@ int main(int argc, char* argv[]) {
               printf("couldn't find command %s\n", splitted_line.values[0]);
             }
           }
-          if (waitpid(pid, NULL, 0) == -1) {
-            // perror("Child-process failure\n");
-            // exit(EXIT_FAILURE);
+          if (waitpid(pid, &w_status, WUNTRACED | WCONTINUED) == -1) {
+            exit(EXIT_FAILURE);
           }
         }
       }
@@ -868,7 +867,6 @@ int main(int argc, char* argv[]) {
     }
     free(line);
   }
-AFTER_LOOP:
   writeSessionCommandsToGlobalHistoryFile(command_history, global_command_history);
   free_string_array(&command_history);
   free_string_array(&PATH_BINS);
