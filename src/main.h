@@ -16,3 +16,4 @@ token_index_arr tokenizeLine(char* line);
 void removeWhitespaceTokens(token_index_arr* tokenized_line);
 bool isValidSyntax(token_index_arr tokenized_line);
 string_array splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_line);
+string_array splitByWhitespaceTokens(char* line);

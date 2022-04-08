@@ -457,12 +457,12 @@ sleep 0.2
 @tty.send_keys(%(ls                                             ../))
 
 @tty.assert_row(22, '/pshell ❱ ls')
-@tty.assert_row(23, '                 ../')
+@tty.assert_row(23, '                 ../media/')
 @tty.assert_cursor_position(20, 23)
 
 @tty.send_keys(TAB)
 @tty.assert_row(17, '/pshell ❱ ls')
-@tty.assert_row(18, '                 ../')
+@tty.assert_row(18, '                 ../media/')
 @tty.assert_row(19, 'bin/     sys/     dev/     lib/')
 @tty.assert_cursor_position(20, 18)
 
@@ -531,17 +531,18 @@ sleep 0.2
 @tty.send_keys(%(l))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))
-@tty.assert_row(7, '/pshell ❱ ls ../bin/')
+@tty.assert_row(6, '/pshell ❱ ls')
+@tty.assert_row(7, '                 ../bin/')
 @tty.assert_row(8, 'ldattach       lsattr')
-@tty.assert_cursor_position(11, 7)
+@tty.assert_cursor_position(11, 6)
 
 puts "    \u2705 When user accepts tab-prompt matches get shown below current line".encode('utf-8')
 
 # When user presses enter on prompt completion replaces current line
 @tty.send_keys(%(\n))
-@tty.assert_row(7, '/pshell ❱ ldattach')
-@tty.assert_row(8, '')
-@tty.assert_cursor_position(18, 7)
+@tty.assert_row(6, '/pshell ❱ ldattach')
+@tty.assert_row(7, '')
+@tty.assert_cursor_position(18, 6)
 puts "    \u2705 When user presses enter on prompt completion replaces current line".encode('utf-8')
 
 # Tab-prompt always below complete line even when multi-line
@@ -552,16 +553,16 @@ sleep 0.2
   @tty.send_keys(%(ZD))
 end
 @tty.send_keys(TAB)
-@tty.assert_row(7, '/pshell ❱ ldattach')
-@tty.assert_row(8, 's')
-@tty.assert_row(9, 'The list of possible matches is 16 lines')
-@tty.assert_cursor_position(2, 11)
+@tty.assert_row(6, '/pshell ❱ ldattach')
+@tty.assert_row(7, 's')
+@tty.assert_row(8, 'The list of possible matches is 16 lines')
+@tty.assert_cursor_position(2, 10)
 
 # When Tab-completion bigger than terminal-size prints all matches and exits Tab-comp
 sleep 0.2
 @tty.send_keys(%(nn))
 @tty.send_keys(%(\n))
-@tty.assert_row(7, '/pshell ❱ lndattach')
+@tty.assert_row(6, '/pshell ❱ lndattach')
 @tty.send_keys(%(s))
 @tty.send_keys(TAB)
 @tty.send_keys(%(y))
@@ -691,22 +692,6 @@ sleep 0.2
 
 puts "    \u2705 Executes line even if command doesnt start at index 0".encode('utf-8')
 
-# Doesnt add whitespace to command-history
-sleep 0.2
-@tty.send_keys(CTRLF)
-@tty.send_keys(%(l))
-@tty.assert_cursor_position(4, 19)
-
-@tty.assert_row(19, ' ❱ l                           1/19')
-@tty.assert_row(20, '   ls dev/')
-
-sleep 0.2
-@tty.send_keys(%(\n))
-@tty.assert_row(7, '/ ❱ ls dev/')
-@tty.assert_cursor_position(11, 7)
-
-puts "    \u2705 Doesnt add whitespace to command-history".encode('utf-8')
-
 puts 'REPLACING ALIASES'
 # Replaces ~ with home-path
 sleep 0.2
@@ -807,13 +792,39 @@ sleep 0.2
 
 puts "    \u2705 Lines with too many whitespaces get stripped for execution".encode('utf-8')
 
-# Command-history lins are also stripped
+puts 'CHECKS IF VALID SHELL SYNTAX'
+# Doesnt execute if line starts with pipe
 sleep 0.2
-@tty.assert_row(23, '/ ❱ ')
-@tty.send_keys(%(\033))
-@tty.send_keys(%(ZA))
-@tty.assert_row(23, '/ ❱ ls /root')
+@tty.send_keys(%(|  ls\n))
+@tty.assert_row(20, '/ ❱ |  ls')
+@tty.assert_row(21, 'Syntax Error')
 
-puts "    \u2705 Command-history lins are also stripped".encode('utf-8')
+puts "    \u2705 Doesnt execute if line starts with pipe".encode('utf-8')
+
+# Doesnt execute if line ends with pipe
+sleep 0.2
+@tty.send_keys(%(ls|\n))
+@tty.assert_row(20, '/ ❱ ls|')
+@tty.assert_row(21, 'Syntax Error')
+
+puts "    \u2705 Doesnt execute if line ends with pipe".encode('utf-8')
+
+# Doesnt execute if multiple pipes consecutively
+sleep 0.2
+@tty.send_keys(%(ls||   cmd\n))
+@tty.assert_row(20, '/ ❱ ls||   cmd')
+@tty.assert_row(21, 'Syntax Error')
+
+puts "    \u2705 Doesnt execute if multiple pipes consecutively".encode('utf-8')
+
+puts 'ALLOWS FOR PIPING I/O'
+# Able to pipe command output to other command
+sleep 0.2
+@tty.send_keys(%(ls ../root|   cat\n))
+@tty.assert_row(19, '/ ❱ ls ../root|   cat')
+@tty.assert_row(20, 'another')
+@tty.assert_row(21, 'some_file')
+
+puts "    \u2705 Able to pipe command output to other command".encode('utf-8')
 
 @tty.send_keys(%(exit\n))

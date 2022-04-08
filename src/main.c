@@ -741,11 +741,27 @@ string_array splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_l
       found_split = true;
     }
   }
-  int end = tokenized_line.arr[i - 1].end;
+  int end = strlen(line);
   line_arr[j] = calloc(end - start + 1, sizeof(char));
   strncpy(line_arr[j], &line[start], end - start);
 
   string_array result = {.values = line_arr, .len = j + 1};
+  return result;
+}
+
+string_array splitByWhitespaceTokens(char* line) {
+  token_index_arr tokenized_line = tokenizeLine(line);
+  removeWhitespaceTokens(&tokenized_line);
+  char** line_arr = calloc(tokenized_line.len + 1, sizeof(char*));
+
+  for (int i = 0; i < tokenized_line.len; i++) {
+    int start = tokenized_line.arr[i].start;
+    int end = tokenized_line.arr[i].end;
+    line_arr[i] = calloc(end - start + 1, sizeof(char));
+    strncpy(line_arr[i], &line[start], end - start);
+  }
+  line_arr[tokenized_line.len] = NULL;
+  string_array result = {.values = line_arr, .len = tokenized_line.len};
   return result;
 }
 
@@ -781,7 +797,7 @@ int main(int argc, char* argv[]) {
     printPrompt(last_two_dirs, CYAN);
 
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
-    line = removeMultipleWhitespaces(line);
+    // line = removeMultipleWhitespaces(line);
     token_index_arr tokenized_line = tokenizeLine(line);
     removeWhitespaceTokens(&tokenized_line);
 
@@ -796,13 +812,14 @@ int main(int argc, char* argv[]) {
       pid_t pid;
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
-        splitted_line = splitString(simple_commands_arr.values[i], ' ');
+        splitted_line = splitByWhitespaceTokens(simple_commands_arr.values[i]);
         int builtin_index;
         if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
+            free_string_array(&simple_commands_arr);
             free_string_array(&splitted_line);
             free(line);
-            break; // has to break out of while too
+            goto AFTER_LOOP;
           }
           current_dir = getcwd(dir, sizeof(dir));
           free(last_two_dirs);
@@ -834,8 +851,8 @@ int main(int argc, char* argv[]) {
             }
           }
           if (waitpid(pid, NULL, 0) == -1) {
-            perror("Child-process failure\n");
-            exit(EXIT_FAILURE);
+            // perror("Child-process failure\n");
+            // exit(EXIT_FAILURE);
           }
         }
       }
@@ -851,7 +868,7 @@ int main(int argc, char* argv[]) {
     }
     free(line);
   }
-
+AFTER_LOOP:
   writeSessionCommandsToGlobalHistoryFile(command_history, global_command_history);
   free_string_array(&command_history);
   free_string_array(&PATH_BINS);
