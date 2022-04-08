@@ -556,3 +556,36 @@ Test(isValidSyntax, not_valid_when_starts_with_pipe) {
   bool result = isValidSyntax(token);
   cr_expect(result == false);
 }
+
+Test(splitLineIntoSimpleCommands, splits_at_pipe) {
+  char* line = "ls|uwe";
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = PIPE, .start = 2, .end = 3};
+  token_index arr3 = {.token = PIPE_CMD, .start = 3, .end = 6};
+  token_index arr[] = {arr1, arr2, arr3};
+  token_index_arr token = {.arr = arr, .len = 3};
+
+  string_array result = splitLineIntoSimpleCommands(line, token);
+  cr_expect(result.len == 2);
+  cr_expect(strcmp(result.values[0], "ls") == 0);
+  cr_expect(strcmp(result.values[1], "uwe") == 0);
+}
+
+Test(splitLineIntoSimpleCommands, splits_at_pipe_with_arg_and_whitespace) {
+  char* line = "ls some_arg| uwe also|last";
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = ARG, .start = 3, .end = 11};
+  token_index arr3 = {.token = PIPE, .start = 11, .end = 12};
+  token_index arr4 = {.token = PIPE_CMD, .start = 13, .end = 16};
+  token_index arr5 = {.token = ARG, .start = 17, .end = 21};
+  token_index arr6 = {.token = PIPE, .start = 21, .end = 22};
+  token_index arr7 = {.token = PIPE_CMD, .start = 22, .end = 26};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5, arr6, arr7};
+  token_index_arr token = {.arr = arr, .len = 7};
+
+  string_array result = splitLineIntoSimpleCommands(line, token);
+  cr_expect(result.len == 3);
+  cr_expect(strcmp(result.values[0], "ls some_arg") == 0);
+  cr_expect(strcmp(result.values[1], "uwe also") == 0);
+  cr_expect(strcmp(result.values[2], "last") == 0);
+}

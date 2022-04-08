@@ -703,7 +703,6 @@ char* convertTokenToString(token_index_arr tokenized_line) {
 }
 
 bool isValidSyntax(token_index_arr tokenized_line) {
-  removeWhitespaceTokens(&tokenized_line);
   char* string_rep = convertTokenToString(tokenized_line);
   bool result = false;
   regex_t re;
@@ -720,6 +719,33 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   }
 
   free(string_rep);
+  return result;
+}
+
+string_array splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_line) {
+  char** line_arr = calloc(tokenized_line.len, sizeof(char*));
+  int j = 0;
+  bool found_split = true;
+  int start = 0;
+  int i;
+  for (i = 0; i < tokenized_line.len; i++) {
+    if (found_split) {
+      start = tokenized_line.arr[i].start;
+      found_split = false;
+    }
+    if (tokenized_line.arr[i].token == PIPE) {
+      int end = tokenized_line.arr[i].start;
+      line_arr[j] = calloc(end - start + 1, sizeof(char));
+      strncpy(line_arr[j], &line[start], end - start);
+      j++;
+      found_split = true;
+    }
+  }
+  int end = tokenized_line.arr[i - 1].end;
+  line_arr[j] = calloc(end - start + 1, sizeof(char));
+  strncpy(line_arr[j], &line[start], end - start);
+
+  string_array result = {.values = line_arr, .len = j + 1};
   return result;
 }
 
@@ -757,35 +783,69 @@ int main(int argc, char* argv[]) {
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
     line = removeMultipleWhitespaces(line);
     token_index_arr tokenized_line = tokenizeLine(line);
+    removeWhitespaceTokens(&tokenized_line);
+
     if (strlen(line) > 0 && isValidSyntax(tokenized_line)) {
-      splitted_line = splitString(line, ' ');
-      replaceAliases(&splitted_line);
-      int builtin_index;
-      if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
-        if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
-          free_string_array(&splitted_line);
-          free(line);
-          break;
+      string_array simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
+      replaceAliases(&simple_commands_arr);
+      int pd[2];
+      int tmpin = dup(0);
+      int tmpout = dup(1);
+      int fdin = open(0, O_RDONLY);
+      int fdout;
+      pid_t pid;
+
+      for (int i = 0; i < simple_commands_arr.len; i++) {
+        splitted_line = splitString(simple_commands_arr.values[i], ' ');
+        int builtin_index;
+        if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
+          if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
+            free_string_array(&splitted_line);
+            free(line);
+            break; // has to break out of while too
+          }
+          current_dir = getcwd(dir, sizeof(dir));
+          free(last_two_dirs);
+          last_two_dirs = getLastTwoDirs(current_dir);
+
+          pushToCommandHistory(line, &command_history);
+
+        } else {
+          pid_t child;
+          // int wstatus;
+
+          dup2(fdin, STDIN_FILENO);
+          close(fdin);
+          if (i < simple_commands_arr.len - 1) {
+            pipe(pd);
+            fdout = pd[1];
+            fdin = pd[0];
+          } else {
+            fdout = dup(tmpout);
+          }
+          dup2(fdout, STDOUT_FILENO);
+          close(fdout);
+          pid = fork();
+
+          if (pid == 0) {
+            int error = execvp(splitted_line.values[0], splitted_line.values);
+            if (error) {
+              printf("couldn't find command %s\n", splitted_line.values[0]);
+            }
+          }
+          if (waitpid(pid, NULL, 0) == -1) {
+            perror("Child-process failure\n");
+            exit(EXIT_FAILURE);
+          }
         }
-        current_dir = getcwd(dir, sizeof(dir));
-        free(last_two_dirs);
-        last_two_dirs = getLastTwoDirs(current_dir);
-
-        pushToCommandHistory(line, &command_history);
-
-      } else {
-        pid_t child;
-        int wstatus;
-
-        child = runChildProcess(splitted_line);
-
-        if (waitpid(child, &wstatus, WUNTRACED | WCONTINUED) == -1) {
-          exit(EXIT_FAILURE);
-        }
-
-        pushToCommandHistory(line, &command_history);
       }
+      pushToCommandHistory(line, &command_history);
+      free_string_array(&simple_commands_arr);
       free_string_array(&splitted_line);
+      dup2(tmpin, 0);
+      dup2(tmpout, 1);
+      close(tmpin);
+      close(tmpout);
     } else {
       printf("Syntax Error\n");
     }
