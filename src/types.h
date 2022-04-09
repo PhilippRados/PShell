@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 enum cursor_direction { cursor_up, cursor_down, cursor_left, cursor_right };
-enum token { CMD = 1, PIPE_CMD, PIPE, WHITESPACE, ARG, ENUM_LEN };
+enum token { CMD = 1, PIPE_CMD, PIPE, WHITESPACE, AMPAMP, AMP_CMD, ARG, ENUM_LEN };
 
 typedef struct token_index {
   int start;
@@ -36,6 +36,12 @@ typedef struct {
   int len;
   char** values;
 } string_array;
+
+typedef struct {
+  int len;
+  char** values;
+  enum token* token_arr;
+} string_array_token;
 
 typedef struct {
   string_array array;

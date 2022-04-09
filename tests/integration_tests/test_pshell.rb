@@ -817,7 +817,7 @@ sleep 0.2
 
 puts "    \u2705 Doesnt execute if multiple pipes consecutively".encode('utf-8')
 
-puts 'ALLOWS FOR PIPING I/O'
+puts 'ALLOWS COMPLEX COMMANDS'
 # Able to pipe command output to other command
 sleep 0.2
 @tty.send_keys(%(ls ../root|   cat\n))
@@ -827,4 +827,26 @@ sleep 0.2
 
 puts "    \u2705 Able to pipe command output to other command".encode('utf-8')
 
+# Able to concatenate mutliple commands and execute after another
+sleep 0.2
+@tty.send_keys(%(ls ../root &&   cd /pshell && make\n))
+@tty.assert_row(7, '/ ❱ ls ../root &&   cd /pshell && make')
+@tty.assert_row(8, 'another  some_file')
+@tty.assert_row(10, 'Usage:')
+@tty.assert_row(23, '/pshell ❱')
+
+puts "    \u2705 Able to concatenate mutliple commands and execute after another".encode('utf-8')
+
+# Able to mix concatenation and pipes
+sleep 0.2
+@tty.send_keys(%(ls ../root |   cat && make | sort\n))
+@tty.assert_row(5, '/pshell ❱ ls ../root |   cat && make | s')
+@tty.assert_row(6, 'ort')
+@tty.assert_row(7, 'another')
+@tty.assert_row(8, 'some_file')
+@tty.assert_row(10, '  clean            Cleans up all binary')
+@tty.assert_row(12, '  help             Display this help')
+@tty.assert_row(23, '/pshell ❱')
+
+puts "    \u2705 Able to mix concatenation and pipes".encode('utf-8')
 @tty.send_keys(%(exit\n))

@@ -218,7 +218,8 @@ token_index_arr tokenizeLine(char* line) {
   regex_t re;
   int group_nums = ENUM_LEN;
   regmatch_t rm[group_nums];
-  char* line_token_regex = "^[ ]*([_A-Za-z0-9.-\\/]+)|\\|[ ]*([_A-Za-z0-9.-\\/]+)|(\\|)|([ ]+)";
+  char* line_token_regex =
+      "^[ ]*([_A-Za-z0-9.-\\/]+)|\\|[ ]*([_A-Za-z0-9.-\\/]+)|(\\|)|([ ]+)|(&&)|&&[ ]*([_A-Za-z0-9.-\\/]+)";
   char* only_args = "([^ \t]+)";
 
   if (regcomp(&re, line_token_regex, REG_EXTENDED) != 0) {
@@ -309,6 +310,7 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
     strncpy(substring, &line[token_start], token_end - token_start);
 
     switch (tokenized_line.arr[i].token) {
+    case (AMP_CMD):
     case (PIPE_CMD):
     case (CMD): {
       bool in_path = isInPath(substring, PATH_BINS);
@@ -337,6 +339,10 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
     }
     case (PIPE): {
       printColor("|", YELLOW, standard);
+      break;
+    }
+    case (AMPAMP): {
+      printColor("&&", YELLOW, standard);
       break;
     }
     default: {
@@ -546,18 +552,17 @@ void pipeOutputToFile(char* filename) {
   close(file);
 }
 
-void replaceAliases(string_array* splitted_line) {
-  for (int i = 0; i < splitted_line->len; i++) {
-    for (int j = 0; j < strlen(splitted_line->values[i]); j++) {
-      if (splitted_line->values[i][j] == '~') {
+void replaceAliases(char** splitted_line, int len) {
+  for (int i = 0; i < len; i++) {
+    for (int j = 0; j < strlen(splitted_line[i]); j++) {
+      if (splitted_line[i][j] == '~') {
         char* home_path = getenv("HOME");
-        char* prior_line = calloc(strlen(splitted_line->values[i]) + 1, sizeof(char));
-        strcpy(prior_line, splitted_line->values[i]);
+        char* prior_line = calloc(strlen(splitted_line[i]) + 1, sizeof(char));
+        strcpy(prior_line, splitted_line[i]);
         removeCharAtPos(prior_line, j + 1);
-        splitted_line->values[i] =
-            realloc(splitted_line->values[i], strlen(home_path) + strlen(splitted_line->values[i]) + 10);
-        strcpy(splitted_line->values[i], prior_line);
-        insertStringAtPos(&(splitted_line->values[i]), home_path, j);
+        splitted_line[i] = realloc(splitted_line[i], strlen(home_path) + strlen(splitted_line[i]) + 10);
+        strcpy(splitted_line[i], prior_line);
+        insertStringAtPos(&(splitted_line[i]), home_path, j);
         free(prior_line);
       }
     }
@@ -707,7 +712,7 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   bool result = false;
   regex_t re;
   regmatch_t rm[1];
-  char* valid_syntax = "^1[5]*((32)*5*)*"; // nums represent enum tokens
+  char* valid_syntax = "^1[7]*((32)7*|(56)7*)*"; // nums represent enum tokens
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
     perror("error in compiling regex\n");
@@ -722,8 +727,9 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   return result;
 }
 
-string_array splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_line) {
+string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_line) {
   char** line_arr = calloc(tokenized_line.len, sizeof(char*));
+  enum token* token_arr = calloc(tokenized_line.len, sizeof(enum token));
   int j = 0;
   bool found_split = true;
   int start = 0;
@@ -737,6 +743,14 @@ string_array splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_l
       int end = tokenized_line.arr[i].start;
       line_arr[j] = calloc(end - start + 1, sizeof(char));
       strncpy(line_arr[j], &line[start], end - start);
+      token_arr[j] = PIPE_CMD;
+      j++;
+      found_split = true;
+    } else if (tokenized_line.arr[i].token == AMPAMP) {
+      int end = tokenized_line.arr[i].start;
+      line_arr[j] = calloc(end - start + 1, sizeof(char));
+      token_arr[j] = AMP_CMD;
+      strncpy(line_arr[j], &line[start], end - start);
       j++;
       found_split = true;
     }
@@ -745,7 +759,7 @@ string_array splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_l
   line_arr[j] = calloc(end - start + 1, sizeof(char));
   strncpy(line_arr[j], &line[start], end - start);
 
-  string_array result = {.values = line_arr, .len = j + 1};
+  string_array_token result = {.values = line_arr, .len = j + 1, .token_arr = token_arr};
   return result;
 }
 
@@ -802,8 +816,8 @@ int main(int argc, char* argv[]) {
     removeWhitespaceTokens(&tokenized_line);
 
     if (strlen(line) > 0 && isValidSyntax(tokenized_line)) {
-      string_array simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
-      replaceAliases(&simple_commands_arr);
+      string_array_token simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
+      replaceAliases(simple_commands_arr.values, simple_commands_arr.len);
       int pd[2];
       int tmpin = dup(0);
       int tmpout = dup(1);
@@ -816,7 +830,7 @@ int main(int argc, char* argv[]) {
         int builtin_index;
         if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
-            free_string_array(&simple_commands_arr);
+            // free_string_array(&simple_commands_arr);
             free_string_array(&splitted_line);
             loop = false;
             break;
@@ -833,7 +847,7 @@ int main(int argc, char* argv[]) {
 
           dup2(fdin, STDIN_FILENO);
           close(fdin);
-          if (i < simple_commands_arr.len - 1) {
+          if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i] == PIPE_CMD) {
             pipe(pd);
             fdout = pd[1];
             fdin = pd[0];
@@ -856,7 +870,7 @@ int main(int argc, char* argv[]) {
         }
       }
       pushToCommandHistory(line, &command_history);
-      free_string_array(&simple_commands_arr);
+      // free_string_array(&simple_commands_arr);
       free_string_array(&splitted_line);
       dup2(tmpin, 0);
       dup2(tmpout, 1);
