@@ -572,6 +572,20 @@ Test(isValidSyntax, cmd_with_args_pipe_and_ampamp) {
   cr_expect(result == true);
 }
 
+Test(isValidSyntax, cmd_pipe_and_ampamp) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr3 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr4 = {.token = AMPAMP, .start = 0, .end = 2};
+  token_index arr5 = {.token = AMP_CMD, .start = 0, .end = 2};
+  token_index arr6 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5, arr6};
+  token_index_arr token = {.arr = arr, .len = 6};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
 Test(splitLineIntoSimpleCommands, splits_at_pipe) {
   char* line = "ls  |uwe";
   token_index arr1 = {.token = CMD, .start = 0, .end = 4};
@@ -600,10 +614,11 @@ Test(splitLineIntoSimpleCommands, tokenizes_splitted_commands_into_ampamp_or_pip
   string_array_token result = splitLineIntoSimpleCommands(line, token);
   cr_expect(result.len == 3);
   cr_expect(strcmp(result.values[0], "ls  arg") == 0);
-  cr_expect(result.token_arr[0] == AMP_CMD);
+  cr_expect(result.token_arr[0] == CMD);
   cr_expect(strcmp(result.values[1], "uwe ") == 0);
-  cr_expect(result.token_arr[1] == PIPE_CMD);
+  cr_expect(result.token_arr[1] == AMP_CMD);
   cr_expect(strcmp(result.values[2], "last") == 0);
+  cr_expect(result.token_arr[2] == PIPE_CMD);
 }
 
 Test(splitLineIntoSimpleCommands, splits_at_pipe_with_arg_and_whitespace) {
@@ -621,10 +636,11 @@ Test(splitLineIntoSimpleCommands, splits_at_pipe_with_arg_and_whitespace) {
   string_array_token result = splitLineIntoSimpleCommands(line, token);
   cr_expect(result.len == 3);
   cr_expect(strcmp(result.values[0], "ls some_arg") == 0);
-  cr_expect(result.token_arr[0] == PIPE_CMD);
+  cr_expect(result.token_arr[0] == CMD);
   cr_expect(strcmp(result.values[1], "uwe also") == 0);
   cr_expect(result.token_arr[1] == PIPE_CMD);
   cr_expect(strcmp(result.values[2], "last") == 0);
+  cr_expect(result.token_arr[2] == PIPE_CMD);
 }
 
 Test(splitLineIntoSimpleCommands, splits_at_pipe_with_mutliple_whitespace) {
@@ -640,10 +656,11 @@ Test(splitLineIntoSimpleCommands, splits_at_pipe_with_mutliple_whitespace) {
   string_array_token result = splitLineIntoSimpleCommands(line, token);
   cr_expect(result.len == 3);
   cr_expect(strcmp(result.values[0], "ls  ") == 0);
-  cr_expect(result.token_arr[0] == PIPE_CMD);
+  cr_expect(result.token_arr[0] == CMD);
   cr_expect(strcmp(result.values[1], "cd") == 0);
   cr_expect(result.token_arr[1] == PIPE_CMD);
   cr_expect(strcmp(result.values[2], "bat") == 0);
+  cr_expect(result.token_arr[2] == PIPE_CMD);
 }
 
 Test(splitByWhitespaceToken, splitByWhitespaceToken) {

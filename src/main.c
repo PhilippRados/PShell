@@ -734,6 +734,7 @@ string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr token
   bool found_split = true;
   int start = 0;
   int i;
+  token_arr[0] = CMD;
   for (i = 0; i < tokenized_line.len; i++) {
     if (found_split) {
       start = tokenized_line.arr[i].start;
@@ -743,13 +744,13 @@ string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr token
       int end = tokenized_line.arr[i].start;
       line_arr[j] = calloc(end - start + 1, sizeof(char));
       strncpy(line_arr[j], &line[start], end - start);
-      token_arr[j] = PIPE_CMD;
+      token_arr[j + 1] = PIPE_CMD;
       j++;
       found_split = true;
     } else if (tokenized_line.arr[i].token == AMPAMP) {
       int end = tokenized_line.arr[i].start;
       line_arr[j] = calloc(end - start + 1, sizeof(char));
-      token_arr[j] = AMP_CMD;
+      token_arr[j + 1] = AMP_CMD;
       strncpy(line_arr[j], &line[start], end - start);
       j++;
       found_split = true;
@@ -826,6 +827,15 @@ int main(int argc, char* argv[]) {
       pid_t pid;
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
+        if (simple_commands_arr.token_arr[i] == AMP_CMD) {
+          dup2(tmpin, 0);
+          dup2(tmpout, 1);
+          close(tmpin);
+          close(tmpout);
+          tmpin = dup(0);
+          tmpout = dup(1);
+          fdin = open(0, O_RDONLY);
+        }
         splitted_line = splitByWhitespaceTokens(simple_commands_arr.values[i]);
         int builtin_index;
         if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
@@ -847,7 +857,7 @@ int main(int argc, char* argv[]) {
 
           dup2(fdin, STDIN_FILENO);
           close(fdin);
-          if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i] == PIPE_CMD) {
+          if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i + 1] == PIPE_CMD) {
             pipe(pd);
             fdout = pd[1];
             fdin = pd[0];
