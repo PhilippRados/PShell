@@ -219,97 +219,42 @@ token_index_arr tokenizeLine(char* line) {
   regmatch_t rm[ENUM_LEN];
   char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
   char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
-  char* line_token_regex = "^[ \n]*([_A-Za-z0-9.\\-\\/]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/]+)|(\\|)|([ ]+)|(&&)|&&[ "
-                           "\n]*([_A-Za-z0-9.\\-\\/]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/]+)|(\\|)|([ ]+)|(&&)|&&[ "
+                     "\n]*([_A-Za-z0-9.\\-\\/]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
   char* only_args = "([^ \t\n]+)";
-
+  char* regexes[] = {filenames, redirection, line_token, only_args};
+  regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 10},
+                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 6},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 0},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11}};
   char* start;
   char* end;
+  int j = 0;
 
   token_index* result_arr = calloc(strlen(line), sizeof(token_index));
 
-  int j;
-
-  if (regcomp(&re, filenames, REG_EXTENDED) != 0) {
-    perror("error in compiling regex\n");
-  }
-  for (j = 0; j < strlen(copy); j++) {
-    if ((retval = regexec(&re, copy, 3, rm, 0)) == 0) {
-      if (rm[2].rm_so != -1) {
-        start = copy + rm[2].rm_so;
-        end = copy + rm[2].rm_eo;
-        result_arr[j].start = rm[2].rm_so;
-        result_arr[j].end = rm[2].rm_eo;
-        result_arr[j].token = ARG;
-        while (start < end) {
-          *start++ = '\n';
-        }
-      }
-    } else {
-      break;
+  for (int k = 0; k < (sizeof(regexes) / sizeof(regexes[0])); k++) {
+    if (regcomp(&re, regexes[k], REG_EXTENDED) != 0) {
+      perror("Error in compiling regex\n");
     }
-  }
-  if (regcomp(&re, redirection, REG_EXTENDED) != 0) {
-    perror("error in compiling regex\n");
-  }
-  for (; j < strlen(copy); j++) {
-    if ((retval = regexec(&re, copy, 6, rm, 0)) == 0) {
-      for (int i = 1; i < 6; i++) {
-        if (rm[i].rm_so != -1) {
-          start = copy + rm[i].rm_so;
-          end = copy + rm[i].rm_eo;
-          result_arr[j].start = rm[i].rm_so;
-          result_arr[j].end = rm[i].rm_eo;
-          result_arr[j].token = i + 6;
-          while (start < end) {
-            *start++ = '\n';
+    for (; j < strlen(copy); j++) {
+      if ((retval = regexec(&re, copy, ENUM_LEN, rm, 0)) == 0) {
+        for (int i = regex_info[k].loop_start; i < ENUM_LEN; i++) {
+          if (rm[i].rm_so != -1) {
+            start = copy + rm[i].rm_so;
+            end = copy + rm[i].rm_eo;
+            result_arr[j].start = rm[i].rm_so;
+            result_arr[j].end = rm[i].rm_eo;
+            result_arr[j].token = i + regex_info[k].token_index_inc;
+            while (start < end) {
+              *start++ = regex_info[k].fill_char; // have to overwrite matches so they dont match again
+            }
+            break;
           }
-          break;
         }
+      } else {
+        break;
       }
-    } else {
-      break;
-    }
-  }
-  if (regcomp(&re, line_token_regex, REG_EXTENDED) != 0) {
-    perror("error in compiling regex\n");
-  }
-  for (; j < strlen(copy); j++) {
-    if ((retval = regexec(&re, copy, ENUM_LEN, rm, 0)) == 0) {
-      for (int i = 1; i < ENUM_LEN; i++) {
-        if (rm[i].rm_so != -1) { // only quit when in every group .so == -1
-          start = copy + rm[i].rm_so;
-          end = copy + rm[i].rm_eo;
-          result_arr[j].start = rm[i].rm_so; // [i] i matches group index
-          result_arr[j].end = rm[i].rm_eo;
-          result_arr[j].token = i; // depending on which group matched assign token
-          while (start < end) {
-            *start++ = '\t';
-          }
-          break;
-        }
-      }
-    } else {
-      break;
-    }
-  }
-  if (regcomp(&re, only_args, REG_EXTENDED) != 0) {
-    perror("error in compiling regex\n");
-  }
-  for (; j < strlen(copy); j++) {
-    if ((retval = regexec(&re, copy, ENUM_LEN, rm, 0)) == 0) {
-      if (rm[1].rm_so != -1) {
-        start = copy + rm[1].rm_so;
-        end = copy + rm[1].rm_eo;
-        result_arr[j].start = rm[1].rm_so;
-        result_arr[j].end = rm[1].rm_eo;
-        result_arr[j].token = ARG;
-        while (start < end) {
-          *start++ = '\t';
-        }
-      }
-    } else {
-      break;
     }
   }
   free(copy);

@@ -13,7 +13,6 @@ enum token {
   LESS,
   AMP_GREAT,
   AMP_GREATGREAT,
-  // FILENAME,
   ARG,
   ENUM_LEN
 };
@@ -28,6 +27,12 @@ typedef struct token_index_arr {
   token_index* arr;
   int len;
 } token_index_arr;
+
+typedef struct regex_loop_struct {
+  char fill_char;
+  int loop_start;
+  int token_index_inc;
+} regex_loop_struct;
 
 enum logger_type {
   integer,
