@@ -8,11 +8,12 @@ enum token {
   WHITESPACE,
   AMPAMP,
   AMP_CMD,
-  // GREAT,
-  // GREATGREAT,
-  // LESS,
-  // GREAT_AMP,
-  // GREATGREAT_AMP,
+  GREATGREAT,
+  GREAT,
+  LESS,
+  AMP_GREAT,
+  AMP_GREATGREAT,
+  // FILENAME,
   ARG,
   ENUM_LEN
 };

@@ -216,24 +216,67 @@ token_index_arr tokenizeLine(char* line) {
 
   int retval = 0;
   regex_t re;
-  int group_nums = ENUM_LEN;
-  regmatch_t rm[group_nums];
-  char* line_token_regex =
-      "^[ ]*([_A-Za-z0-9.-\\/]+)|\\|[ ]*([_A-Za-z0-9.-\\/]+)|(\\|)|([ ]+)|(&&)|&&[ ]*([_A-Za-z0-9.-\\/]+)";
-  char* only_args = "([^ \t]+)";
+  regmatch_t rm[ENUM_LEN];
+  char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
+  char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* line_token_regex = "^[ \n]*([_A-Za-z0-9.\\-\\/]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/]+)|(\\|)|([ ]+)|(&&)|&&[ "
+                           "\n]*([_A-Za-z0-9.\\-\\/]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* only_args = "([^ \t\n]+)";
 
-  if (regcomp(&re, line_token_regex, REG_EXTENDED) != 0) {
-    perror("error in compiling regex\n");
-  }
   char* start;
   char* end;
 
   token_index* result_arr = calloc(strlen(line), sizeof(token_index));
 
   int j;
+
+  if (regcomp(&re, filenames, REG_EXTENDED) != 0) {
+    perror("error in compiling regex\n");
+  }
   for (j = 0; j < strlen(copy); j++) {
-    if ((retval = regexec(&re, copy, group_nums, rm, 0)) == 0) {
-      for (int i = 1; i < group_nums; i++) {
+    if ((retval = regexec(&re, copy, 3, rm, 0)) == 0) {
+      if (rm[2].rm_so != -1) {
+        start = copy + rm[2].rm_so;
+        end = copy + rm[2].rm_eo;
+        result_arr[j].start = rm[2].rm_so;
+        result_arr[j].end = rm[2].rm_eo;
+        result_arr[j].token = ARG;
+        while (start < end) {
+          *start++ = '\n';
+        }
+      }
+    } else {
+      break;
+    }
+  }
+  if (regcomp(&re, redirection, REG_EXTENDED) != 0) {
+    perror("error in compiling regex\n");
+  }
+  for (; j < strlen(copy); j++) {
+    if ((retval = regexec(&re, copy, 6, rm, 0)) == 0) {
+      for (int i = 1; i < 6; i++) {
+        if (rm[i].rm_so != -1) {
+          start = copy + rm[i].rm_so;
+          end = copy + rm[i].rm_eo;
+          result_arr[j].start = rm[i].rm_so;
+          result_arr[j].end = rm[i].rm_eo;
+          result_arr[j].token = i + 6;
+          while (start < end) {
+            *start++ = '\n';
+          }
+          break;
+        }
+      }
+    } else {
+      break;
+    }
+  }
+  if (regcomp(&re, line_token_regex, REG_EXTENDED) != 0) {
+    perror("error in compiling regex\n");
+  }
+  for (; j < strlen(copy); j++) {
+    if ((retval = regexec(&re, copy, ENUM_LEN, rm, 0)) == 0) {
+      for (int i = 1; i < ENUM_LEN; i++) {
         if (rm[i].rm_so != -1) { // only quit when in every group .so == -1
           start = copy + rm[i].rm_so;
           end = copy + rm[i].rm_eo;
@@ -254,7 +297,7 @@ token_index_arr tokenizeLine(char* line) {
     perror("error in compiling regex\n");
   }
   for (; j < strlen(copy); j++) {
-    if ((retval = regexec(&re, copy, group_nums, rm, 0)) == 0) {
+    if ((retval = regexec(&re, copy, ENUM_LEN, rm, 0)) == 0) {
       if (rm[1].rm_so != -1) {
         start = copy + rm[1].rm_so;
         end = copy + rm[1].rm_eo;
@@ -337,12 +380,14 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
       printf("%s", substring);
       break;
     }
-    case (PIPE): {
-      printColor("|", YELLOW, standard);
-      break;
-    }
+    case (GREAT):
+    case (GREATGREAT):
+    case (LESS):
+    case (AMP_GREAT):
+    case (AMP_GREATGREAT):
+    case (PIPE):
     case (AMPAMP): {
-      printColor("&&", YELLOW, standard);
+      printColor(substring, YELLOW, standard);
       break;
     }
     default: {
@@ -641,7 +686,6 @@ string_array getAllHistoryCommands() {
 }
 
 void writeSessionCommandsToGlobalHistoryFile(string_array command_history, string_array global_history) {
-  // string_array history_commands = getAllHistoryCommands();
   char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_write = fopen(file_path, "a");
   free(file_path);
@@ -700,9 +744,11 @@ void removeWhitespaceTokens(token_index_arr* tokenized_line) {
   }
 }
 char* convertTokenToString(token_index_arr tokenized_line) {
-  char* result = calloc(tokenized_line.len + 1, sizeof(char));
+  char* result = calloc(tokenized_line.len * 2 + 1, sizeof(char));
+  int string_index = 0;
   for (int i = 0; i < tokenized_line.len; i++) {
-    result[i] = tokenized_line.arr[i].token + '0';
+    sprintf(&result[string_index], "%d", tokenized_line.arr[i].token);
+    tokenized_line.arr[i].token >= 10 ? string_index += 2 : string_index++;
   }
   return result;
 }
@@ -712,7 +758,7 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   bool result = false;
   regex_t re;
   regmatch_t rm[1];
-  char* valid_syntax = "^1[7]*((32)7*|(56)7*)*"; // nums represent enum tokens
+  char* valid_syntax = "^1(12)*((32)(12)*|(56)(12)*)*"; // nums represent enum tokens
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
     perror("error in compiling regex\n");

@@ -485,6 +485,51 @@ Test(tokenizeLine, command_and_pipe_cmd_multiple_args) {
   cr_expect(result_arr[2].end == 11);
 }
 
+Test(tokenizeLine, first_token_great_redirection) {
+  char* line = ">file";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 2);
+  cr_expect(result_arr[0].token == GREAT);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 1);
+  cr_expect(result_arr[1].token == ARG);
+  cr_expect(result_arr[1].start == 1);
+  cr_expect(result_arr[1].end == 5);
+}
+
+Test(tokenizeLine, first_token_greatgreat_redirection) {
+  char* line = ">>file";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 2);
+  cr_expect(result_arr[0].token == GREATGREAT);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == ARG);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 6);
+}
+
+Test(tokenizeLine, first_token_greatgreat_redirection_prefixed_with_fd) {
+  char* line = "1>>   file";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == GREATGREAT);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 3);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 3);
+  cr_expect(result_arr[1].end == 6);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 6);
+  cr_expect(result_arr[2].end == 10);
+}
+
 Test(removeWhitespacetokens, removes_whitetoken) {
   token_index arr1 = {.token = WHITESPACE, .start = 0, .end = 2};
   token_index arr2 = {.token = CMD, .start = 0, .end = 2};
