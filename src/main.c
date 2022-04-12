@@ -703,7 +703,10 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   bool result = false;
   regex_t re;
   regmatch_t rm[1];
-  char* valid_syntax = "^1(12)*((32)(12)*|(56)(12)*)*"; // nums represent enum tokens
+  char* valid_syntax =
+      "^((7|8|9|10|11)12)*(1((7|8|9|10|11)12)*(12)*((7|8|9|10|11)12)*((3((7|8|9|10|11)12)*2)((7|8|9|10|11)12)*(12)"
+      "*((7|8|9|10|11)12)*|(5((7|8|9|10|11)12)*6)((7|8|9|10|11)12)*(12)*((7|8|9|10|11)12)*)*)?"; // nums represent
+                                                                                                 // enum tokens
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
     perror("error in compiling regex\n");

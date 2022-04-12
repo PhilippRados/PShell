@@ -542,11 +542,11 @@ Test(removeWhitespacetokens, removes_whitetoken) {
 }
 
 Test(removeWhitespacetokens, removes_whitetoken_when_multiple_args) {
-  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
-  token_index arr2 = {.token = WHITESPACE, .start = 0, .end = 2};
-  token_index arr3 = {.token = ARG, .start = 0, .end = 2};
-  token_index arr4 = {.token = WHITESPACE, .start = 0, .end = 2};
-  token_index arr5 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr1 = {.token = CMD};
+  token_index arr2 = {.token = WHITESPACE};
+  token_index arr3 = {.token = ARG};
+  token_index arr4 = {.token = WHITESPACE};
+  token_index arr5 = {.token = ARG};
   token_index arr[] = {arr1, arr2, arr3, arr4, arr5};
   token_index_arr token = {.arr = arr, .len = 5};
 
@@ -629,6 +629,148 @@ Test(isValidSyntax, cmd_pipe_and_ampamp) {
 
   bool result = isValidSyntax(token);
   cr_expect(result == true);
+}
+
+Test(isValidSyntax, redirectction_end_of_line) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr3 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr4 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4};
+  token_index_arr token = {.arr = arr, .len = 4};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+Test(isValidSyntax, redirectction_end_of_line_no_filename) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr3 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3};
+  token_index_arr token = {.arr = arr, .len = 3};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == false);
+}
+
+Test(isValidSyntax, redirection_also_pipe) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr3 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr4 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr5 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5};
+  token_index_arr token = {.arr = arr, .len = 5};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, multiple_redirection_also_pipe) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr3 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr4 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr5 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr6 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr7 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5, arr6, arr7};
+  token_index_arr token = {.arr = arr, .len = 7};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, only_redirection) {
+  token_index arr1 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr2 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2};
+  token_index_arr token = {.arr = arr, .len = 2};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, redirection_between_cmd_and_args) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr3 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr4 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr5 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr6 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr7 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr8 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5, arr6, arr7, arr8};
+  token_index_arr token = {.arr = arr, .len = 8};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, redirection_pipe_and_pipe_cmd) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr3 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr4 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr5 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr6 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr7 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5, arr6, arr7};
+  token_index_arr token = {.arr = arr, .len = 7};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, redirection_ampamp_and_amp_cmd) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = AMPAMP, .start = 0, .end = 2};
+  token_index arr3 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr4 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr5 = {.token = AMP_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5};
+  token_index_arr token = {.arr = arr, .len = 5};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, mulitple_redirections_without_filenames) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr3 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr4 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr5 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5};
+  token_index_arr token = {.arr = arr, .len = 5};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == false);
+}
+Test(isValidSyntax, redirectction_after_pipecmd_and_arg) {
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr3 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr4 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr5 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr6 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4, arr5, arr6};
+  token_index_arr token = {.arr = arr, .len = 6};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == true);
+}
+
+Test(isValidSyntax, only_redirection_and_pipe_cmd) {
+  token_index arr1 = {.token = GREAT, .start = 0, .end = 2};
+  token_index arr2 = {.token = ARG, .start = 0, .end = 2};
+  token_index arr3 = {.token = PIPE, .start = 0, .end = 2};
+  token_index arr4 = {.token = PIPE_CMD, .start = 0, .end = 2};
+  token_index arr[] = {arr1, arr2, arr3, arr4};
+  token_index_arr token = {.arr = arr, .len = 4};
+
+  bool result = isValidSyntax(token);
+  cr_expect(result == false);
 }
 
 Test(splitLineIntoSimpleCommands, splits_at_pipe) {
