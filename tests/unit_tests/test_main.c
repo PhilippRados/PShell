@@ -937,7 +937,7 @@ Test(splitByWhitespaceToken, split_only_token_also_with_multiple_whitespace) {
   cr_expect(strcmp(result.values[0], "bat") == 0);
 }
 
-Test(stripRedirections, removes_all_redirections_in_split) {
+Test(parseForRedirectionFiles, removes_all_redirections_in_split) {
   enum token arr[] = {};
   char* simple_cmd1 = ">log.txt   bat";
   char* simple_cmd2 = " < fl.txt cmd arg";

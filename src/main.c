@@ -826,18 +826,21 @@ void removeArrayElement(string_array* splitted, int pos) {
   for (int i = pos; i < splitted->len; i++) {
     splitted->values[i] = splitted->values[i + 1];
   }
+  splitted->len--;
 }
 
 void stripRedirections(string_array* splitted_line, token_index_arr token) {
-  int sub = 0;
-  for (int i = 0; i < splitted_line->len; i++) {
+  int j = 0;
+  for (int i = 0; i < splitted_line->len;) {
     if (token.arr[i].token >= GREATGREAT && token.arr[i].token <= AMP_GREATGREAT) {
-      removeArrayElement(splitted_line, i); // removes redirection
-      removeArrayElement(splitted_line, i); // removes filename
-      sub += 2;
+      removeArrayElement(splitted_line, j); // removes redirection
+      removeArrayElement(splitted_line, j); // removes filename
+      i += 2;
+    } else {
+      j++;
+      i++;
     }
   }
-  splitted_line->len -= sub;
 }
 
 #ifndef TEST
