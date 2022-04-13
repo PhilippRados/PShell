@@ -17,3 +17,4 @@ void removeWhitespaceTokens(token_index_arr* tokenized_line);
 bool isValidSyntax(token_index_arr tokenized_line);
 string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr tokenized_line);
 string_array splitByWhitespaceTokens(char* line);
+file_redirection_data parseForRedirectionFiles(string_array_token simple_commands_arr);

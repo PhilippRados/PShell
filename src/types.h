@@ -34,6 +34,12 @@ typedef struct regex_loop_struct {
   int token_index_inc;
 } regex_loop_struct;
 
+typedef struct {
+  char** output_filenames;
+  char** input_filenames;
+  int* output_append;
+} file_redirection_data;
+
 enum logger_type {
   integer,
   string,

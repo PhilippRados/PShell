@@ -744,8 +744,8 @@ string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr token
     } else if (tokenized_line.arr[i].token == AMPAMP) {
       int end = tokenized_line.arr[i].start;
       line_arr[j] = calloc(end - start + 1, sizeof(char));
-      token_arr[j + 1] = AMP_CMD;
       strncpy(line_arr[j], &line[start], end - start);
+      token_arr[j + 1] = AMP_CMD;
       j++;
       found_split = true;
     }
@@ -772,6 +772,72 @@ string_array splitByWhitespaceTokens(char* line) {
   line_arr[tokenized_line.len] = NULL;
   string_array result = {.values = line_arr, .len = tokenized_line.len};
   return result;
+}
+
+file_redirection_data parseForRedirectionFiles(string_array_token simple_commands_arr) {
+  char** output_names = calloc(simple_commands_arr.len, sizeof(char*));
+  char** input_names = calloc(simple_commands_arr.len, sizeof(char*));
+  int* output_append = calloc(simple_commands_arr.len, sizeof(int));
+  bool found_output;
+  bool found_input;
+
+  for (int i = 0; i < simple_commands_arr.len; i++) {
+    token_index_arr token_line = tokenizeLine(simple_commands_arr.values[i]);
+    removeWhitespaceTokens(&token_line);
+    found_input = false;
+    found_output = false;
+
+    for (int j = token_line.len - 1; j >= 0; j--) {
+      int start = token_line.arr[j + 1].start;
+      int end = token_line.arr[j + 1].end;
+      if (!found_input && token_line.arr[j].token == LESS) {
+        input_names[i] = calloc(end - start + 1, sizeof(char));
+        strncpy(input_names[i], &simple_commands_arr.values[i][start], end - start);
+        found_input = true;
+      } else if (!found_input && j == 0) {
+        input_names[i] = calloc(1, sizeof(NULL));
+        input_names[i] = NULL;
+      }
+      if (!found_output && (token_line.arr[j].token == GREAT || token_line.arr[j].token == GREATGREAT)) {
+        output_names[i] = calloc(end - start + 1, sizeof(char));
+        strncpy(output_names[i], &simple_commands_arr.values[i][start], end - start);
+        found_output = true;
+        output_append[i] = token_line.arr[j].token == GREATGREAT ? true : false;
+      } else if (!found_output && j == 0) {
+        output_names[i] = calloc(1, sizeof(NULL));
+        output_names[i] = NULL;
+        output_append[i] = false;
+      }
+    }
+  }
+  return (file_redirection_data){
+      .output_filenames = output_names, .input_filenames = input_names, .output_append = output_append};
+}
+
+bool fileExists(char* name) {
+  if (access(name, 0) == 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void removeArrayElement(string_array* splitted, int pos) {
+  for (int i = pos; i < splitted->len; i++) {
+    splitted->values[i] = splitted->values[i + 1];
+  }
+}
+
+void stripRedirections(string_array* splitted_line, token_index_arr token) {
+  int sub = 0;
+  for (int i = 0; i < splitted_line->len; i++) {
+    if (token.arr[i].token >= GREATGREAT && token.arr[i].token <= AMP_GREATGREAT) {
+      removeArrayElement(splitted_line, i); // removes redirection
+      removeArrayElement(splitted_line, i); // removes filename
+      sub += 2;
+    }
+  }
+  splitted_line->len -= sub;
 }
 
 #ifndef TEST
@@ -813,14 +879,32 @@ int main(int argc, char* argv[]) {
     if (strlen(line) > 0 && isValidSyntax(tokenized_line)) {
       string_array_token simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
       replaceAliases(simple_commands_arr.values, simple_commands_arr.len);
+      file_redirection_data file_info = parseForRedirectionFiles(simple_commands_arr);
+
       int pd[2];
       int tmpin = dup(0);
       int tmpout = dup(1);
-      int fdin = open(0, O_RDONLY);
       int fdout;
       pid_t pid;
+      int fdin;
+      if (file_info.input_filenames[0] != NULL) {
+        if (fileExists(file_info.input_filenames[0])) {
+          fdin = open(file_info.input_filenames[0], O_RDONLY);
+        } else {
+          printf("no such file %s\n", file_info.input_filenames[0]);
+          continue;
+        }
+      } else {
+        fdin = open(0, O_RDONLY);
+      }
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
+        splitted_line = splitByWhitespaceTokens(simple_commands_arr.values[i]);
+        token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
+        removeWhitespaceTokens(&token);
+        stripRedirections(&splitted_line, token);
+        int builtin_index;
+
         if (simple_commands_arr.token_arr[i] == AMP_CMD) {
           dup2(tmpin, 0);
           dup2(tmpout, 1);
@@ -828,10 +912,17 @@ int main(int argc, char* argv[]) {
           close(tmpout);
           tmpin = dup(0);
           tmpout = dup(1);
-          fdin = open(0, O_RDONLY);
+          if (file_info.input_filenames[i] != NULL) {
+            if (fileExists(file_info.input_filenames[i])) {
+              fdin = open(file_info.input_filenames[i], O_RDONLY);
+            } else {
+              printf("no such file %s\n", file_info.input_filenames[i]);
+              continue;
+            }
+          } else {
+            fdin = open(0, O_RDONLY);
+          }
         }
-        splitted_line = splitByWhitespaceTokens(simple_commands_arr.values[i]);
-        int builtin_index;
         if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
             // free_string_array(&simple_commands_arr);

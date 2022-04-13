@@ -849,4 +849,14 @@ sleep 0.2
 @tty.assert_row(23, '/pshell ❱')
 
 puts "    \u2705 Able to mix concatenation and pipes".encode('utf-8')
+
+puts 'IO-REDIRECTION'
+# When file not found for input throws error
+sleep 0.2
+@tty.send_keys(%(cat < dsha\n))
+@tty.assert_row(20, '/pshell ❱ cat < dsha')
+@tty.assert_row(21, 'no such file dsha')
+
+puts "    \u2705 When file not found for input throws error".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

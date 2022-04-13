@@ -530,6 +530,53 @@ Test(tokenizeLine, first_token_greatgreat_redirection_prefixed_with_fd) {
   cr_expect(result_arr[2].end == 10);
 }
 
+Test(tokenizeLine, multiple_redirections_with_ampamp) {
+  char* line = "<log.txt   bat&& > fl.txt cmd arg";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 13);
+  cr_expect(result_arr[0].token == LESS);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 1);
+  cr_expect(result_arr[1].token == ARG);
+  cr_expect(result_arr[1].start == 1);
+  cr_expect(result_arr[1].end == 8);
+  cr_expect(result_arr[2].token == WHITESPACE);
+  cr_expect(result_arr[2].start == 8);
+  cr_expect(result_arr[2].end == 11);
+  cr_expect(result_arr[3].token == CMD);
+  cr_expect(result_arr[3].start == 11);
+  cr_expect(result_arr[3].end == 14);
+  cr_expect(result_arr[4].token == AMPAMP);
+  cr_expect(result_arr[4].start == 14);
+  cr_expect(result_arr[4].end == 16);
+  cr_expect(result_arr[5].token == WHITESPACE);
+  cr_expect(result_arr[5].start == 16);
+  cr_expect(result_arr[5].end == 17);
+  cr_expect(result_arr[6].token == GREAT);
+  cr_expect(result_arr[6].start == 17);
+  cr_expect(result_arr[6].end == 18);
+  cr_expect(result_arr[7].token == WHITESPACE);
+  cr_expect(result_arr[7].start == 18);
+  cr_expect(result_arr[7].end == 19);
+  cr_expect(result_arr[8].token == ARG);
+  cr_expect(result_arr[8].start == 19);
+  cr_expect(result_arr[8].end == 25);
+  cr_expect(result_arr[9].token == WHITESPACE);
+  cr_expect(result_arr[9].start == 25);
+  cr_expect(result_arr[9].end == 26);
+  cr_expect(result_arr[10].token == AMP_CMD);
+  cr_expect(result_arr[10].start == 26);
+  cr_expect(result_arr[10].end == 29);
+  cr_expect(result_arr[11].token == WHITESPACE);
+  cr_expect(result_arr[11].start == 29);
+  cr_expect(result_arr[11].end == 30);
+  cr_expect(result_arr[12].token == ARG);
+  cr_expect(result_arr[12].start == 30);
+  cr_expect(result_arr[12].end == 33);
+}
+
 Test(removeWhitespacetokens, removes_whitetoken) {
   token_index arr1 = {.token = WHITESPACE, .start = 0, .end = 2};
   token_index arr2 = {.token = CMD, .start = 0, .end = 2};
@@ -850,6 +897,22 @@ Test(splitLineIntoSimpleCommands, splits_at_pipe_with_mutliple_whitespace) {
   cr_expect(result.token_arr[2] == PIPE_CMD);
 }
 
+Test(splitLineIntoSimpleCommands, split_with_ampamp) {
+  char* line = "ls  &&cmd";
+  token_index arr1 = {.token = CMD, .start = 0, .end = 2};
+  token_index arr2 = {.token = AMPAMP, .start = 4, .end = 6};
+  token_index arr3 = {.token = AMP_CMD, .start = 6, .end = 9};
+  token_index arr[] = {arr1, arr2, arr3};
+  token_index_arr token = {.arr = arr, .len = 3};
+
+  string_array_token result = splitLineIntoSimpleCommands(line, token);
+  cr_expect(result.len == 2);
+  cr_expect(strcmp(result.values[0], "ls  ") == 0);
+  cr_expect(result.token_arr[0] == CMD);
+  cr_expect(strcmp(result.values[1], "cmd") == 0);
+  cr_expect(result.token_arr[1] == AMP_CMD);
+}
+
 Test(splitByWhitespaceToken, splitByWhitespaceToken) {
   char* line = "ls ..";
   token_index arr1 = {.token = CMD, .start = 0, .end = 2};
@@ -872,4 +935,21 @@ Test(splitByWhitespaceToken, split_only_token_also_with_multiple_whitespace) {
 
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.values[0], "bat") == 0);
+}
+
+Test(stripRedirections, removes_all_redirections_in_split) {
+  enum token arr[] = {};
+  char* simple_cmd1 = ">log.txt   bat";
+  char* simple_cmd2 = " < fl.txt cmd arg";
+  char* simple_commands[] = {simple_cmd1, simple_cmd2};
+
+  string_array_token simple_commands_arr = {.len = 2, .values = simple_commands, .token_arr = arr};
+  file_redirection_data result = parseForRedirectionFiles(simple_commands_arr);
+
+  cr_expect(strcmp(result.output_filenames[0], "log.txt") == 0);
+  cr_expect_null(result.input_filenames[0]);
+  cr_expect(result.output_append[0] == false);
+  cr_expect_null(result.output_filenames[1]);
+  cr_expect(strcmp(result.input_filenames[1], "fl.txt") == 0);
+  cr_expect(result.output_append[1] == false);
 }
