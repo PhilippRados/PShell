@@ -629,6 +629,7 @@ sleep 0.2
 @tty.send_keys(%(\n))
 @tty.send_keys(%(clear))
 @tty.send_keys(%(\n))
+sleep 0.2
 @tty.send_keys(%(    ls))
 @tty.assert_cursor_position(10, 1)
 
@@ -850,38 +851,80 @@ sleep 0.2
 
 puts "    \u2705 Able to mix concatenation and pipes".encode('utf-8')
 
-puts 'IO-REDIRECTION'
+puts 'OUTPUT REDIRECTION'
+# If file doesnt exist and > creates it and redirects
+sleep 0.2
+@tty.send_keys(%(ls / > /in1.txt\n))
+@tty.assert_row(21, '/pshell ❱ ls / > /in1.txt')
+@tty.assert_row(22, '')
+@tty.send_keys(%(cat /in1.txt\n))
+@tty.assert_row(1, 'bin')
+@tty.assert_row(2, 'boot')
+@tty.assert_row(3, 'dev')
+puts "    \u2705 If file doesnt exist and > creates it".encode('utf-8')
+
+# >> appends to file
+sleep 0.2
+@tty.send_keys(%(echo some_text>> /in1.txt\n))
+@tty.assert_row(21, '/pshell ❱ echo some_text>> /in1.txt')
+@tty.assert_row(22, '')
+@tty.send_keys(%(cat /in1.txt\n))
+@tty.assert_row(0, 'bin')
+@tty.assert_row(1, 'boot')
+@tty.assert_row(2, 'dev')
+@tty.assert_row(21, 'some_text')
+puts "    \u2705 >> appends to file".encode('utf-8')
+
+# If multiple output redirections only last one counts
+sleep 0.2
+@tty.send_keys(%(echo another> /in1.txt >> /in2.txt\n))
+sleep 0.2
+@tty.send_keys(%(cat /in2.txt && cat /in1.txt | tail -3\n))
+@tty.assert_row(18, 'another')
+@tty.assert_row(19, 'usr')
+@tty.assert_row(20, 'var')
+@tty.assert_row(21, 'some_text')
+puts "    \u2705 If multiple output redirections only last one counts".encode('utf-8')
+
+# If file exists > truncates existing content
+sleep 0.2
+@tty.send_keys(%(echo more> /in1.txt\n))
+sleep 0.2
+@tty.send_keys(%(cat /in1.txt\n))
+@tty.assert_row(21, 'more')
+puts "    \u2705 If file exists > truncates existing content".encode('utf-8')
+
+puts 'INPUT REDIRECTION'
 # When file not found for input throws error
 sleep 0.2
 @tty.send_keys(%(cat < dsha\n))
 @tty.assert_row(20, '/pshell ❱ cat < dsha')
 @tty.assert_row(21, 'no such file dsha')
-
 puts "    \u2705 When file not found for input throws error".encode('utf-8')
 
-#### TESTS WHEN OUTPUT REDIRECTION WORKS
-# input redirection followed by pipe
-# sleep 0.2
-# @tty.send_keys(%(sort <in2.txt | cat\n))
-# @tty.assert_row(23, '/pshell ❱ sort <in2.txt | cat')
-# @tty.assert_row(21, 'file')
-# @tty.assert_row(21, 'second')
+# Regular input redirection
+sleep 0.2
+@tty.send_keys(%(ls /root >> /in1.txt\n))
+sleep 0.2
+@tty.send_keys(%(sort < /in1.txt\n))
+@tty.assert_row(19, 'another')
+@tty.assert_row(20, 'more')
+@tty.assert_row(21, 'some_file')
 
-# puts "    \u2705 Input redirection followed by pipe".encode('utf-8')
+puts "    \u2705 Regular input redirection".encode('utf-8')
 
-# # two input redirections in pipe ignores pipe
-# sleep 0.2
-# @tty.send_keys(%(cat < in1.txt | cat < in2.txt))
-# @tty.assert_row(23, '/pshell ❱ sort <in2.txt | cat')
-# @tty.assert_row(21, 'second')
-# @tty.assert_row(21, 'file')
+# two input redirections in pipe ignores pipe
+sleep 0.2
+@tty.send_keys(%(cat < /in1.txt | cat < /in2.txt\n))
+@tty.assert_row(21, 'another')
+puts "    \u2705 Two input redirections in pipe ignores pipe".encode('utf-8')
 
-# puts "    \u2705 two input redirections in pipe ignores pipe".encode('utf-8')
 # only cares about last redirection
-# sleep 0.2
-# @tty.send_keys(%(cat < in2.txt < in1.txt\n))
-# @tty.assert_row(23, '/pshell ❱ sort <in2.txt | cat')
-# @tty.assert_row(21, 'first')
-# @tty.assert_row(21, 'file')
+sleep 0.2
+@tty.send_keys(%(cat < /in2.txt < /in1.txt\n))
+@tty.assert_row(19, 'more')
+@tty.assert_row(20, 'another')
+@tty.assert_row(21, 'some_file')
+puts "    \u2705 Only cares about last redirection".encode('utf-8')
 
 @tty.send_keys(%(exit\n))

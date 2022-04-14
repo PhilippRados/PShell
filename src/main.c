@@ -909,14 +909,6 @@ int main(int argc, char* argv[]) {
         stripRedirections(&splitted_line, token);
         int builtin_index;
 
-        // if (simple_commands_arr.token_arr[i] == AMP_CMD) {
-        //   dup2(tmpin, 0);
-        //   dup2(tmpout, 1);
-        //   close(tmpin);
-        //   close(tmpout);
-        //   tmpin = dup(0);
-        //   tmpout = dup(1);
-        // }
         if (file_info.input_filenames[i] != NULL) {
           if (fileExists(file_info.input_filenames[i])) {
             fdin = open(file_info.input_filenames[i], O_RDONLY);
@@ -951,7 +943,11 @@ int main(int argc, char* argv[]) {
 
           dup2(fdin, STDIN_FILENO);
           close(fdin);
-          if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i + 1] == PIPE_CMD) {
+          if (file_info.output_filenames[i] != NULL) {
+            fdout = file_info.output_append[i]
+                        ? open(file_info.output_filenames[i], O_RDWR | O_CREAT | O_APPEND, 0666)
+                        : open(file_info.output_filenames[i], O_RDWR | O_CREAT | O_TRUNC, 0666);
+          } else if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i + 1] == PIPE_CMD) {
             pipe(pd);
             fdout = pd[1];
             fdin = pd[0];
