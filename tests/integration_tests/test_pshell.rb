@@ -859,4 +859,29 @@ sleep 0.2
 
 puts "    \u2705 When file not found for input throws error".encode('utf-8')
 
+#### TESTS WHEN OUTPUT REDIRECTION WORKS
+# input redirection followed by pipe
+# sleep 0.2
+# @tty.send_keys(%(sort <in2.txt | cat\n))
+# @tty.assert_row(23, '/pshell ❱ sort <in2.txt | cat')
+# @tty.assert_row(21, 'file')
+# @tty.assert_row(21, 'second')
+
+# puts "    \u2705 Input redirection followed by pipe".encode('utf-8')
+
+# # two input redirections in pipe ignores pipe
+# sleep 0.2
+# @tty.send_keys(%(cat < in1.txt | cat < in2.txt))
+# @tty.assert_row(23, '/pshell ❱ sort <in2.txt | cat')
+# @tty.assert_row(21, 'second')
+# @tty.assert_row(21, 'file')
+
+# puts "    \u2705 two input redirections in pipe ignores pipe".encode('utf-8')
+# only cares about last redirection
+# sleep 0.2
+# @tty.send_keys(%(cat < in2.txt < in1.txt\n))
+# @tty.assert_row(23, '/pshell ❱ sort <in2.txt | cat')
+# @tty.assert_row(21, 'first')
+# @tty.assert_row(21, 'file')
+
 @tty.send_keys(%(exit\n))

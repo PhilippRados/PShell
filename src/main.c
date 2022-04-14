@@ -831,7 +831,8 @@ void removeArrayElement(string_array* splitted, int pos) {
 
 void stripRedirections(string_array* splitted_line, token_index_arr token) {
   int j = 0;
-  for (int i = 0; i < splitted_line->len;) {
+  int len = splitted_line->len;
+  for (int i = 0; i < len;) {
     if (token.arr[i].token >= GREATGREAT && token.arr[i].token <= AMP_GREATGREAT) {
       removeArrayElement(splitted_line, j); // removes redirection
       removeArrayElement(splitted_line, j); // removes filename
@@ -908,23 +909,28 @@ int main(int argc, char* argv[]) {
         stripRedirections(&splitted_line, token);
         int builtin_index;
 
-        if (simple_commands_arr.token_arr[i] == AMP_CMD) {
+        // if (simple_commands_arr.token_arr[i] == AMP_CMD) {
+        //   dup2(tmpin, 0);
+        //   dup2(tmpout, 1);
+        //   close(tmpin);
+        //   close(tmpout);
+        //   tmpin = dup(0);
+        //   tmpout = dup(1);
+        // }
+        if (file_info.input_filenames[i] != NULL) {
+          if (fileExists(file_info.input_filenames[i])) {
+            fdin = open(file_info.input_filenames[i], O_RDONLY);
+          } else {
+            printf("no such file %s\n", file_info.input_filenames[i]);
+            continue;
+          }
+        } else if (simple_commands_arr.token_arr[i] == AMP_CMD) {
           dup2(tmpin, 0);
           dup2(tmpout, 1);
           close(tmpin);
           close(tmpout);
           tmpin = dup(0);
           tmpout = dup(1);
-          if (file_info.input_filenames[i] != NULL) {
-            if (fileExists(file_info.input_filenames[i])) {
-              fdin = open(file_info.input_filenames[i], O_RDONLY);
-            } else {
-              printf("no such file %s\n", file_info.input_filenames[i]);
-              continue;
-            }
-          } else {
-            fdin = open(0, O_RDONLY);
-          }
         }
         if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
