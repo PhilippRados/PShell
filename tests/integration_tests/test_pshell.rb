@@ -927,4 +927,32 @@ sleep 0.2
 @tty.assert_row(21, 'some_file')
 puts "    \u2705 Only cares about last redirection".encode('utf-8')
 
+puts 'ERROR REDIRECTION'
+# redirects errors to given file
+sleep 0.2
+@tty.send_keys(%(ls non_existant no_file2> errors\n))
+@tty.assert_row(20, '/pshell ❱ ls non_existant no_file2> erro')
+@tty.assert_row(22, '')
+sleep 0.2
+@tty.send_keys(%(cat errors\n))
+@tty.assert_row(18, "ls: cannot access 'non_existant': No suc")
+@tty.assert_row(20, "ls: cannot access 'no_file': No such fil")
+puts "    \u2705 Redirects errors to given file".encode('utf-8')
+
+# appends errors when when 2>>
+sleep 0.2
+@tty.send_keys(%(ls some_error_file 2>>errors && cat errors\n))
+@tty.assert_row(16, "ls: cannot access 'non_existant': No suc")
+@tty.assert_row(18, "ls: cannot access 'no_file': No such fil")
+@tty.assert_row(20, "ls: cannot access 'some_error_file': No")
+puts "    \u2705 Appends errors when when 2>>".encode('utf-8')
+
+# can split error to error-file and regular output to normal output-redirection with && and |
+sleep 0.2
+@tty.send_keys(%(ls uwe /bin 2> errors > some_file && cat some_file | grep bz 1>> bz_bins && cat bz_bins errors\n))
+@tty.assert_row(18, 'bzless')
+@tty.assert_row(19, 'bzmore')
+@tty.assert_row(20, "ls: cannot access 'uwe': No such file or")
+puts "    \u2705 Can split error to error-file and regular output to normal output-redirection with && and |".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

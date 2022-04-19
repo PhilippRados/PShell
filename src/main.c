@@ -777,15 +777,19 @@ string_array splitByWhitespaceTokens(char* line) {
 file_redirection_data parseForRedirectionFiles(string_array_token simple_commands_arr) {
   char** output_names = calloc(simple_commands_arr.len, sizeof(char*));
   char** input_names = calloc(simple_commands_arr.len, sizeof(char*));
+  char** error_names = calloc(simple_commands_arr.len, sizeof(char*));
   int* output_append = calloc(simple_commands_arr.len, sizeof(int));
+  int* error_append = calloc(simple_commands_arr.len, sizeof(int));
   bool found_output;
   bool found_input;
+  bool found_stderr;
 
   for (int i = 0; i < simple_commands_arr.len; i++) {
     token_index_arr token_line = tokenizeLine(simple_commands_arr.values[i]);
     removeWhitespaceTokens(&token_line);
     found_input = false;
     found_output = false;
+    found_stderr = false;
 
     for (int j = token_line.len - 1; j >= 0; j--) {
       int start = token_line.arr[j + 1].start;
@@ -798,20 +802,36 @@ file_redirection_data parseForRedirectionFiles(string_array_token simple_command
         input_names[i] = calloc(1, sizeof(NULL));
         input_names[i] = NULL;
       }
-      if (!found_output && (token_line.arr[j].token == GREAT || token_line.arr[j].token == GREATGREAT)) {
-        output_names[i] = calloc(end - start + 1, sizeof(char));
-        strncpy(output_names[i], &simple_commands_arr.values[i][start], end - start);
-        found_output = true;
-        output_append[i] = token_line.arr[j].token == GREATGREAT ? true : false;
-      } else if (!found_output && j == 0) {
-        output_names[i] = calloc(1, sizeof(NULL));
-        output_names[i] = NULL;
-        output_append[i] = false;
+      if (token_line.arr[j].token == GREAT || token_line.arr[j].token == GREATGREAT) {
+        if (!found_stderr && simple_commands_arr.values[i][token_line.arr[j].start] == '2') {
+          error_names[i] = calloc(end - start + 1, sizeof(char));
+          strncpy(error_names[i], &simple_commands_arr.values[i][start], end - start);
+          found_stderr = true;
+          error_append[i] = token_line.arr[j].token == GREATGREAT ? true : false;
+        } else if (!found_stderr && j == 0) {
+          error_names[i] = calloc(1, sizeof(NULL));
+          error_names[i] = NULL;
+          error_append[i] = false;
+        }
+        if (!found_output && simple_commands_arr.values[i][token_line.arr[j].start] != '2') {
+          output_names[i] = calloc(end - start + 1, sizeof(char));
+          strncpy(output_names[i], &simple_commands_arr.values[i][start], end - start);
+          found_output = true;
+          output_append[i] = token_line.arr[j].token == GREATGREAT ? true : false;
+
+        } else if (!found_output && j == 0) {
+          output_names[i] = calloc(1, sizeof(NULL));
+          output_names[i] = NULL;
+          output_append[i] = false;
+        }
       }
     }
   }
-  return (file_redirection_data){
-      .output_filenames = output_names, .input_filenames = input_names, .output_append = output_append};
+  return (file_redirection_data){.output_filenames = output_names,
+                                 .input_filenames = input_names,
+                                 .output_append = output_append,
+                                 .stderr_filenames = error_names,
+                                 .stderr_append = error_append};
 }
 
 bool fileExists(char* name) {
@@ -888,19 +908,11 @@ int main(int argc, char* argv[]) {
       int pd[2];
       int tmpin = dup(0);
       int tmpout = dup(1);
+      int tmperr = dup(2);
       int fdout;
+      int fderr;
       pid_t pid;
-      int fdin;
-      if (file_info.input_filenames[0] != NULL) {
-        if (fileExists(file_info.input_filenames[0])) {
-          fdin = open(file_info.input_filenames[0], O_RDONLY);
-        } else {
-          printf("no such file %s\n", file_info.input_filenames[0]);
-          continue;
-        }
-      } else {
-        fdin = open(0, O_RDONLY);
-      }
+      int fdin = open(0, O_RDONLY);
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
         splitted_line = splitByWhitespaceTokens(simple_commands_arr.values[i]);
@@ -919,10 +931,13 @@ int main(int argc, char* argv[]) {
         } else if (simple_commands_arr.token_arr[i] == AMP_CMD) {
           dup2(tmpin, 0);
           dup2(tmpout, 1);
+          dup2(tmperr, 2);
           close(tmpin);
           close(tmpout);
+          close(tmperr);
           tmpin = dup(0);
           tmpout = dup(1);
+          tmperr = dup(2);
         }
         if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
@@ -954,6 +969,15 @@ int main(int argc, char* argv[]) {
           } else {
             fdout = dup(tmpout);
           }
+          if (file_info.stderr_filenames[i] != NULL) {
+            fderr = file_info.stderr_append[i]
+                        ? open(file_info.stderr_filenames[i], O_RDWR | O_CREAT | O_APPEND, 0666)
+                        : open(file_info.stderr_filenames[i], O_RDWR | O_CREAT | O_TRUNC, 0666);
+          } else {
+            fderr = dup(tmperr);
+          }
+          dup2(fderr, STDERR_FILENO);
+          close(fderr);
           dup2(fdout, STDOUT_FILENO);
           close(fdout);
           pid = fork();
@@ -974,8 +998,10 @@ int main(int argc, char* argv[]) {
       free_string_array(&splitted_line);
       dup2(tmpin, 0);
       dup2(tmpout, 1);
+      dup2(tmperr, 2);
       close(tmpin);
       close(tmpout);
+      close(tmperr);
     } else {
       printf("Syntax Error\n");
     }
