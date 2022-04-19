@@ -955,4 +955,16 @@ sleep 0.2
 @tty.assert_row(20, "ls: cannot access 'uwe': No such file or")
 puts "    \u2705 Can split error to error-file and regular output to normal output-redirection with && and |".encode('utf-8')
 
+puts 'MERGE REDIRECTION'
+# when error-output and normal output &> redirects both to same file
+sleep 0.2
+@tty.send_keys(%(ls not_file /root   &> merged_ls\n))
+sleep 0.2
+@tty.send_keys(%(cat merged_ls\n))
+@tty.assert_row(17, "ls: cannot access 'not_file': No such fi")
+@tty.assert_row(19, '/root:')
+@tty.assert_row(20, 'another')
+@tty.assert_row(21, 'some_file')
+puts "    \u2705 When error-output and normal output &> redirects both to same file".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

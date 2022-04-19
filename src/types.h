@@ -38,8 +38,10 @@ typedef struct {
   char** output_filenames;
   char** input_filenames;
   char** stderr_filenames;
+  char** merge_filenames;
   int* output_append;
   int* stderr_append;
+  int* merge_append;
 } file_redirection_data;
 
 enum logger_type {
