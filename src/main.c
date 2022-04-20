@@ -922,7 +922,7 @@ int main(int argc, char* argv[]) {
     token_index_arr tokenized_line = tokenizeLine(line);
     removeWhitespaceTokens(&tokenized_line);
 
-    if (strlen(line) > 0 && isValidSyntax(tokenized_line)) {
+    if (tokenized_line.len > 0 && isValidSyntax(tokenized_line)) {
       string_array_token simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
       replaceAliases(simple_commands_arr.values, simple_commands_arr.len);
       file_redirection_data file_info = parseForRedirectionFiles(simple_commands_arr);

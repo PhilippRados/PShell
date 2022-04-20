@@ -930,18 +930,18 @@ puts "    \u2705 Only cares about last redirection".encode('utf-8')
 puts 'ERROR REDIRECTION'
 # redirects errors to given file
 sleep 0.2
-@tty.send_keys(%(ls non_existant no_file2> errors\n))
-@tty.assert_row(20, '/pshell ❱ ls non_existant no_file2> erro')
+@tty.send_keys(%(ls non_existant no_file2> /errors\n))
+@tty.assert_row(20, '/pshell ❱ ls non_existant no_file2> /err')
 @tty.assert_row(22, '')
 sleep 0.2
-@tty.send_keys(%(cat errors\n))
+@tty.send_keys(%(cat /errors\n))
 @tty.assert_row(18, "ls: cannot access 'non_existant': No suc")
 @tty.assert_row(20, "ls: cannot access 'no_file': No such fil")
 puts "    \u2705 Redirects errors to given file".encode('utf-8')
 
 # appends errors when when 2>>
 sleep 0.2
-@tty.send_keys(%(ls some_error_file 2>>errors && cat errors\n))
+@tty.send_keys(%(ls some_error_file 2>>/errors && cat /errors\n))
 @tty.assert_row(16, "ls: cannot access 'non_existant': No suc")
 @tty.assert_row(18, "ls: cannot access 'no_file': No such fil")
 @tty.assert_row(20, "ls: cannot access 'some_error_file': No")
@@ -949,7 +949,7 @@ puts "    \u2705 Appends errors when when 2>>".encode('utf-8')
 
 # can split error to error-file and regular output to normal output-redirection with && and |
 sleep 0.2
-@tty.send_keys(%(ls uwe /bin 2> errors > some_file && cat some_file | grep bz 1>> bz_bins && cat bz_bins errors\n))
+@tty.send_keys(%(ls uwe /bin 2> /errors > /some_file && cat /some_file | grep bz 1>> /bz_bins && cat /bz_bins /errors\n))
 @tty.assert_row(18, 'bzless')
 @tty.assert_row(19, 'bzmore')
 @tty.assert_row(20, "ls: cannot access 'uwe': No such file or")
@@ -958,9 +958,9 @@ puts "    \u2705 Can split error to error-file and regular output to normal outp
 puts 'MERGE REDIRECTION'
 # when error-output and normal output &> redirects both to same file
 sleep 0.2
-@tty.send_keys(%(ls not_file /root   &> merged_ls\n))
+@tty.send_keys(%(ls not_file /root   &> /merged_ls\n))
 sleep 0.2
-@tty.send_keys(%(cat merged_ls\n))
+@tty.send_keys(%(cat /merged_ls\n))
 @tty.assert_row(17, "ls: cannot access 'not_file': No such fi")
 @tty.assert_row(19, '/root:')
 @tty.assert_row(20, 'another')
