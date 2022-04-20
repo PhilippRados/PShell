@@ -795,7 +795,7 @@ file_redirection_data parseForRedirectionFiles(string_array_token simple_command
     found_stderr = false;
     found_merge = false;
 
-    for (int j = token_line.len - 1; j >= 0; j--) {
+    for (int j = token_line.len - 2; j >= 0; j--) {
       int start = token_line.arr[j + 1].start;
       int end = token_line.arr[j + 1].end;
       if (!found_input && token_line.arr[j].token == LESS) {
