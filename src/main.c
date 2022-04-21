@@ -1033,7 +1033,9 @@ int main(int argc, char* argv[]) {
       close(tmpout);
       close(tmperr);
     } else {
-      printf("Syntax Error\n");
+      if (!isOnlyDelimeter(line, ' ')) {
+        printf("Syntax Error\n");
+      }
     }
     pushToCommandHistory(line, &command_history);
     free(line);
