@@ -967,4 +967,51 @@ sleep 0.2
 @tty.assert_row(21, 'some_file')
 puts "    \u2705 When error-output and normal output &> redirects both to same file".encode('utf-8')
 
+puts 'TAB-COMP ON COMPLEX LINES'
+# tab-comps cmd after pipe
+sleep 0.2
+@tty.send_keys(%(ls | ca))
+@tty.send_keys(TAB)
+@tty.assert_row(23, 'captoinfo  catchsegv  cat')
+@tty.send_keys(%(\n))
+@tty.send_keys(%(\n))
+puts "    \u2705 Tab-comps cmd after pipe".encode('utf-8')
+
+# tab-comps cmd after &&
+sleep 0.2
+@tty.send_keys(%(cat /root && lsm))
+@tty.assert_cursor_position(26, 23)
+@tty.send_keys(TAB)
+@tty.assert_row(23, '/pshell ❱ cat /root && lsmem')
+puts "    \u2705 Tab-comps cmd after &&".encode('utf-8')
+
+# tab-comps args before &&
+sleep 0.2
+(0..8).each do |_i|
+  @tty.send_keys(%(\033))
+  @tty.send_keys(%(ZD))
+end
+@tty.assert_cursor_position(19, 23)
+@tty.send_keys(TAB)
+@tty.assert_row(23, '/pshell ❱ cat /root/ && lsmem')
+puts "    \u2705 Tab-comps args before &&".encode('utf-8')
+
+# tab-comps files if redirections before cmd
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(> /so))
+@tty.send_keys(TAB)
+@tty.assert_row(23, '/pshell ❱ > /some_file')
+puts "    \u2705 tab-comps files if redirections before cmd".encode('utf-8')
+
+# tab-comps cmd even when prior redirections
+sleep 0.2
+@tty.send_keys(%(  l))
+@tty.send_keys(TAB)
+@tty.assert_row(20, '/pshell ❱ > /some_file  l')
+@tty.assert_row(21, 'The list of possible matches is 16 lines')
+@tty.send_keys(%(y))
+@tty.assert_row(22, 'ls             ln')
+puts "    \u2705 tab-comps cmd even when prior redirections".encode('utf-8')
+
 @tty.send_keys(%(exit\n))
