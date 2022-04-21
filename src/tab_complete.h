@@ -1,6 +1,5 @@
 #include "util.h"
 
-char* getCurrentWordFromLineIndex(string_array command_line, int cursor_x, int starting_index);
 void removeSlice(char** line, int start);
 string_array getAllMatchingFiles(char* current_dir_sub, char* removed_sub);
 string_array filterMatching(char* line, const string_array PATH_BINS);

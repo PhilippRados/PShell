@@ -392,7 +392,8 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   if (strlen(line_info->line) <= 0)
     return;
 
-  if (tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size)) {
+  token_index_arr tokenized_line = tokenizeLine(line_info->line);
+  if (tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, tokenized_line)) {
     // successful completion
     *line_info->i = getWordEndIndex(line_info->line, *line_info->i);
     line_info->c = -1;
@@ -827,22 +828,18 @@ file_redirection_data parseForRedirectionFiles(string_array_token simple_command
         }
       }
       if (!found_output && j == 0) {
-        output_names[i] = calloc(1, sizeof(NULL));
         output_names[i] = NULL;
         output_append[i] = false;
       }
       if (!found_merge && j == 0) {
-        merge_names[i] = calloc(1, sizeof(NULL));
         merge_names[i] = NULL;
         merge_append[i] = false;
       }
       if (!found_stderr && j == 0) {
-        error_names[i] = calloc(1, sizeof(NULL));
         error_names[i] = NULL;
         error_append[i] = false;
       }
       if (!found_input && j == 0) {
-        input_names[i] = calloc(1, sizeof(NULL));
         input_names[i] = NULL;
       }
     }

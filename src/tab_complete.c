@@ -38,23 +38,6 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
   }
 }
 
-char* getCurrentWordFromLineIndex(string_array command_line, int line_index, int starting_index) {
-  line_index -= starting_index;
-  int current_pos = 0;
-  char* result;
-  for (int i = starting_index; i < command_line.len; i++) {
-    if (line_index >= current_pos && line_index <= (current_pos + strlen(command_line.values[i]))) {
-      int index_in_word = line_index - current_pos;
-      result = calloc(strlen(command_line.values[i]) + 1, sizeof(char));
-      strncpy(result, command_line.values[i], index_in_word);
-      break;
-    }
-    current_pos += strlen(command_line.values[i]) + 1;
-  }
-
-  return result;
-}
-
 // 0-indexed
 void removeSlice(char** line, int start) {
   int end = getWordEndIndex(*line, start);
@@ -63,11 +46,11 @@ void removeSlice(char** line, int start) {
   }
 }
 
-autocomplete_array checkForAutocomplete(char* current_word, char* first_word, int line_index,
+autocomplete_array checkForAutocomplete(char* current_word, enum token current_token,
                                         const string_array PATH_BINS) {
   autocomplete_array possible_autocomplete = {.array.len = 0};
 
-  if (strlen(first_word) >= line_index) { // autocomplete for commands
+  if (current_token == CMD || current_token == PIPE_CMD || current_token == AMP_CMD) { // autocomplete for commands
     string_array filtered = filterMatching(current_word, PATH_BINS);
 
     possible_autocomplete = (autocomplete_array){
@@ -258,20 +241,52 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
+token_index getCurrentToken(int line_index, token_index_arr tokenized_line) {
+  token_index result = {.start = -1, .end = -1};
+  for (int i = 0; i < tokenized_line.len; i++) {
+    if (line_index >= tokenized_line.arr[i].start && line_index <= tokenized_line.arr[i].end) {
+      result = tokenized_line.arr[i];
+      break;
+    }
+  }
+  return result;
+}
+
+char* getCurrentWord(char* line, int line_index, token_index current_token) {
+  if (current_token.start == -1 && current_token.end == -1) {
+    return NULL;
+  } else if (current_token.token == WHITESPACE) {
+    char* result = calloc(2, sizeof(char));
+    strcpy(result, "");
+    return result;
+  } else {
+    char* result = calloc(line_index - current_token.start + 1, sizeof(char));
+    strncpy(result, &line[current_token.start], line_index - current_token.start);
+    return result;
+  }
+}
+
+int firstNonWhitespaceToken(token_index_arr token_line) {
+  for (int i = 0; i < token_line.len; i++) {
+    if (token_line.arr[i].token != WHITESPACE) {
+      return token_line.arr[i].start;
+    }
+  }
+  return INT_MAX;
+}
+
 bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array PATH_BINS,
-             const coordinates terminal_size) {
-  string_array splitted_line = splitString(line_info->line, ' ');
-  int starting_index = firstNonDelimeterIndex(splitted_line);
-  if (*line_info->i <= starting_index) {
-    free_string_array(&splitted_line);
+             const coordinates terminal_size, token_index_arr tokenized_line) {
+  if (tokenized_line.len > 0 && *line_info->i <= firstNonWhitespaceToken(tokenized_line)) {
     return false;
   }
 
   int tab_index = -1;
-  char* current_word = getCurrentWordFromLineIndex(splitted_line, *line_info->i, starting_index);
-  autocomplete_array possible_tabcomplete = checkForAutocomplete(
-      current_word, splitted_line.values[starting_index], (*line_info->i) - starting_index, PATH_BINS);
+  token_index current_token = getCurrentToken(*line_info->i, tokenized_line);
+  char* current_word = getCurrentWord(line_info->line, *line_info->i, current_token);
+  autocomplete_array possible_tabcomplete = checkForAutocomplete(current_word, current_token.token, PATH_BINS);
   removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
+
   render_objects render_data =
       initializeRenderObjects(terminal_size, possible_tabcomplete, cursor_pos, line_info->cursor_row,
                               line_info->line_row_count_with_autocomplete);
@@ -279,7 +294,6 @@ bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array P
 
   if (possible_tabcomplete.array.len <= 0 || tooManyMatches(&render_data, possible_tabcomplete)) {
     free_string_array(&(possible_tabcomplete.array));
-    free_string_array(&splitted_line);
     free(current_word);
     return false;
   }
@@ -292,7 +306,6 @@ bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array P
   } while (completion_result.continue_loop && (line_info->c = getch()));
 
   free_string_array(&(possible_tabcomplete.array));
-  free_string_array(&splitted_line);
   free(current_word);
 
   return completion_result.successful;

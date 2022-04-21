@@ -1,66 +1,6 @@
 #include "../../src/tab_complete.h"
 #include <criterion/criterion.h>
 
-Test(getCurrentWordFromLineIndex, cursor_in_middle_of_word) {
-  char* one = "one";
-  char* two = "two";
-  char* addr_one[] = {one, two};
-
-  string_array arr1 = {.len = 2, .values = addr_one};
-
-  char* result = getCurrentWordFromLineIndex(arr1, 6, 0);
-  cr_expect(strcmp(result, "tw") == 0);
-}
-
-Test(getCurrentWordFromLineIndex, cursor_at_end_of_word) {
-  char* one = "one";
-  char* two = "two";
-  char* three = "three";
-  char* addr_one[] = {one, two, three};
-
-  string_array arr1 = {.len = 3, .values = addr_one};
-
-  char* result = getCurrentWordFromLineIndex(arr1, 3, 0);
-  cr_expect(strcmp(result, "one") == 0);
-}
-
-Test(getCurrentWordFromLineIndex, when_leading_whitespace_takes_first_word_after) {
-  char* one = "";
-  char* two = "";
-  char* three = "three";
-  char* four = "four";
-  char* addr_one[] = {one, two, three, four};
-
-  string_array arr1 = {.len = 4, .values = addr_one};
-
-  char* result = getCurrentWordFromLineIndex(arr1, 3, 0);
-  cr_expect(strcmp(result, "t") == 0);
-}
-
-Test(getCurrentWordFromLineIndex, when_line_index_on_whitespace_should_return_whitespace) {
-  char* one = "";
-  char* two = "";
-  char* three = "three";
-  char* four = "four";
-  char* addr_one[] = {one, two, three, four};
-
-  string_array arr1 = {.len = 4, .values = addr_one};
-
-  char* result = getCurrentWordFromLineIndex(arr1, 2, 0);
-  cr_expect(strcmp(result, "") == 0);
-}
-
-Test(removeSlice, remove_end_if_cursor_middle) {
-  char* word = calloc(52, sizeof(char));
-  strcpy(word, "testing if Makefile works");
-  int start = 14;
-
-  removeSlice(&word, start);
-
-  cr_expect(strcmp(word, "testing if Mak works") == 0);
-  free(word);
-}
-
 Test(removeSlice, remove_nothing_cursor_end_of_current_word) {
   char* word = calloc(52, sizeof(char));
   strcpy(word, "testing if Makefile works");
