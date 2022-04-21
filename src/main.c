@@ -221,12 +221,14 @@ token_index_arr tokenizeLine(char* line) {
   char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
   char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/]+)|(\\|)|([ ]+)|(&&)|&&[ "
                      "\n]*([_A-Za-z0-9.\\-\\/]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* wildcards = "(\\*)|(\\?)";
   char* only_args = "([^ \t\n]+)";
-  char* regexes[] = {filenames, redirection, line_token, only_args};
-  regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 10},
+  char* regexes[] = {filenames, redirection, line_token, wildcards, only_args};
+  regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 12},
                                     {.fill_char = '\n', .loop_start = 1, .token_index_inc = 6},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 0},
-                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11}};
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 13}};
   char* start;
   char* end;
   int j = 0;
@@ -333,6 +335,11 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
     case (PIPE):
     case (AMPAMP): {
       printColor(substring, YELLOW, standard);
+      break;
+    }
+    case (QUESTION):
+    case (ASTERISK): {
+      printColor(substring, BLUE, bold);
       break;
     }
     default: {
@@ -706,8 +713,8 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   regmatch_t rm[1];
   // nums represent token enum values from types.h
   char* valid_syntax =
-      "^((7|8|9|10|11)12)*(1((7|8|9|10|11)12)*(12)*((7|8|9|10|11)12)*((3((7|8|9|10|11)12)*2)((7|8|9|10|11)12)*(12)"
-      "*((7|8|9|10|11)12)*|((5((7|8|9|10|11)12)*6)|(5((7|8|9|10|11)12)+))((7|8|9|10|11)12)*(12)*((7|8|9|10|11)12)*"
+      "^((7|8|9|10|11)14)*(1((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*((3((7|8|9|10|11)14)*2)((7|8|9|10|11)14)*(14)"
+      "*((7|8|9|10|11)14)*|((5((7|8|9|10|11)14)*6)|(5((7|8|9|10|11)14)+))((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*"
       ")*)?";
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {

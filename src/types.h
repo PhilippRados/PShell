@@ -13,6 +13,8 @@ enum token {
   LESS,
   AMP_GREAT,
   AMP_GREATGREAT,
+  ASTERISK,
+  QUESTION,
   ARG,
   ENUM_LEN
 };

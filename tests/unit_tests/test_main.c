@@ -577,6 +577,38 @@ Test(tokenizeLine, multiple_redirections_with_ampamp) {
   cr_expect(result_arr[12].end == 33);
 }
 
+Test(tokenizeLine, tokenizes_asterisks) {
+  char* line = "ls s* * -a";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 8);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 4);
+  cr_expect(result_arr[3].token == ASTERISK);
+  cr_expect(result_arr[3].start == 4);
+  cr_expect(result_arr[3].end == 5);
+  cr_expect(result_arr[4].token == WHITESPACE);
+  cr_expect(result_arr[4].start == 5);
+  cr_expect(result_arr[4].end == 6);
+  cr_expect(result_arr[5].token == ASTERISK);
+  cr_expect(result_arr[5].start == 6);
+  cr_expect(result_arr[5].end == 7);
+  cr_expect(result_arr[6].token == WHITESPACE);
+  cr_expect(result_arr[6].start == 7);
+  cr_expect(result_arr[6].end == 8);
+  cr_expect(result_arr[7].token == ARG);
+  cr_expect(result_arr[7].start == 8);
+  cr_expect(result_arr[7].end == 10);
+}
+
 Test(removeWhitespacetokens, removes_whitetoken) {
   token_index arr1 = {.token = WHITESPACE, .start = 0, .end = 2};
   token_index arr2 = {.token = CMD, .start = 0, .end = 2};
