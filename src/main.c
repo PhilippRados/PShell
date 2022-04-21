@@ -704,10 +704,11 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   bool result = false;
   regex_t re;
   regmatch_t rm[1];
+  // nums represent token enum values from types.h
   char* valid_syntax =
       "^((7|8|9|10|11)12)*(1((7|8|9|10|11)12)*(12)*((7|8|9|10|11)12)*((3((7|8|9|10|11)12)*2)((7|8|9|10|11)12)*(12)"
-      "*((7|8|9|10|11)12)*|(5((7|8|9|10|11)12)*6)((7|8|9|10|11)12)*(12)*((7|8|9|10|11)12)*)*)?"; // nums represent
-                                                                                                 // enum tokens
+      "*((7|8|9|10|11)12)*|((5((7|8|9|10|11)12)*6)|(5((7|8|9|10|11)12)+))((7|8|9|10|11)12)*(12)*((7|8|9|10|11)12)*"
+      ")*)?";
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
     perror("error in compiling regex\n");
@@ -958,7 +959,7 @@ int main(int argc, char* argv[]) {
           tmpout = dup(1);
           tmperr = dup(2);
         }
-        if ((builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
+        if (splitted_line.len > 0 && (builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
             // free_string_array(&simple_commands_arr);
             free_string_array(&splitted_line);
@@ -1008,16 +1009,18 @@ int main(int argc, char* argv[]) {
             dup2(fdout, STDOUT_FILENO);
             close(fdout);
           }
-          pid = fork();
+          if (splitted_line.len > 0) {
+            pid = fork();
 
-          if (pid == 0) {
-            int error = execvp(splitted_line.values[0], splitted_line.values);
-            if (error) {
-              printf("couldn't find command %s\n", splitted_line.values[0]);
+            if (pid == 0) {
+              int error = execvp(splitted_line.values[0], splitted_line.values);
+              if (error) {
+                printf("couldn't find command %s\n", splitted_line.values[0]);
+              }
             }
-          }
-          if (waitpid(pid, &w_status, WUNTRACED | WCONTINUED) == -1) {
-            exit(EXIT_FAILURE);
+            if (waitpid(pid, &w_status, WUNTRACED | WCONTINUED) == -1) {
+              exit(EXIT_FAILURE);
+            }
           }
         }
       }
