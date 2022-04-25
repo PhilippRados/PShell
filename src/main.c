@@ -1020,9 +1020,9 @@ int main(int argc, char* argv[]) {
       int fdin = open(0, O_RDONLY);
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
-        splitted_line = splitByTokens(simple_commands_arr.values[i]);
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
         replaceWildcards(&simple_commands_arr.values[i], token);
+        splitted_line = splitByTokens(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
         stripRedirections(&splitted_line, token);
         int builtin_index;
