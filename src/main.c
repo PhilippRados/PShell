@@ -219,8 +219,8 @@ token_index_arr tokenizeLine(char* line) {
   regmatch_t rm[ENUM_LEN];
   char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
   char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
-  char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/]+)|(\\|)|([ ]+)|(&&)|&&[ "
-                     "\n]*([_A-Za-z0-9.\\-\\/]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/\\*]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*]+)|(\\|)|([ ]+)|(&&)|&&[ "
+                     "\n]*([_A-Za-z0-9.\\-\\/\\*]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
   char* wildcards = "(\\*)|(\\?)";
   char* only_args = "([^ \t\n]+)";
   char* regexes[] = {filenames, redirection, line_token, wildcards, only_args};
@@ -278,7 +278,7 @@ int isBuiltin(char* command, builtins_array builtins) {
 
 void replaceAliasesString(char** line) {
   for (int j = 0; j < strlen(*line); j++) {
-    if (**line == '~') {
+    if ((*line)[j] == '~') {
       char* home_path = getenv("HOME");
       char* prior_line = calloc(strlen(*line) + 1, sizeof(char));
       strcpy(prior_line, *line);
@@ -550,23 +550,99 @@ void pipeOutputToFile(char* filename) {
   close(file);
 }
 
-void replaceAliases(char** splitted_line, int len) {
-  for (int i = 0; i < len; i++) {
-    for (int j = 0; j < strlen(splitted_line[i]); j++) {
-      if (splitted_line[i][j] == '~') {
-        char* home_path = getenv("HOME");
-        char* prior_line = calloc(strlen(splitted_line[i]) + 1, sizeof(char));
-        strcpy(prior_line, splitted_line[i]);
-        removeCharAtPos(prior_line, j + 1);
-        splitted_line[i] = realloc(splitted_line[i], strlen(home_path) + strlen(splitted_line[i]) + 10);
-        strcpy(splitted_line[i], prior_line);
-        insertStringAtPos(&(splitted_line[i]), home_path, j);
-        free(prior_line);
+void removeSlice_clone(char** line, int start) {
+  int end = getWordEndIndex(*line, start);
+  for (int i = start; i < end; i++) {
+    *line = removeCharAtPos(*line, start + 1);
+  }
+  // for (int i = start;
+  //      i < strlen(*line) && *line[i] != '/' && *line[i] != ' ' && *line[i] != '&' && *line[i] != '|'; i++) {
+  //   *line = removeCharAtPos(*line, start + 1);
+  // }
+}
+void replaceWildcards(char** line, token_index_arr tokenized_line) {
+  for (int i = 0; i < tokenized_line.len; i++) {
+    if (tokenized_line.arr[i].token == ASTERISK) {
+
+      token_index current_token = tokenized_line.arr[i];
+      token_index prev_token = tokenized_line.arr[i - 1];
+      token_index next_token = tokenized_line.arr[i + 1];
+
+      char* prev_word = calloc(prev_token.end - prev_token.start + 2, sizeof(char));
+      strncpy(prev_word, &((*line)[prev_token.start]), prev_token.end - prev_token.start);
+
+      int inserting_index = prev_token.token == ARG ? prev_token.start : current_token.start;
+      regex_t re;
+      regmatch_t rm[1];
+
+      // char* start = prev_token.token == ARG ? &(*line)[prev_token.start] : &(*line)[current_token.start];
+      char* start;
+      if (prev_token.token == ARG && (*line)[prev_token.end - 1] != '/') {
+        start = &(*line)[prev_token.start];
+      } else {
+        start = &(*line)[current_token.start];
       }
+      char* end = next_token.token == ARG ? &(*line)[next_token.end] : &(*line)[current_token.end];
+      // int end_index;
+      // for (int end_index = current_token.end;
+      //      end_index < strlen(*line) && *line[end_index] != '/' && *line[end_index] != ' ' &&
+      //      *line[end_index] != '&' && *line[end_index] != '|';
+      //      end_index++) {
+      // }
+      // char* end = &(*line)[end_index];
+
+      char* regex = calloc(((end - start) * 2) + 3, sizeof(char));
+      char* regex_start = regex;
+
+      *regex++ = '^';
+      while (start < end) {
+        if (*start == '*') {
+          *regex++ = '.';
+          *regex++ = '*';
+          start++;
+        } else {
+          *regex++ = *start++;
+        }
+      }
+      *regex++ = '$';
+      regex = regex_start;
+
+      if (regcomp(&re, regex, REG_EXTENDED) != 0) {
+        perror("error in compiling regex\n");
+      }
+      DIR* current_dir;
+      if (prev_word[strlen(prev_word) - 1] == '/') {
+        current_dir = opendir(prev_word);
+      } else {
+        current_dir = opendir(".");
+      }
+      removeSlice_clone(line, inserting_index);
+
+      struct dirent* dir;
+      if (current_dir == NULL) {
+        printf("couldnt open directory\n");
+      }
+      while ((dir = readdir(current_dir)) != NULL) {
+        if (regexec(&re, dir->d_name, 1, rm, 0) == 0) {
+          char* match;
+          if (prev_word[strlen(prev_word) - 1] == '/') {
+            char* prev_copy = calloc(strlen(prev_word) + strlen(dir->d_name) + 1, sizeof(char));
+            strcpy(prev_copy, prev_word);
+            match = strcat(prev_copy, dir->d_name);
+          } else {
+            match = dir->d_name;
+          }
+          *line = realloc(*line, strlen(*line) + strlen(match) + 1);
+          insertStringAtPos(line, match, inserting_index);
+          inserting_index += strlen(match);
+          insertCharAtPos(*line, inserting_index, ' ');
+          inserting_index++;
+        }
+      }
+      // free(prev_word);
     }
   }
 }
-
 int runChildProcess(string_array splitted_line) {
   pid_t pid = fork();
 
@@ -700,8 +776,11 @@ char* convertTokenToString(token_index_arr tokenized_line) {
   char* result = calloc(tokenized_line.len * 2 + 1, sizeof(char));
   int string_index = 0;
   for (int i = 0; i < tokenized_line.len; i++) {
-    sprintf(&result[string_index], "%d", tokenized_line.arr[i].token);
-    tokenized_line.arr[i].token >= 10 ? string_index += 2 : string_index++;
+    // ignoring wildcards since they can be anywhere
+    if (tokenized_line.arr[i].token != ASTERISK && tokenized_line.arr[i].token != QUESTION) {
+      sprintf(&result[string_index], "%d", tokenized_line.arr[i].token);
+      tokenized_line.arr[i].token >= 10 ? string_index += 2 : string_index++;
+    }
   }
   return result;
 }
@@ -712,10 +791,9 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   regex_t re;
   regmatch_t rm[1];
   // nums represent token enum values from types.h
-  char* valid_syntax =
-      "^((7|8|9|10|11)14)*(1((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*((3((7|8|9|10|11)14)*2)((7|8|9|10|11)14)*(14)"
-      "*((7|8|9|10|11)14)*|((5((7|8|9|10|11)14)*6)|(5((7|8|9|10|11)14)+))((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*"
-      ")*)?";
+  char* valid_syntax = "^((7|8|9|10|11)14)*(1((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*((3((7|8|9|10|11)14)*2)(("
+                       "7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*|((5((7|8|9|10|11)14)*6)|(5((7|8|9|10|11)14)+))"
+                       "((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*)*)?";
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
     perror("error in compiling regex\n");
@@ -767,7 +845,7 @@ string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr token
   return result;
 }
 
-string_array splitByWhitespaceTokens(char* line) {
+string_array splitByTokens(char* line) {
   token_index_arr tokenized_line = tokenizeLine(line);
   removeWhitespaceTokens(&tokenized_line);
   char** line_arr = calloc(tokenized_line.len + 1, sizeof(char*));
@@ -924,12 +1002,12 @@ int main(int argc, char* argv[]) {
     printPrompt(last_two_dirs, CYAN);
 
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
+    replaceAliasesString(&line);
     token_index_arr tokenized_line = tokenizeLine(line);
     removeWhitespaceTokens(&tokenized_line);
 
     if (tokenized_line.len > 0 && isValidSyntax(tokenized_line)) {
       string_array_token simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
-      replaceAliases(simple_commands_arr.values, simple_commands_arr.len);
       file_redirection_data file_info = parseForRedirectionFiles(simple_commands_arr);
 
       int pd[2];
@@ -942,8 +1020,9 @@ int main(int argc, char* argv[]) {
       int fdin = open(0, O_RDONLY);
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
-        splitted_line = splitByWhitespaceTokens(simple_commands_arr.values[i]);
+        splitted_line = splitByTokens(simple_commands_arr.values[i]);
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
+        replaceWildcards(&simple_commands_arr.values[i], token);
         removeWhitespaceTokens(&token);
         stripRedirections(&splitted_line, token);
         int builtin_index;

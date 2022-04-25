@@ -241,17 +241,6 @@ void removeDotFilesIfnecessary(char* current_word, autocomplete_array* possible_
   }
 }
 
-token_index getCurrentToken(int line_index, token_index_arr tokenized_line) {
-  token_index result = {.start = -1, .end = -1};
-  for (int i = 0; i < tokenized_line.len; i++) {
-    if (line_index >= tokenized_line.arr[i].start && line_index <= tokenized_line.arr[i].end) {
-      result = tokenized_line.arr[i];
-      break;
-    }
-  }
-  return result;
-}
-
 char* getCurrentWord(char* line, int line_index, token_index current_token) {
   if (current_token.start == -1 && current_token.end == -1) {
     return NULL;

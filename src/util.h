@@ -70,5 +70,6 @@ int getLongestWordInArray(const string_array array);
 void clean_stdin(void);
 char* removeMultipleWhitespaces(char* string);
 bool isExec(char* file);
+token_index getCurrentToken(int line_index, token_index_arr tokenized_line);
 
 #endif // !UTIL_H

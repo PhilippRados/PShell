@@ -609,6 +609,46 @@ Test(tokenizeLine, tokenizes_asterisks) {
   cr_expect(result_arr[7].end == 10);
 }
 
+Test(tokenizeLine, if_asterisks_in_cmd_just_includes_to_command) {
+  char* line = "ls*op -a && so*cmd *  arg*";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 12);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 5);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 5);
+  cr_expect(result_arr[1].end == 6);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 6);
+  cr_expect(result_arr[2].end == 8);
+  cr_expect(result_arr[3].token == WHITESPACE);
+  cr_expect(result_arr[3].start == 8);
+  cr_expect(result_arr[3].end == 9);
+  cr_expect(result_arr[4].token == AMPAMP);
+  cr_expect(result_arr[4].start == 9);
+  cr_expect(result_arr[4].end == 11);
+  cr_expect(result_arr[5].token == WHITESPACE);
+  cr_expect(result_arr[5].start == 11);
+  cr_expect(result_arr[5].end == 12);
+  cr_expect(result_arr[6].token == AMP_CMD);
+  cr_expect(result_arr[6].start == 12);
+  cr_expect(result_arr[6].end == 18);
+  cr_expect(result_arr[7].token == WHITESPACE);
+  cr_expect(result_arr[7].start == 18);
+  cr_expect(result_arr[7].end == 19);
+  cr_expect(result_arr[8].token == ASTERISK);
+  cr_expect(result_arr[8].start == 19);
+  cr_expect(result_arr[8].end == 20);
+  cr_expect(result_arr[10].token == ARG);
+  cr_expect(result_arr[10].start == 22);
+  cr_expect(result_arr[10].end == 25);
+  cr_expect(result_arr[11].token == ASTERISK);
+  cr_expect(result_arr[11].start == 25);
+  cr_expect(result_arr[11].end == 26);
+}
 Test(removeWhitespacetokens, removes_whitetoken) {
   token_index arr1 = {.token = WHITESPACE, .start = 0, .end = 2};
   token_index arr2 = {.token = CMD, .start = 0, .end = 2};
@@ -951,7 +991,7 @@ Test(splitByWhitespaceToken, splitByWhitespaceToken) {
   token_index arr2 = {.token = ARG, .start = 3, .end = 5};
   token_index arr[] = {arr1, arr2};
   token_index_arr token = {.arr = arr, .len = 2};
-  string_array result = splitByWhitespaceTokens(line);
+  string_array result = splitByTokens(line);
 
   cr_expect(result.len == 2);
   cr_expect(strcmp(result.values[0], "ls") == 0);
@@ -963,7 +1003,7 @@ Test(splitByWhitespaceToken, split_only_token_also_with_multiple_whitespace) {
   token_index arr1 = {.token = CMD, .start = 4, .end = 7};
   token_index arr[] = {arr1};
   token_index_arr token = {.arr = arr, .len = 1};
-  string_array result = splitByWhitespaceTokens(line);
+  string_array result = splitByTokens(line);
 
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.values[0], "bat") == 0);
@@ -984,4 +1024,57 @@ Test(parseForRedirectionFiles, removes_all_redirections_in_split) {
   cr_expect_null(result.output_filenames[1]);
   cr_expect(strcmp(result.input_filenames[1], "fl.txt") == 0);
   cr_expect(result.output_append[1] == false);
+}
+
+Test(replaceWildcards, replace_wildcard_astrisk_when_single_match) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls sr*");
+  token_index_arr token = tokenizeLine(line);
+
+  replaceWildcards(&line, token);
+  cr_expect(strcmp(line, "ls src ") == 0);
+  free(line);
+}
+
+Test(replaceWildcards, replace_wildcard_astrisk_with_everything_if_not_after_file) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls *");
+  token_index_arr token = tokenizeLine(line);
+
+  replaceWildcards(&line, token);
+  cr_expect(strcmp(line, "ls . .. Dockerfile Makefile tests README.md log.txt .gitignore .clang-format "
+                         "compile_flags.txt .git src ") == 0);
+  free(line);
+}
+
+Test(replaceWildcards, replace_wildcard_astrisk_with_multiple_matches_in_dir) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls tests/* some_other");
+  token_index_arr token = tokenizeLine(line);
+
+  replaceWildcards(&line, token);
+  cr_expect(strcmp(line, "ls tests/. tests/.. tests/unit_tests tests/integration_tests  some_other") == 0);
+  free(line);
+}
+
+Test(replaceWildcards, if_asterisk_in_middle_of_arg) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls Do*ile");
+  token_index_arr token = tokenizeLine(line);
+
+  replaceWildcards(&line, token);
+  cr_expect(strcmp(line, "ls Dockerfile ") == 0);
+  free(line);
+}
+
+Test(replaceWildcards, multiple_asterisks_in_one_arg) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls sr*/fuz*");
+  token_index_arr token = tokenizeLine(line);
+
+  replaceWildcards(&line, token);
+  logger(string, line);
+  logger(string, "\n");
+  cr_expect(strcmp(line, "ls src/fuzzy_finder.c src/fuzzy_finder.h ") == 0);
+  free(line);
 }

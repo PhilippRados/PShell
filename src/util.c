@@ -501,3 +501,14 @@ bool isExec(char* file) {
   }
   return false;
 }
+
+token_index getCurrentToken(int line_index, token_index_arr tokenized_line) {
+  token_index result = {.start = -1, .end = -1};
+  for (int i = 0; i < tokenized_line.len; i++) {
+    if (line_index >= tokenized_line.arr[i].start && line_index <= tokenized_line.arr[i].end) {
+      result = tokenized_line.arr[i];
+      break;
+    }
+  }
+  return result;
+}
