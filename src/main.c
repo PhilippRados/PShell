@@ -846,18 +846,18 @@ string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr token
 }
 
 string_array splitByTokens(char* line) {
-  token_index_arr tokenized_line = tokenizeLine(line);
-  removeWhitespaceTokens(&tokenized_line);
-  char** line_arr = calloc(tokenized_line.len + 1, sizeof(char*));
+  token_index_arr token = tokenizeLine(line);
+  removeWhitespaceTokens(&token);
+  char** line_arr = calloc(token.len + 1, sizeof(char*));
 
-  for (int i = 0; i < tokenized_line.len; i++) {
-    int start = tokenized_line.arr[i].start;
-    int end = tokenized_line.arr[i].end;
+  for (int i = 0; i < token.len; i++) {
+    int start = token.arr[i].start;
+    int end = token.arr[i].end;
     line_arr[i] = calloc(end - start + 1, sizeof(char));
     strncpy(line_arr[i], &line[start], end - start);
   }
-  line_arr[tokenized_line.len] = NULL;
-  string_array result = {.values = line_arr, .len = tokenized_line.len};
+  line_arr[token.len] = NULL;
+  string_array result = {.values = line_arr, .len = token.len};
   return result;
 }
 
@@ -969,6 +969,12 @@ void stripRedirections(string_array* splitted_line, token_index_arr token) {
   }
 }
 
+void replaceAliases(char** line, int len) {
+  for (int i = 0; i < len; i++) {
+    replaceAliasesString(&line[i]);
+  }
+}
+
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
@@ -1002,12 +1008,12 @@ int main(int argc, char* argv[]) {
     printPrompt(last_two_dirs, CYAN);
 
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
-    replaceAliasesString(&line);
     token_index_arr tokenized_line = tokenizeLine(line);
     removeWhitespaceTokens(&tokenized_line);
 
     if (tokenized_line.len > 0 && isValidSyntax(tokenized_line)) {
       string_array_token simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
+      replaceAliases(simple_commands_arr.values, simple_commands_arr.len);
       file_redirection_data file_info = parseForRedirectionFiles(simple_commands_arr);
 
       int pd[2];
@@ -1023,6 +1029,7 @@ int main(int argc, char* argv[]) {
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
         replaceWildcards(&simple_commands_arr.values[i], token);
         splitted_line = splitByTokens(simple_commands_arr.values[i]);
+        token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
         stripRedirections(&splitted_line, token);
         int builtin_index;
