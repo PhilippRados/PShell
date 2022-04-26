@@ -1031,8 +1031,9 @@ Test(replaceWildcards, replace_wildcard_astrisk_when_single_match) {
   strcpy(line, "ls sr*");
   token_index_arr token = tokenizeLine(line);
 
-  replaceWildcards(&line, token);
-  cr_expect(strcmp(line, "ls src ") == 0);
+  wildcard_groups_arr result = replaceWildcards(&line, token);
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "./src ") == 0);
   free(line);
 }
 
@@ -1041,9 +1042,11 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_everything_if_not_after_fil
   strcpy(line, "ls *");
   token_index_arr token = tokenizeLine(line);
 
-  replaceWildcards(&line, token);
-  cr_expect(strcmp(line, "ls . .. Dockerfile Makefile tests README.md log.txt .gitignore .clang-format "
-                         "compile_flags.txt .git src ") == 0);
+  wildcard_groups_arr result = replaceWildcards(&line, token);
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.arr[0].wildcard_arg,
+                   "./. ./.. ./Dockerfile ./Makefile ./tests ./README.md ./log.txt ./.gitignore ./.clang-format"
+                   " ./compile_flags.txt ./.git ./src ") == 0);
   free(line);
 }
 
@@ -1052,8 +1055,10 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_multiple_matches_in_dir) {
   strcpy(line, "ls tests/* some_other");
   token_index_arr token = tokenizeLine(line);
 
-  replaceWildcards(&line, token);
-  cr_expect(strcmp(line, "ls tests/. tests/.. tests/unit_tests tests/integration_tests  some_other") == 0);
+  wildcard_groups_arr result = replaceWildcards(&line, token);
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.arr[0].wildcard_arg,
+                   "./tests/. ./tests/.. ./tests/unit_tests ./tests/integration_tests ") == 0);
   free(line);
 }
 
@@ -1062,24 +1067,43 @@ Test(replaceWildcards, if_asterisk_in_middle_of_arg) {
   strcpy(line, "ls Do*ile");
   token_index_arr token = tokenizeLine(line);
 
-  replaceWildcards(&line, token);
-  cr_expect(strcmp(line, "ls Dockerfile ") == 0);
+  wildcard_groups_arr result = replaceWildcards(&line, token);
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "./Dockerfile ") == 0);
   free(line);
 }
 
-// Test(replaceWildcards, multiple_asterisks_in_one_arg) {
-//   char* line = calloc(512, sizeof(char));
-//   strcpy(line, "ls sr*/fuz*");
-//   token_index_arr token = tokenizeLine(line);
+Test(replaceWildcards, multiple_asterisks_in_one_arg) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls sr*/fuz*");
+  token_index_arr token = tokenizeLine(line);
 
-//   replaceWildcards(&line, token);
-//   cr_expect(strcmp(line, "ls src/fuzzy_finder.c src/fuzzy_finder.h ") == 0);
-//   free(line);
-// }
+  wildcard_groups_arr result = replaceWildcards(&line, token);
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "./src/fuzzy_finder.c ./src/fuzzy_finder.h ") == 0);
+  free(line);
+}
+
+Test(replaceWildcards, multiple_asterisks_in_line) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls sr*/fuz*  *  *file te*&&");
+  token_index_arr token = tokenizeLine(line);
+
+  wildcard_groups_arr result = replaceWildcards(&line, token);
+  cr_expect(result.len == 4);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "./src/fuzzy_finder.c ./src/fuzzy_finder.h ") == 0);
+
+  cr_expect(strcmp(result.arr[1].wildcard_arg,
+                   "./. ./.. ./Dockerfile ./Makefile ./tests ./README.md ./log.txt ./.gitignore ./.clang-format"
+                   " ./compile_flags.txt ./.git ./src ") == 0);
+  cr_expect(strcmp(result.arr[2].wildcard_arg, "./Dockerfile ./Makefile ") == 0);
+  cr_expect(strcmp(result.arr[3].wildcard_arg, "./tests ") == 0);
+  free(line);
+}
 
 Test(groupWildcards, finds_all_wildcard_groupings) {
   char* line = calloc(512, sizeof(char));
-  strcpy(line, "ls sr*/fuz*  *  *sl ls*&&");
+  strcpy(line, "ls sr*/fuz*  *  *file te*&&");
   token_index_arr token = tokenizeLine(line);
 
   wildcard_groups_arr result = groupWildcards(line, token);
@@ -1088,10 +1112,10 @@ Test(groupWildcards, finds_all_wildcard_groupings) {
   cr_expect(result.arr[0].line_index == 3);
   cr_expect(strcmp(result.arr[1].wildcard_arg, "*") == 0);
   cr_expect(result.arr[1].line_index == 13);
-  cr_expect(strcmp(result.arr[2].wildcard_arg, "*sl") == 0);
+  cr_expect(strcmp(result.arr[2].wildcard_arg, "*file") == 0);
   cr_expect(result.arr[2].line_index == 16);
-  cr_expect(strcmp(result.arr[3].wildcard_arg, "ls*") == 0);
-  cr_expect(result.arr[3].line_index == 20);
+  cr_expect(strcmp(result.arr[3].wildcard_arg, "te*") == 0);
+  cr_expect(result.arr[3].line_index == 22);
   free(line);
   free(result.arr);
 }

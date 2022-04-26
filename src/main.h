@@ -5,7 +5,7 @@ void printPrompt(const char* dir, color color);
 string_array removeDots(string_array* array);
 void stringToLower(char* string);
 char* joinHistoryFilePath(char* home_dir, char* destination_file);
-bool replaceWildcards(char** line, token_index_arr tokenized_line);
+wildcard_groups_arr replaceWildcards(char** line, token_index_arr tokenized_line);
 bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_data* history_info,
             coordinates terminal_size, string_array PATH_BINS, coordinates* cursor_pos);
 line_data* lineDataConstructor(int directory_len);

@@ -583,30 +583,40 @@ wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
   return (wildcard_groups_arr){.arr = result, .len = wildcard_index};
 }
 
-bool replaceWildcards(char** line, token_index_arr tokenized_line) {
+bool isLastRedirectionInLine(char* line, int current_pos) {
+  for (int i = 0; i < strlen(line); i++) {
+    if (line[i] == '*')
+      return false;
+  }
+  return true;
+}
+wildcard_groups_arr replaceWildcards(char** line, token_index_arr tokenized_line) {
   wildcard_groups_arr wildcard_groups = groupWildcards(*line, tokenized_line);
 
   for (int i = 0; i < wildcard_groups.len; i++) {
     for (int j = 0; j < strlen(wildcard_groups.arr[i].wildcard_arg); j++) {
       if (wildcard_groups.arr[i].wildcard_arg[j] == '*') {
         int start_index = 0;
-        // int insert_index = 0;
         int prefix_end = j;
         for (; prefix_end > 0 && wildcard_groups.arr[i].wildcard_arg[prefix_end - 1] != '/'; prefix_end--)
           ;
 
         char* prefix = calloc(prefix_end + 3, sizeof(char));
-        strcpy(prefix, "./");
-        strncpy(&prefix[2], wildcard_groups.arr[i].wildcard_arg, prefix_end);
+        if (wildcard_groups.arr[i].wildcard_arg[0] == '.' && wildcard_groups.arr[i].wildcard_arg[1] == '/') {
+          strncpy(prefix, wildcard_groups.arr[i].wildcard_arg, prefix_end);
+        } else {
+          strcpy(prefix, "./");
+          strncpy(&prefix[2], wildcard_groups.arr[i].wildcard_arg, prefix_end);
+        }
         char* start = &wildcard_groups.arr[i].wildcard_arg[prefix_end];
         int end_index = j + 1;
 
         for (; end_index < strlen(wildcard_groups.arr[i].wildcard_arg) &&
                wildcard_groups.arr[i].wildcard_arg[end_index] != '/' &&
-               wildcard_groups.arr[i].wildcard_arg[end_index] != '*';
+               wildcard_groups.arr[i].wildcard_arg[end_index] != '*' &&
+               wildcard_groups.arr[i].wildcard_arg[end_index] != ' ';
              end_index++)
           ;
-        // (wildcard_groups.arr[i].wildcard_arg[end_index] != '/') ? end_index++ : end_index;
         char* end = &wildcard_groups.arr[i].wildcard_arg[end_index];
 
         DIR* current_dir = opendir(prefix);
@@ -625,8 +635,6 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
         }
         *regex++ = '$';
         regex = regex_start;
-        // logger(string, regex);
-        // logger(string, "\n");
 
         regex_t re;
         if (regcomp(&re, regex, REG_EXTENDED) != 0) {
@@ -640,8 +648,6 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
 
         while ((dir = readdir(current_dir)) != NULL) {
           if (regexec(&re, dir->d_name, 0, NULL, 0) == 0) {
-            // !found_match ? removeSlice_clone(line, inserting_index) : NULL;
-            // found_match = true;
             char* match;
             if (prefix[strlen(prefix) - 1] == '/') {
               char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
@@ -658,24 +664,20 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
               insertStringAtPos(&wildcard_groups.arr[i].wildcard_arg, match, start_index);
             }
 
-            // j = strlen(match)-j;
-            start_index += strlen(match);
-            wildcard_groups.arr[i].wildcard_arg =
-                realloc(wildcard_groups.arr[i].wildcard_arg,
-                        (strlen(wildcard_groups.arr[i].wildcard_arg) + 2) * sizeof(char));
-            insertCharAtPos(wildcard_groups.arr[i].wildcard_arg, start_index, ' ');
-            start_index++;
+            if (isLastRedirectionInLine(wildcard_groups.arr[i].wildcard_arg, j)) {
+              start_index = strlen(wildcard_groups.arr[i].wildcard_arg);
+              wildcard_groups.arr[i].wildcard_arg =
+                  realloc(wildcard_groups.arr[i].wildcard_arg,
+                          (strlen(wildcard_groups.arr[i].wildcard_arg) + 2) * sizeof(char));
+              insertCharAtPos(wildcard_groups.arr[i].wildcard_arg, start_index, ' ');
+              start_index++;
+            }
           }
         }
       }
     }
   }
-  for (int i = 0; i < wildcard_groups.len; i++) {
-    logger(string, "afterloop:\n");
-    logger(string, wildcard_groups.arr[i].wildcard_arg);
-    logger(string, "\n");
-  }
-  return true;
+  return wildcard_groups;
 }
 
 int runChildProcess(string_array splitted_line) {
@@ -1062,10 +1064,10 @@ int main(int argc, char* argv[]) {
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
-        if (!replaceWildcards(&simple_commands_arr.values[i], token)) {
-          printf("psh: no matches found\n");
-          continue;
-        }
+        // if (!replaceWildcards(&simple_commands_arr.values[i], token)) {
+        //   printf("psh: no matches found\n");
+        //   continue;
+        // }
         splitted_line = splitByTokens(simple_commands_arr.values[i]);
         token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
