@@ -19,6 +19,16 @@ enum token {
   ENUM_LEN
 };
 
+typedef struct wildcard_groups {
+  char* wildcard_arg;
+  int line_index;
+} wildcard_groups;
+
+typedef struct {
+  int len;
+  wildcard_groups* arr;
+} wildcard_groups_arr;
+
 typedef struct token_index {
   int start;
   int end;
