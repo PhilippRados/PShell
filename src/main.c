@@ -555,7 +555,7 @@ void removeSlice_clone(char** line, int start, int end) {
   for (int i = start; i < end; i++) {
     *line = removeCharAtPos(*line, start + 1);
   }
-  *line[prior_len - (end - start)] = '\0';
+  // *line[prior_len - (end - start)] = '\0';
 }
 
 wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
@@ -589,14 +589,16 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
   for (int i = 0; i < wildcard_groups.len; i++) {
     for (int j = 0; j < strlen(wildcard_groups.arr[i].wildcard_arg); j++) {
       if (wildcard_groups.arr[i].wildcard_arg[j] == '*') {
-        int start_index = j;
-        for (; start_index > 0 && wildcard_groups.arr[i].wildcard_arg[start_index] != '/'; start_index--)
+        int start_index = 0;
+        // int insert_index = 0;
+        int prefix_end = j;
+        for (; prefix_end > 0 && wildcard_groups.arr[i].wildcard_arg[prefix_end - 1] != '/'; prefix_end--)
           ;
 
-        char* prefix = calloc(start_index + 3, sizeof(char));
+        char* prefix = calloc(prefix_end + 3, sizeof(char));
         strcpy(prefix, "./");
-        strncpy(&prefix[2], wildcard_groups.arr[i].wildcard_arg, start_index);
-        char* start = &wildcard_groups.arr[i].wildcard_arg[start_index];
+        strncpy(&prefix[2], wildcard_groups.arr[i].wildcard_arg, prefix_end);
+        char* start = &wildcard_groups.arr[i].wildcard_arg[prefix_end];
         int end_index = j + 1;
 
         for (; end_index < strlen(wildcard_groups.arr[i].wildcard_arg) &&
@@ -604,14 +606,13 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
                wildcard_groups.arr[i].wildcard_arg[end_index] != '*';
              end_index++)
           ;
-
+        // (wildcard_groups.arr[i].wildcard_arg[end_index] != '/') ? end_index++ : end_index;
         char* end = &wildcard_groups.arr[i].wildcard_arg[end_index];
 
         DIR* current_dir = opendir(prefix);
         char* regex = calloc(((end - start) * 2) + 3, sizeof(char));
         char* regex_start = regex;
 
-        char* initial_start = start;
         *regex++ = '^';
         while (start < end) {
           if (*start == '*') {
@@ -624,6 +625,8 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
         }
         *regex++ = '$';
         regex = regex_start;
+        // logger(string, regex);
+        // logger(string, "\n");
 
         regex_t re;
         if (regcomp(&re, regex, REG_EXTENDED) != 0) {
@@ -633,11 +636,7 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
         if (current_dir == NULL) {
           printf("psh: couldn't open directory: %s\n", prefix);
         }
-        logger(integer, &start_index);
-        logger(string, "\n");
-        logger(integer, &end_index);
-        logger(string, "\n");
-        removeSlice_clone(&wildcard_groups.arr[i].wildcard_arg, start_index, end_index);
+        removeSlice_clone(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
 
         while ((dir = readdir(current_dir)) != NULL) {
           if (regexec(&re, dir->d_name, 0, NULL, 0) == 0) {
@@ -671,8 +670,8 @@ bool replaceWildcards(char** line, token_index_arr tokenized_line) {
       }
     }
   }
-  logger(string, "afterloop:");
   for (int i = 0; i < wildcard_groups.len; i++) {
+    logger(string, "afterloop:\n");
     logger(string, wildcard_groups.arr[i].wildcard_arg);
     logger(string, "\n");
   }
