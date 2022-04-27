@@ -602,7 +602,7 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           ;
 
         char* prefix = calloc(prefix_end + 3, sizeof(char));
-        if (wildcard_groups.arr[i].wildcard_arg[0] == '.' && wildcard_groups.arr[i].wildcard_arg[1] == '/') {
+        if (wildcard_groups.arr[i].wildcard_arg[0] == '/') {
           strncpy(prefix, wildcard_groups.arr[i].wildcard_arg, prefix_end);
         } else {
           strcpy(prefix, "./");
@@ -646,11 +646,15 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
         }
         removeSlice_clone(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
 
+        int concat_index = 0;
+        for (; concat_index < strlen(prefix) && prefix[concat_index] != '/'; concat_index++)
+          ;
+        concat_index += (prefix[0] == '/') ? 0 : 1;
         while ((dir = readdir(current_dir)) != NULL) {
           if (regexec(&re, dir->d_name, 0, NULL, 0) == 0) {
             char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
             strcpy(prev_copy, prefix);
-            char* match = strcat(&prev_copy[2], dir->d_name);
+            char* match = strcat(&prev_copy[concat_index], dir->d_name);
 
             if (strlen(wildcard_groups.arr[i].wildcard_arg) == 0) {
               wildcard_groups.arr[i].wildcard_arg =

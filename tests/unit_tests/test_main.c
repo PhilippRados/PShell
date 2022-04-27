@@ -1026,7 +1026,7 @@ Test(parseForRedirectionFiles, removes_all_redirections_in_split) {
   cr_expect(result.output_append[1] == false);
 }
 
-Test(replaceWildcards, replace_wildcard_astrisk_when_single_match) {
+Test(expandWildcardgroups, replace_wildcard_astrisk_when_single_match) {
   char* line = calloc(512, sizeof(char));
   strcpy(line, "ls sr*");
   token_index_arr token = tokenizeLine(line);
@@ -1038,7 +1038,7 @@ Test(replaceWildcards, replace_wildcard_astrisk_when_single_match) {
   free(line);
 }
 
-Test(replaceWildcards, replace_wildcard_astrisk_with_everything_if_not_after_file) {
+Test(expandWildcardgroups, replace_wildcard_astrisk_with_everything_if_not_after_file) {
   char* line = calloc(512, sizeof(char));
   strcpy(line, "ls *");
   token_index_arr token = tokenizeLine(line);
@@ -1052,7 +1052,7 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_everything_if_not_after_fil
   free(line);
 }
 
-Test(replaceWildcards, replace_wildcard_astrisk_with_multiple_matches_in_dir) {
+Test(expandWildcardgroups, replace_wildcard_astrisk_with_multiple_matches_in_dir) {
   char* line = calloc(512, sizeof(char));
   strcpy(line, "ls tests/* some_other");
   token_index_arr token = tokenizeLine(line);
@@ -1064,7 +1064,7 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_multiple_matches_in_dir) {
   free(line);
 }
 
-Test(replaceWildcards, if_asterisk_in_middle_of_arg) {
+Test(expandWildcardgroups, if_asterisk_in_middle_of_arg) {
   char* line = calloc(512, sizeof(char));
   strcpy(line, "ls Do*ile");
   token_index_arr token = tokenizeLine(line);
@@ -1076,7 +1076,7 @@ Test(replaceWildcards, if_asterisk_in_middle_of_arg) {
   free(line);
 }
 
-Test(replaceWildcards, multiple_asterisks_in_one_arg) {
+Test(expandWildcardgroups, multiple_asterisks_in_one_arg) {
   char* line = calloc(512, sizeof(char));
   strcpy(line, "ls sr*/fuz*");
   token_index_arr token = tokenizeLine(line);
@@ -1088,7 +1088,7 @@ Test(replaceWildcards, multiple_asterisks_in_one_arg) {
   free(line);
 }
 
-Test(replaceWildcards, multiple_asterisks_in_line) {
+Test(expandWildcardgroups, multiple_asterisks_in_line) {
   char* line = calloc(512, sizeof(char));
   strcpy(line, "ls sr*/fuz*  *  *file te*&&");
   token_index_arr token = tokenizeLine(line);

@@ -1002,7 +1002,7 @@ sleep 0.2
 @tty.send_keys(%(> /so))
 @tty.send_keys(TAB)
 @tty.assert_row(23, '/pshell ❱ > /some_file')
-puts "    \u2705 tab-comps files if redirections before cmd".encode('utf-8')
+puts "    \u2705 Tab-comps files if redirections before cmd".encode('utf-8')
 
 # tab-comps cmd even when prior redirections
 sleep 0.2
@@ -1013,7 +1013,7 @@ sleep 0.2
 @tty.send_keys(%(y))
 @tty.assert_row(22, 'ls             ln')
 @tty.send_keys(%(m))
-puts "    \u2705 tab-comps cmd even when prior redirections".encode('utf-8')
+puts "    \u2705 Tab-comps cmd even when prior redirections".encode('utf-8')
 
 puts 'WILDCARD MATCHING - ASTERISK'
 # asterisk doesnt match if in cmd
@@ -1057,5 +1057,17 @@ sleep 0.2
 @tty.assert_row(18, 'bin sys dev lib home run lib64 media srv')
 @tty.assert_row(19, ' boot proc opt var usr mnt tmp etc .. sb')
 puts "    \u2705 Matches everything if only *".encode('utf-8')
+
+# also matches when ~ used
+sleep 0.2
+@tty.send_keys(%(echo ~/*file\n))
+@tty.assert_row(21, '/root/.profile /root/some_file')
+puts "    \u2705 Also matches when ~ used".encode('utf-8')
+
+# also matches when /usr used
+sleep 0.2
+@tty.send_keys(%(cd /home && echo /ro*\n))
+@tty.assert_row(21, '/root')
+puts "    \u2705 Also matches when /usr used".encode('utf-8')
 
 @tty.send_keys(%(exit\n))
