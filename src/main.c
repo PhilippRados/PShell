@@ -573,7 +573,8 @@ wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
 
       result[wildcard_index].wildcard_arg = calloc(end_index - start + 1, sizeof(char));
       strncpy(result[wildcard_index].wildcard_arg, &line[start], end_index - start);
-      result[wildcard_index].line_index = start;
+      result[wildcard_index].start = start;
+      result[wildcard_index].end = start + strlen(result[wildcard_index].wildcard_arg);
 
       wildcard_index++;
       i = j + 1;
@@ -590,9 +591,8 @@ bool isLastRedirectionInLine(char* line, int current_pos) {
   }
   return true;
 }
-wildcard_groups_arr replaceWildcards(char** line, token_index_arr tokenized_line) {
-  wildcard_groups_arr wildcard_groups = groupWildcards(*line, tokenized_line);
 
+wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
   for (int i = 0; i < wildcard_groups.len; i++) {
     for (int j = 0; j < strlen(wildcard_groups.arr[i].wildcard_arg); j++) {
       if (wildcard_groups.arr[i].wildcard_arg[j] == '*') {
@@ -678,6 +678,17 @@ wildcard_groups_arr replaceWildcards(char** line, token_index_arr tokenized_line
     }
   }
   return wildcard_groups;
+}
+
+void replaceLineWithWildcards(char** line, wildcard_groups_arr wildcard_matches) {
+  int verschoben_len = 0;
+  for (int i = 0; i < wildcard_matches.len; i++) {
+    removeSlice_clone(line, wildcard_matches.arr[i].start + verschoben_len,
+                      wildcard_matches.arr[i].end + verschoben_len);
+    insertStringAtPos(line, wildcard_matches.arr[i].wildcard_arg, wildcard_matches.arr[i].start + verschoben_len);
+    verschoben_len += strlen(wildcard_matches.arr[i].wildcard_arg) -
+                      (wildcard_matches.arr[i].end - wildcard_matches.arr[i].start);
+  }
 }
 
 int runChildProcess(string_array splitted_line) {
@@ -1012,6 +1023,12 @@ void replaceAliases(char** line, int len) {
   }
 }
 
+void replaceWildcards(char** line) {
+  wildcard_groups_arr groups = groupWildcards(*line, tokenizeLine(*line));
+  wildcard_groups_arr wildcard_matches = expandWildcardgroups(groups);
+  replaceLineWithWildcards(line, wildcard_matches);
+}
+
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
@@ -1064,10 +1081,7 @@ int main(int argc, char* argv[]) {
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
-        // if (!replaceWildcards(&simple_commands_arr.values[i], token)) {
-        //   printf("psh: no matches found\n");
-        //   continue;
-        // }
+        replaceWildcards(&simple_commands_arr.values[i]);
         splitted_line = splitByTokens(simple_commands_arr.values[i]);
         token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);

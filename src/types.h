@@ -21,7 +21,8 @@ enum token {
 
 typedef struct wildcard_groups {
   char* wildcard_arg;
-  int line_index;
+  int start;
+  int end;
 } wildcard_groups;
 
 typedef struct {

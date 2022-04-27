@@ -1031,7 +1031,8 @@ Test(replaceWildcards, replace_wildcard_astrisk_when_single_match) {
   strcpy(line, "ls sr*");
   token_index_arr token = tokenizeLine(line);
 
-  wildcard_groups_arr result = replaceWildcards(&line, token);
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.arr[0].wildcard_arg, "./src ") == 0);
   free(line);
@@ -1042,7 +1043,8 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_everything_if_not_after_fil
   strcpy(line, "ls *");
   token_index_arr token = tokenizeLine(line);
 
-  wildcard_groups_arr result = replaceWildcards(&line, token);
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.arr[0].wildcard_arg,
                    "./. ./.. ./Dockerfile ./Makefile ./tests ./README.md ./log.txt ./.gitignore ./.clang-format"
@@ -1055,7 +1057,8 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_multiple_matches_in_dir) {
   strcpy(line, "ls tests/* some_other");
   token_index_arr token = tokenizeLine(line);
 
-  wildcard_groups_arr result = replaceWildcards(&line, token);
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.arr[0].wildcard_arg,
                    "./tests/. ./tests/.. ./tests/unit_tests ./tests/integration_tests ") == 0);
@@ -1067,7 +1070,8 @@ Test(replaceWildcards, if_asterisk_in_middle_of_arg) {
   strcpy(line, "ls Do*ile");
   token_index_arr token = tokenizeLine(line);
 
-  wildcard_groups_arr result = replaceWildcards(&line, token);
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.arr[0].wildcard_arg, "./Dockerfile ") == 0);
   free(line);
@@ -1078,7 +1082,8 @@ Test(replaceWildcards, multiple_asterisks_in_one_arg) {
   strcpy(line, "ls sr*/fuz*");
   token_index_arr token = tokenizeLine(line);
 
-  wildcard_groups_arr result = replaceWildcards(&line, token);
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.arr[0].wildcard_arg, "./src/fuzzy_finder.c ./src/fuzzy_finder.h ") == 0);
   free(line);
@@ -1089,7 +1094,8 @@ Test(replaceWildcards, multiple_asterisks_in_line) {
   strcpy(line, "ls sr*/fuz*  *  *file te*&&");
   token_index_arr token = tokenizeLine(line);
 
-  wildcard_groups_arr result = replaceWildcards(&line, token);
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 4);
   cr_expect(strcmp(result.arr[0].wildcard_arg, "./src/fuzzy_finder.c ./src/fuzzy_finder.h ") == 0);
 
@@ -1109,13 +1115,17 @@ Test(groupWildcards, finds_all_wildcard_groupings) {
   wildcard_groups_arr result = groupWildcards(line, token);
   cr_expect(result.len == 4);
   cr_expect(strcmp(result.arr[0].wildcard_arg, "sr*/fuz*") == 0);
-  cr_expect(result.arr[0].line_index == 3);
+  cr_expect(result.arr[0].start == 3);
+  cr_expect(result.arr[0].end == 11);
   cr_expect(strcmp(result.arr[1].wildcard_arg, "*") == 0);
-  cr_expect(result.arr[1].line_index == 13);
+  cr_expect(result.arr[1].start == 13);
+  cr_expect(result.arr[1].end == 14);
   cr_expect(strcmp(result.arr[2].wildcard_arg, "*file") == 0);
-  cr_expect(result.arr[2].line_index == 16);
+  cr_expect(result.arr[2].start == 16);
+  cr_expect(result.arr[2].end == 21);
   cr_expect(strcmp(result.arr[3].wildcard_arg, "te*") == 0);
-  cr_expect(result.arr[3].line_index == 22);
+  cr_expect(result.arr[3].start == 22);
+  cr_expect(result.arr[3].end == 25);
   free(line);
   free(result.arr);
 }
@@ -1125,5 +1135,18 @@ Test(removeSlice_clone, when_slice_is_complete_line_empties_string) {
   strcpy(line, "src");
   removeSlice_clone(&line, 0, 3);
   cr_expect(strcmp(line, "") == 0);
+  free(line);
+}
+
+Test(replaceLineWithWildcards, replaces_regular_line_with_wildcard_match) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls sr*/fuz* *file te*&&");
+
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr wildcard_matches = expandWildcardgroups(groups);
+  replaceLineWithWildcards(&line, wildcard_matches);
+
+  cr_expect(strcmp(line, "ls ./src/fuzzy_finder.c ./src/fuzzy_finder.h  ./Dockerfile ./Makefile  ./tests &&") ==
+            0);
   free(line);
 }
