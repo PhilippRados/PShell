@@ -1027,36 +1027,35 @@ puts "    \u2705 Asterisk doesnt match if in cmd".encode('utf-8')
 # expands simple file
 sleep 0.2
 @tty.send_keys(%(echo Doc*\n))
-@tty.assert_row(13, './Dockerfile')
+@tty.assert_row(13, 'Dockerfile')
 puts "    \u2705 Expands simple file".encode('utf-8')
 
 # finds directory matches in parent dir
 sleep 0.2
 @tty.send_keys(%(echo ../b*\n))
 @tty.assert_row(15, '/pshell ❱ echo ../b*')
-@tty.assert_row(16, './../bin ./../boot ./../bz_bins')
+@tty.assert_row(16, '../bin ../boot ../bz_bins')
 puts "    \u2705 Finds directory matches in parent dir".encode('utf-8')
 
 # multiple wildcard-matches in same arg
 sleep 0.2
 @tty.send_keys(%(echo ../bi*/*egrep\n))
-@tty.assert_row(19, './../bin/egrep ./../bin/bzegrep ./../bin')
-@tty.assert_row(20, '/zegrep')
+@tty.assert_row(19, '../bin/egrep ../bin/bzegrep ../bin/zegre')
 puts "    \u2705 Multiple wildcard-matches in same arg".encode('utf-8')
 
 # multiple wildcard-matches in same line
 sleep 0.2
 @tty.send_keys(%(echo ../* ../*.txt\n))
-@tty.assert_row(13, './../bin ./../sys ./../dev ./../lib ./..')
-@tty.assert_row(20, '/.dockerenv ./../pshell ./../in1.txt ./.')
-@tty.assert_row(21, './in2.txt')
+@tty.assert_row(15, '../bin ../sys ../dev ../lib ../home ../r')
+@tty.assert_row(20, './some_file ../errors ../.dockerenv ../p')
+@tty.assert_row(21, 'shell ../in1.txt ../in2.txt')
 puts "    \u2705 Multiple wildcard-matches in same line".encode('utf-8')
 
 # matches everything if only *
 sleep 0.2
 @tty.send_keys(%(cd .. && echo *\n))
-@tty.assert_row(17, 'ib64 ./media ./srv ./boot ./proc ./opt .')
-@tty.assert_row(18, '/var ./usr ./mnt ./tmp ./etc ./.. ./sbin')
+@tty.assert_row(18, 'bin sys dev lib home run lib64 media srv')
+@tty.assert_row(19, ' boot proc opt var usr mnt tmp etc .. sb')
 puts "    \u2705 Matches everything if only *".encode('utf-8')
 
 @tty.send_keys(%(exit\n))

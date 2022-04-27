@@ -1034,7 +1034,7 @@ Test(replaceWildcards, replace_wildcard_astrisk_when_single_match) {
   wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
-  cr_expect(strcmp(result.arr[0].wildcard_arg, "./src ") == 0);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "src ") == 0);
   free(line);
 }
 
@@ -1047,8 +1047,8 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_everything_if_not_after_fil
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.arr[0].wildcard_arg,
-                   "./. ./.. ./Dockerfile ./Makefile ./tests ./README.md ./log.txt ./.gitignore ./.clang-format"
-                   " ./compile_flags.txt ./.git ./src ") == 0);
+                   ". .. Dockerfile Makefile tests README.md log.txt .gitignore .clang-format"
+                   " compile_flags.txt .git src ") == 0);
   free(line);
 }
 
@@ -1060,8 +1060,7 @@ Test(replaceWildcards, replace_wildcard_astrisk_with_multiple_matches_in_dir) {
   wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
-  cr_expect(strcmp(result.arr[0].wildcard_arg,
-                   "./tests/. ./tests/.. ./tests/unit_tests ./tests/integration_tests ") == 0);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "tests/. tests/.. tests/unit_tests tests/integration_tests ") == 0);
   free(line);
 }
 
@@ -1073,7 +1072,7 @@ Test(replaceWildcards, if_asterisk_in_middle_of_arg) {
   wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
-  cr_expect(strcmp(result.arr[0].wildcard_arg, "./Dockerfile ") == 0);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "Dockerfile ") == 0);
   free(line);
 }
 
@@ -1085,7 +1084,7 @@ Test(replaceWildcards, multiple_asterisks_in_one_arg) {
   wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
-  cr_expect(strcmp(result.arr[0].wildcard_arg, "./src/fuzzy_finder.c ./src/fuzzy_finder.h ") == 0);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "src/fuzzy_finder.c src/fuzzy_finder.h ") == 0);
   free(line);
 }
 
@@ -1097,13 +1096,13 @@ Test(replaceWildcards, multiple_asterisks_in_line) {
   wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 4);
-  cr_expect(strcmp(result.arr[0].wildcard_arg, "./src/fuzzy_finder.c ./src/fuzzy_finder.h ") == 0);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "src/fuzzy_finder.c src/fuzzy_finder.h ") == 0);
 
   cr_expect(strcmp(result.arr[1].wildcard_arg,
-                   "./. ./.. ./Dockerfile ./Makefile ./tests ./README.md ./log.txt ./.gitignore ./.clang-format"
-                   " ./compile_flags.txt ./.git ./src ") == 0);
-  cr_expect(strcmp(result.arr[2].wildcard_arg, "./Dockerfile ./Makefile ") == 0);
-  cr_expect(strcmp(result.arr[3].wildcard_arg, "./tests ") == 0);
+                   ". .. Dockerfile Makefile tests README.md log.txt .gitignore .clang-format"
+                   " compile_flags.txt .git src ") == 0);
+  cr_expect(strcmp(result.arr[2].wildcard_arg, "Dockerfile Makefile ") == 0);
+  cr_expect(strcmp(result.arr[3].wildcard_arg, "tests ") == 0);
   free(line);
 }
 
@@ -1146,7 +1145,6 @@ Test(replaceLineWithWildcards, replaces_regular_line_with_wildcard_match) {
   wildcard_groups_arr wildcard_matches = expandWildcardgroups(groups);
   replaceLineWithWildcards(&line, wildcard_matches);
 
-  cr_expect(strcmp(line, "ls ./src/fuzzy_finder.c ./src/fuzzy_finder.h  ./Dockerfile ./Makefile  ./tests &&") ==
-            0);
+  cr_expect(strcmp(line, "ls src/fuzzy_finder.c src/fuzzy_finder.h  Dockerfile Makefile  tests &&") == 0);
   free(line);
 }

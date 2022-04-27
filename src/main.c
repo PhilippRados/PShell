@@ -648,14 +648,10 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
 
         while ((dir = readdir(current_dir)) != NULL) {
           if (regexec(&re, dir->d_name, 0, NULL, 0) == 0) {
-            char* match;
-            if (prefix[strlen(prefix) - 1] == '/') {
-              char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
-              strcpy(prev_copy, prefix);
-              match = strcat(prev_copy, dir->d_name);
-            } else {
-              match = dir->d_name;
-            }
+            char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
+            strcpy(prev_copy, prefix);
+            char* match = strcat(&prev_copy[2], dir->d_name);
+
             if (strlen(wildcard_groups.arr[i].wildcard_arg) == 0) {
               wildcard_groups.arr[i].wildcard_arg =
                   realloc(wildcard_groups.arr[i].wildcard_arg, (strlen(match) + 1) * sizeof(char));
@@ -672,6 +668,7 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
               insertCharAtPos(wildcard_groups.arr[i].wildcard_arg, start_index, ' ');
               start_index++;
             }
+            free(prev_copy);
           }
         }
       }
