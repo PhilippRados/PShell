@@ -1058,16 +1058,23 @@ sleep 0.2
 @tty.assert_row(19, ' boot proc opt var usr mnt tmp etc .. sb')
 puts "    \u2705 Matches everything if only *".encode('utf-8')
 
-# also matches when ~ used
+# matches when ~ used
 sleep 0.2
 @tty.send_keys(%(echo ~/*file\n))
 @tty.assert_row(21, '/root/.profile /root/some_file')
-puts "    \u2705 Also matches when ~ used".encode('utf-8')
+puts "    \u2705 Matches when ~ used".encode('utf-8')
 
-# also matches when /usr used
+# matches when /usr used
 sleep 0.2
 @tty.send_keys(%(cd /home && echo /ro*\n))
 @tty.assert_row(21, '/root')
-puts "    \u2705 Also matches when /usr used".encode('utf-8')
+puts "    \u2705 Matches when /usr used".encode('utf-8')
+
+# when starting with . matches dotfiles
+sleep 0.2
+@tty.send_keys(%(echo /root/.*\n))
+@tty.assert_row(20, '/root/.bashrc /root/.profile /root/.. /r')
+@tty.assert_row(21, 'oot/. /root/.psh_history /root/.gem')
+puts "    \u2705 When starting with . matches dotfiles".encode('utf-8')
 
 @tty.send_keys(%(exit\n))

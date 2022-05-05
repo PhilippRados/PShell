@@ -629,6 +629,10 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
             *regex++ = '.';
             *regex++ = '*';
             start++;
+          } else if (*start == '.') {
+            *regex++ = '\\';
+            *regex++ = '.';
+            start++;
           } else {
             *regex++ = *start++;
           }
