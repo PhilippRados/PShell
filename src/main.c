@@ -609,6 +609,7 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           strncpy(&prefix[2], wildcard_groups.arr[i].wildcard_arg, prefix_end);
         }
         char* start = &wildcard_groups.arr[i].wildcard_arg[prefix_end];
+        bool is_dotfile = start[0] == '.' ? true : false;
         int end_index = j + 1;
 
         for (; end_index < strlen(wildcard_groups.arr[i].wildcard_arg) &&
@@ -656,6 +657,9 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
         concat_index += (prefix[0] == '/') ? 0 : 1;
         while ((dir = readdir(current_dir)) != NULL) {
           if (regexec(&re, dir->d_name, 0, NULL, 0) == 0) {
+            if (dir->d_name[0] == '.' && !is_dotfile) {
+              continue;
+            }
             char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
             strcpy(prev_copy, prefix);
             char* match = strcat(&prev_copy[concat_index], dir->d_name);

@@ -1046,9 +1046,8 @@ Test(expandWildcardgroups, replace_wildcard_astrisk_with_everything_if_not_after
   wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
-  cr_expect(strcmp(result.arr[0].wildcard_arg,
-                   ". .. Dockerfile Makefile tests README.md log.txt .gitignore .clang-format"
-                   " compile_flags.txt .git src ") == 0);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "Dockerfile Makefile tests README.md log.txt"
+                                               " compile_flags.txt src ") == 0);
   free(line);
 }
 
@@ -1060,7 +1059,7 @@ Test(expandWildcardgroups, replace_wildcard_astrisk_with_multiple_matches_in_dir
   wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
   wildcard_groups_arr result = expandWildcardgroups(groups);
   cr_expect(result.len == 1);
-  cr_expect(strcmp(result.arr[0].wildcard_arg, "tests/. tests/.. tests/unit_tests tests/integration_tests ") == 0);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "tests/unit_tests tests/integration_tests ") == 0);
   free(line);
 }
 
@@ -1098,9 +1097,8 @@ Test(expandWildcardgroups, multiple_asterisks_in_line) {
   cr_expect(result.len == 4);
   cr_expect(strcmp(result.arr[0].wildcard_arg, "src/fuzzy_finder.c src/fuzzy_finder.h ") == 0);
 
-  cr_expect(strcmp(result.arr[1].wildcard_arg,
-                   ". .. Dockerfile Makefile tests README.md log.txt .gitignore .clang-format"
-                   " compile_flags.txt .git src ") == 0);
+  cr_expect(strcmp(result.arr[1].wildcard_arg, "Dockerfile Makefile tests README.md log.txt"
+                                               " compile_flags.txt src ") == 0);
   cr_expect(strcmp(result.arr[2].wildcard_arg, "Dockerfile Makefile ") == 0);
   cr_expect(strcmp(result.arr[3].wildcard_arg, "tests ") == 0);
   free(line);

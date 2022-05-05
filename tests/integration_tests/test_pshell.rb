@@ -1047,21 +1047,23 @@ puts "    \u2705 Multiple wildcard-matches in same arg".encode('utf-8')
 sleep 0.2
 @tty.send_keys(%(echo ../* ../*.txt\n))
 @tty.assert_row(15, '../bin ../sys ../dev ../lib ../home ../r')
-@tty.assert_row(20, './some_file ../errors ../.dockerenv ../p')
-@tty.assert_row(21, 'shell ../in1.txt ../in2.txt')
+@tty.assert_row(16, 'un ../lib64 ../media ../srv ../boot ../p')
+@tty.assert_row(20, ' ../errors ../pshell ../in1.txt ../in2.t')
 puts "    \u2705 Multiple wildcard-matches in same line".encode('utf-8')
 
 # matches everything if only *
 sleep 0.2
 @tty.send_keys(%(cd .. && echo *\n))
 @tty.assert_row(18, 'bin sys dev lib home run lib64 media srv')
-@tty.assert_row(19, ' boot proc opt var usr mnt tmp etc .. sb')
+@tty.assert_row(19, ' boot proc opt var usr mnt tmp etc sbin ')
+@tty.assert_row(20, 'root merged_ls in1.txt bz_bins in2.txt s')
+@tty.assert_row(21, 'ome_file errors pshell')
 puts "    \u2705 Matches everything if only *".encode('utf-8')
 
 # matches when ~ used
 sleep 0.2
 @tty.send_keys(%(echo ~/*file\n))
-@tty.assert_row(21, '/root/.profile /root/some_file')
+@tty.assert_row(21, '/root/some_file')
 puts "    \u2705 Matches when ~ used".encode('utf-8')
 
 # matches when /usr used
