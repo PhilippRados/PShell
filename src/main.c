@@ -219,8 +219,9 @@ token_index_arr tokenizeLine(char* line) {
   regmatch_t rm[ENUM_LEN];
   char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
   char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
-  char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/\\*]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*]+)|(\\|)|([ ]+)|(&&)|&&[ "
-                     "\n]*([_A-Za-z0-9.\\-\\/\\*]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* line_token =
+      "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|([ ]+)|(&&)|&&[ "
+      "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
   char* wildcards = "(\\*)|(\\?)";
   char* only_args = "([^ \t\n]+)";
   char* regexes[] = {filenames, redirection, line_token, wildcards, only_args};
@@ -563,11 +564,13 @@ wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
   int wildcard_index = 0;
 
   for (int i = 0; i < token.len;) {
-    if (token.arr[i].token == ASTERISK) {
+    if (token.arr[i].token == ASTERISK || token.arr[i].token == QUESTION) {
       int start = token.arr[i - 1].token == ARG ? token.arr[i - 1].start : token.arr[i].start;
       int j = i;
 
-      for (; (j + 1) < token.len && (token.arr[j + 1].token == ARG || token.arr[j + 1].token == ASTERISK); j++)
+      for (; (j + 1) < token.len && (token.arr[j + 1].token == ARG || token.arr[j + 1].token == ASTERISK ||
+                                     token.arr[j + 1].token == QUESTION);
+           j++)
         ;
       int end_index = token.arr[j].end;
 
@@ -595,7 +598,7 @@ bool isLastRedirectionInLine(char* line, int current_pos) {
 wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
   for (int i = 0; i < wildcard_groups.len; i++) {
     for (int j = 0; j < strlen(wildcard_groups.arr[i].wildcard_arg); j++) {
-      if (wildcard_groups.arr[i].wildcard_arg[j] == '*') {
+      if (wildcard_groups.arr[i].wildcard_arg[j] == '*' || wildcard_groups.arr[i].wildcard_arg[j] == '?') {
         int start_index = 0;
         int prefix_end = j;
         for (; prefix_end > 0 && wildcard_groups.arr[i].wildcard_arg[prefix_end - 1] != '/'; prefix_end--)
@@ -614,7 +617,6 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
 
         for (; end_index < strlen(wildcard_groups.arr[i].wildcard_arg) &&
                wildcard_groups.arr[i].wildcard_arg[end_index] != '/' &&
-               wildcard_groups.arr[i].wildcard_arg[end_index] != '*' &&
                wildcard_groups.arr[i].wildcard_arg[end_index] != ' ';
              end_index++)
           ;
@@ -629,6 +631,9 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           if (*start == '*') {
             *regex++ = '.';
             *regex++ = '*';
+            start++;
+          } else if (*start == '?') {
+            *regex++ = '.';
             start++;
           } else if (*start == '.') {
             *regex++ = '\\';

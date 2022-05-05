@@ -1127,6 +1127,35 @@ Test(groupWildcards, finds_all_wildcard_groupings) {
   free(result.arr);
 }
 
+Test(tokenizeLine, tokenizes_question_wildcard) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls Do??erfile");
+  token_index_arr token = tokenizeLine(line);
+
+  cr_expect(token.len == 6);
+  cr_expect(token.arr[0].token == CMD);
+  cr_expect(token.arr[1].token == WHITESPACE);
+  cr_expect(token.arr[2].token == ARG);
+  cr_expect(token.arr[3].token == QUESTION);
+  cr_expect(token.arr[4].token == QUESTION);
+  cr_expect(token.arr[5].token == ARG);
+  free(line);
+}
+
+Test(groupWildcards, groups_with_question_wildcard) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls Do??erfile");
+  token_index_arr token = tokenizeLine(line);
+
+  wildcard_groups_arr result = groupWildcards(line, token);
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "Do??erfile") == 0);
+  cr_expect(result.arr[0].start == 3);
+  cr_expect(result.arr[0].end == 13);
+  free(line);
+  free(result.arr);
+}
+
 Test(removeSlice_clone, when_slice_is_complete_line_empties_string) {
   char* line = calloc(4, sizeof(char));
   strcpy(line, "src");
@@ -1144,5 +1173,28 @@ Test(replaceLineWithWildcards, replaces_regular_line_with_wildcard_match) {
   replaceLineWithWildcards(&line, wildcard_matches);
 
   cr_expect(strcmp(line, "ls src/fuzzy_finder.c src/fuzzy_finder.h  Dockerfile Makefile  tests &&") == 0);
+  free(line);
+}
+
+Test(replaceLineWithWildcards, double_question_wildcard_in_center) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls Do??erfile");
+
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr wildcard_matches = expandWildcardgroups(groups);
+  replaceLineWithWildcards(&line, wildcard_matches);
+
+  cr_expect(strcmp(line, "ls Dockerfile ") == 0);
+  free(line);
+}
+Test(replaceLineWithWildcards, single_letter_between_two_asterisks) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls *a*");
+
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr wildcard_matches = expandWildcardgroups(groups);
+  replaceLineWithWildcards(&line, wildcard_matches);
+
+  cr_expect(strcmp(line, "ls Makefile compile_flags.txt ") == 0);
   free(line);
 }
