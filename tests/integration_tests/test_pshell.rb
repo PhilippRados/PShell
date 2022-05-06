@@ -1079,4 +1079,15 @@ sleep 0.2
 @tty.assert_row(21, 'oot/. /root/.psh_history /root/.gem')
 puts "    \u2705 When starting with . matches dotfiles".encode('utf-8')
 
+# when invalid wildcard responds with error
+sleep 0.2
+@tty.send_keys(%(echo dahxmnnll*\n))
+@tty.assert_row(21, 'psh: no wildcard matches found')
+puts "    \u2705 When invalid wildcard responds with error".encode('utf-8')
+
+# when only one invalid wildcard responds with error
+sleep 0.2
+@tty.send_keys(%(echo * jdzna?\n))
+@tty.assert_row(21, 'psh: no wildcard matches found')
+puts "    \u2705 When only one invalid wildcard responds with error".encode('utf-8')
 @tty.send_keys(%(exit\n))

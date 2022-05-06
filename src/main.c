@@ -1037,10 +1037,21 @@ void replaceAliases(char** line, int len) {
   }
 }
 
-void replaceWildcards(char** line) {
+bool foundAllWildcards(wildcard_groups_arr arr) {
+  for (int i = 0; i < arr.len; i++) {
+    if (strcmp(arr.arr[i].wildcard_arg, "") == 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool replaceWildcards(char** line) {
   wildcard_groups_arr groups = groupWildcards(*line, tokenizeLine(*line));
   wildcard_groups_arr wildcard_matches = expandWildcardgroups(groups);
   replaceLineWithWildcards(line, wildcard_matches);
+
+  return foundAllWildcards(wildcard_matches);
 }
 
 #ifndef TEST
@@ -1095,7 +1106,13 @@ int main(int argc, char* argv[]) {
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
-        replaceWildcards(&simple_commands_arr.values[i]);
+        if (strchr(simple_commands_arr.values[i], '*') != NULL ||
+            strchr(simple_commands_arr.values[i], '?') != NULL) {
+          if (!replaceWildcards(&simple_commands_arr.values[i])) {
+            printf("psh: no wildcard matches found\n");
+            continue;
+          }
+        }
         splitted_line = splitByTokens(simple_commands_arr.values[i]);
         token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
