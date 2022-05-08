@@ -1085,9 +1085,18 @@ sleep 0.2
 @tty.assert_row(21, 'psh: no wildcard matches found')
 puts "    \u2705 When invalid wildcard responds with error".encode('utf-8')
 
+puts 'WILDCARD MATCHING - QUESTION'
 # when only one invalid wildcard responds with error
 sleep 0.2
 @tty.send_keys(%(echo * jdzna?\n))
 @tty.assert_row(21, 'psh: no wildcard matches found')
 puts "    \u2705 When only one invalid wildcard responds with error".encode('utf-8')
+
+puts 'ARGUMENT IN QUOTES'
+# when arg in quotes then seen as single arg
+sleep 0.2
+@tty.send_keys(%(cd 'this is the arg'\n))
+@tty.assert_row(20, 'cd: this is the arg: No such file or dir')
+puts "    \u2705 When arg in quotes then seen as single arg".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

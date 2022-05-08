@@ -390,6 +390,23 @@ Test(tokenizeLine, tokenizes_simple_command) {
   cr_expect(result_arr[2].end == 6);
 }
 
+Test(tokenizeLine, tokenizes_everything_in_quotes_as_arg) {
+  char* line = "ls 'this is one big arg'";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 24);
+}
+
 Test(tokenizeLine, tokenizes_command_with_too_much_whitespace) {
   char* line = "   ls  arg_s   ";
   token_index_arr result = tokenizeLine(line);

@@ -219,14 +219,16 @@ token_index_arr tokenizeLine(char* line) {
   regmatch_t rm[ENUM_LEN];
   char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
   char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* quoted_args = "(\'[^\n]+\')";
   char* line_token =
       "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|([ ]+)|(&&)|&&[ "
       "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
   char* wildcards = "(\\*)|(\\?)";
   char* only_args = "([^ \t\n]+)";
-  char* regexes[] = {filenames, redirection, line_token, wildcards, only_args};
+  char* regexes[] = {filenames, redirection, quoted_args, line_token, wildcards, only_args};
   regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 12},
                                     {.fill_char = '\n', .loop_start = 1, .token_index_inc = 6},
+                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 13},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 0},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 13}};
@@ -318,6 +320,8 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
       int autocomplete = fileComp(copy_sub).array.len;
       if (autocomplete > 0) {
         printColor(substring, WHITE, underline);
+      } else if (substring[0] == '\'' && substring[strlen(substring) - 1] == '\'') {
+        printColor(substring, YELLOW, standard);
       } else {
         printf("%s", substring);
       }
@@ -912,9 +916,16 @@ string_array splitByTokens(char* line) {
   removeWhitespaceTokens(&token);
   char** line_arr = calloc(token.len + 1, sizeof(char*));
 
+  int start;
+  int end;
   for (int i = 0; i < token.len; i++) {
-    int start = token.arr[i].start;
-    int end = token.arr[i].end;
+    if (token.arr[i].token == ARG && line[token.arr[i].start] == '\'' && line[token.arr[i].end - 1] == '\'') {
+      start = token.arr[i].start + 1;
+      end = token.arr[i].end - 1;
+    } else {
+      start = token.arr[i].start;
+      end = token.arr[i].end;
+    }
     line_arr[i] = calloc(end - start + 1, sizeof(char));
     strncpy(line_arr[i], &line[start], end - start);
   }
