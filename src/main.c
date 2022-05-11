@@ -225,8 +225,7 @@ token_index_arr tokenizeLine(char* line) {
   char* whitespace = "\\\\[ ]|([ ]+)";
   char* wildcards = "(\\*)|(\\?)";
   char* only_args = "([^\t\n]+)";
-  char* regexes[] = {filenames, redirection, quoted_args, line_token, whitespace,
-                     wildcards, only_args};
+  char* regexes[] = {filenames, redirection, quoted_args, line_token, whitespace, wildcards, only_args};
   regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 12},
                                     {.fill_char = '\n', .loop_start = 1, .token_index_inc = 5},
                                     {.fill_char = '\n', .loop_start = 1, .token_index_inc = 13},
@@ -257,9 +256,9 @@ token_index_arr tokenizeLine(char* line) {
               *start++ = regex_info[k].fill_char; // have to overwrite matches so they dont match again
             }
             break;
-          } else if (k== 4){
-          // special case when whitespace-regex still matches but not in group
-          goto empty_match;
+          } else if (k == 4) {
+            // special case when whitespace-regex still matches but not in group
+            goto empty_match;
           }
         }
       } else {
@@ -414,7 +413,7 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   if (tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, tokenized_line)) {
     // successful completion
     tokenized_line = tokenizeLine(line_info->line);
-    token_index current_token = getCurrentToken(*line_info->i+1, tokenized_line);
+    token_index current_token = getCurrentToken(*line_info->i + 1, tokenized_line);
     *line_info->i = current_token.end;
     line_info->c = -1;
   }
