@@ -294,6 +294,7 @@ string_array getAllMatchingFiles(char* current_dir_sub, char* removed_sub) {
   return filtered;
 }
 
+// doesnt allocate necessary memory
 bool insertCharAtPos(char* line, int index, char c) {
   int len = strlen(line);
   if (index >= 0 && index <= strlen(line)) {

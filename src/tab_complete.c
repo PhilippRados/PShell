@@ -46,6 +46,18 @@ void removeSlice(char** line, int start) {
   }
 }
 
+void escapeWhitespace(string_array* arr) {
+  for (int i = 0; i < arr->len; i++) {
+    for (int j = 0; j < strlen(arr->values[i]); j++) {
+      if (arr->values[i][j] == ' ') {
+        arr->values[i] = realloc(arr->values[i], (strlen(arr->values[i]) + 2) * sizeof(char));
+        // insert escape \\ in front of whitespace
+        insertCharAtPos(arr->values[i], j, '\\');
+        j++;
+      }
+    }
+  }
+}
 autocomplete_array checkForAutocomplete(char* current_word, enum token current_token,
                                         const string_array PATH_BINS) {
   autocomplete_array possible_autocomplete = {.array.len = 0};
@@ -57,6 +69,7 @@ autocomplete_array checkForAutocomplete(char* current_word, enum token current_t
         .array.values = filtered.values, .array.len = filtered.len, .appending_index = strlen(current_word)};
   } else { // autocomplete for files
     possible_autocomplete = fileComp(current_word);
+    escapeWhitespace(&possible_autocomplete.array);
   }
 
   return possible_autocomplete;

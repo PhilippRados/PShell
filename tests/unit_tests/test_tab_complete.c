@@ -235,3 +235,21 @@ Test(getCurrentWordFromLineIndex, should_not_remove_if_current_word_starts_with_
 
   free_string_array(&autocomplete.array);
 }
+
+Test(escapeWhitespace, when_whitespace_in_array_gets_escaped) {
+  char** addr_one = calloc(4, sizeof(char*));
+  addr_one[0] = calloc(strlen("one") + 1, 1);
+  strcpy(addr_one[0], "one");
+  addr_one[1] = calloc(strlen("  two") + 1, 1);
+  strcpy(addr_one[1], "  two");
+  addr_one[2] = calloc(strlen("testi ng") + 1, 1);
+  strcpy(addr_one[2], "testi ng");
+  string_array arr1 = {.len = 3, .values = addr_one};
+
+  escapeWhitespace(&arr1);
+  cr_expect(strcmp(arr1.values[0], "one") == 0);
+  // cr_expect(strcmp(arr1.values[1], "\ \ two") == 0);
+  logger(string, arr1.values[1]);
+  // cr_expect(strcmp(arr1.values[2], "testi\ ng") == 0);
+  logger(string, arr1.values[2]);
+}

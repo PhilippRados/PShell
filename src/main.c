@@ -220,16 +220,18 @@ token_index_arr tokenizeLine(char* line) {
   char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
   char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
   char* quoted_args = "(\'[^\n]+\')";
-  char* line_token =
-      "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|([ ]+)|(&&)|&&[ "
-      "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|(&&)|&&[ "
+                     "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* whitespace = "\\\\[ ]|([ ]+)";
   char* wildcards = "(\\*)|(\\?)";
-  char* only_args = "([^ \t\n]+)";
-  char* regexes[] = {filenames, redirection, quoted_args, line_token, wildcards, only_args};
+  char* only_args = "([^\t\n]+)";
+  char* regexes[] = {filenames, redirection, quoted_args, line_token, whitespace,
+                     wildcards, only_args};
   regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 12},
-                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 6},
+                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 5},
                                     {.fill_char = '\n', .loop_start = 1, .token_index_inc = 13},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 0},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 10},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 13}};
   char* start;
@@ -255,9 +257,13 @@ token_index_arr tokenizeLine(char* line) {
               *start++ = regex_info[k].fill_char; // have to overwrite matches so they dont match again
             }
             break;
+          } else if (k== 4){
+          // special case when whitespace-regex still matches but not in group
+          goto empty_match;
           }
         }
       } else {
+      empty_match:
         break;
       }
     }
@@ -407,7 +413,9 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
   token_index_arr tokenized_line = tokenizeLine(line_info->line);
   if (tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, tokenized_line)) {
     // successful completion
-    *line_info->i = getWordEndIndex(line_info->line, *line_info->i);
+    tokenized_line = tokenizeLine(line_info->line);
+    token_index current_token = getCurrentToken(*line_info->i+1, tokenized_line);
+    *line_info->i = current_token.end;
     line_info->c = -1;
   }
 }
@@ -857,9 +865,9 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   regex_t re;
   regmatch_t rm[1];
   // nums represent token enum values from types.h
-  char* valid_syntax = "^((7|8|9|10|11)14)*(1((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*((3((7|8|9|10|11)14)*2)(("
-                       "7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*|((5((7|8|9|10|11)14)*6)|(5((7|8|9|10|11)14)+))"
-                       "((7|8|9|10|11)14)*(14)*((7|8|9|10|11)14)*)*)?";
+  char* valid_syntax = "^((6|7|8|9|10)14)*(1((6|7|8|9|10)14)*(14)*((6|7|8|9|10)14)*((3((6|7|8|9|10)14)*2)(("
+                       "6|7|8|9|10)14)*(14)*((6|7|8|9|10)14)*|((4((6|7|8|9|10)14)*5)|(4((6|7|8|9|10)14)+))"
+                       "((6|7|8|9|10)14)*(14)*((6|7|8|9|10)14)*)*)?";
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
     perror("error in compiling regex\n");
@@ -1065,6 +1073,16 @@ bool replaceWildcards(char** line) {
   return foundAllWildcards(wildcard_matches);
 }
 
+void removeEscapes(string_array* splitted) {
+  for (int i = 0; i < splitted->len; i++) {
+    for (int j = 0; j < strlen(splitted->values[i]); j++) {
+      if (splitted->values[i][j] == '\\') {
+        splitted->values[i] = removeCharAtPos(splitted->values[i], j + 1);
+      }
+    }
+  }
+}
+
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
@@ -1128,6 +1146,7 @@ int main(int argc, char* argv[]) {
         token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
         stripRedirections(&splitted_line, token);
+        removeEscapes(&splitted_line);
         int builtin_index;
 
         if (file_info.input_filenames[i] != NULL) {

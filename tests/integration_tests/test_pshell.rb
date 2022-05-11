@@ -1099,4 +1099,30 @@ sleep 0.2
 @tty.assert_row(20, 'cd: this is the arg: No such file or dir')
 puts "    \u2705 When arg in quotes then seen as single arg".encode('utf-8')
 
+puts 'WHITESPACE ESCAPED'
+# when filename contains whitespace its escaped to be recognized
+sleep 0.2
+@tty.send_keys(%(touch 'this file'\n))
+sleep 0.2
+@tty.send_keys(%(ls th))
+@tty.send_keys(TAB)
+@tty.assert_cursor_position(21, 23)
+@tty.assert_row(23, '/home ❱ ls this\ file')
+puts "    \u2705 When filename contains whitespace its escaped in tabcomp to be recognized".encode('utf-8')
+
+# escapes get removed for execution
+sleep 0.2
+@tty.send_keys(%(\n))
+@tty.assert_row(21, "'this file'")
+puts "    \u2705 Escapes get removed for execution".encode('utf-8')
+
+# multiple whitespace also get escaped
+sleep 0.2
+@tty.send_keys(%(touch 'multiple   white'\n))
+sleep 0.2
+@tty.send_keys(%(echo multi))
+@tty.send_keys(TAB)
+@tty.assert_row(23, "/home ❱ echo multiple\\ \\ \\ white")
+puts "    \u2705 Multiple whitespaces also get escaped".encode('utf-8')
+
 @tty.send_keys(%(exit\n))
