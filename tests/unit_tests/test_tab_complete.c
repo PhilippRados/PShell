@@ -248,8 +248,6 @@ Test(escapeWhitespace, when_whitespace_in_array_gets_escaped) {
 
   escapeWhitespace(&arr1);
   cr_expect(strcmp(arr1.values[0], "one") == 0);
-  // cr_expect(strcmp(arr1.values[1], "\ \ two") == 0);
-  logger(string, arr1.values[1]);
-  // cr_expect(strcmp(arr1.values[2], "testi\ ng") == 0);
-  logger(string, arr1.values[2]);
+  cr_expect(strcmp(arr1.values[1], "\\ \\ two") == 0);
+  cr_expect(strcmp(arr1.values[2], "testi\\ ng") == 0);
 }

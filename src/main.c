@@ -258,6 +258,7 @@ token_index_arr tokenizeLine(char* line) {
             break;
           } else if (k == 4) {
             // special case when whitespace-regex still matches but not in group
+            // have to break out of outer loop thats why goto is necessary
             goto empty_match;
           }
         }
@@ -299,6 +300,20 @@ void replaceAliasesString(char** line) {
   }
 }
 
+void removeEscapesString(char** string) {
+  for (int j = 0; j < strlen(*string); j++) {
+    if ((*string)[j] == '\\') {
+      *string = removeCharAtPos(*string, j + 1);
+    }
+  }
+}
+
+void removeEscapesArr(string_array* splitted) {
+  for (int i = 0; i < splitted->len; i++) {
+    removeEscapesString(&splitted->values[i]);
+  }
+}
+
 void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_array BUILTINS,
                         string_array PATH_BINS) {
   for (int i = 0; i < tokenized_line.len; i++) {
@@ -321,6 +336,7 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
       char* copy_sub = calloc(strlen(substring) + 1, sizeof(char));
       strcpy(copy_sub, substring);
       replaceAliasesString(&copy_sub);
+      removeEscapesString(&copy_sub);
 
       int autocomplete = fileComp(copy_sub).array.len;
       if (autocomplete > 0) {
@@ -1072,16 +1088,6 @@ bool replaceWildcards(char** line) {
   return foundAllWildcards(wildcard_matches);
 }
 
-void removeEscapes(string_array* splitted) {
-  for (int i = 0; i < splitted->len; i++) {
-    for (int j = 0; j < strlen(splitted->values[i]); j++) {
-      if (splitted->values[i][j] == '\\') {
-        splitted->values[i] = removeCharAtPos(splitted->values[i], j + 1);
-      }
-    }
-  }
-}
-
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
@@ -1145,7 +1151,7 @@ int main(int argc, char* argv[]) {
         token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
         stripRedirections(&splitted_line, token);
-        removeEscapes(&splitted_line);
+        removeEscapesArr(&splitted_line);
         int builtin_index;
 
         if (file_info.input_filenames[i] != NULL) {
