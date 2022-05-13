@@ -429,6 +429,16 @@ int getCurrentWordPosInLine(string_array command_line, char* word) {
 
   return -1;
 }
+
+int countWhitespace(char* string) {
+  int result = 0;
+  for (int i = 0; i < strlen(string); i++) {
+    if (string[i] == ' ')
+      result++;
+  }
+  return result;
+}
+
 autocomplete_array fileComp(char* current_word) {
   char cd[PATH_MAX];
   file_string_tuple file_strings = getFileStrings(current_word, strcat(getcwd(cd, sizeof(cd)), "/"));
@@ -439,10 +449,12 @@ autocomplete_array fileComp(char* current_word) {
   string_array filtered = getAllMatchingFiles(current_dir_sub, file_strings.removed_sub);
 
   fileDirArray(&filtered, current_dir_sub, file_strings.removed_sub);
+  // have to take escapes into account which offset the original appending_index
+  int offset = countWhitespace(file_strings.removed_sub);
 
   return (autocomplete_array){.array.values = filtered.values,
                               .array.len = filtered.len,
-                              .appending_index = strlen(file_strings.removed_sub)};
+                              .appending_index = strlen(file_strings.removed_sub) + offset};
 }
 
 coordinates calculateCursorPos(coordinates terminal_size, coordinates cursor_pos, int prompt_len, int i) {
@@ -504,7 +516,9 @@ bool isExec(char* file) {
 }
 
 token_index getCurrentToken(int line_index, token_index_arr tokenized_line) {
-  token_index result = {.start = -1, .end = -1};
+  // when current index greater than existant line len take last element
+  token_index result = {.start = tokenized_line.arr[tokenized_line.len - 1].start,
+                        .end = tokenized_line.arr[tokenized_line.len - 1].end};
   for (int i = 0; i < tokenized_line.len; i++) {
     if (line_index >= tokenized_line.arr[i].start && line_index <= tokenized_line.arr[i].end) {
       result = tokenized_line.arr[i];
@@ -512,4 +526,18 @@ token_index getCurrentToken(int line_index, token_index_arr tokenized_line) {
     }
   }
   return result;
+}
+
+void removeEscapesString(char** string) {
+  for (int j = 0; j < strlen(*string); j++) {
+    if ((*string)[j] == '\\') {
+      *string = removeCharAtPos(*string, j + 1);
+    }
+  }
+}
+
+void removeSlice(char** line, int start, int end) {
+  for (int i = start; i < end; i++) {
+    *line = removeCharAtPos(*line, start + 1);
+  }
 }

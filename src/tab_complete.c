@@ -38,14 +38,6 @@ void tabRender(string_array possible_tabcomplete, int tab_index, int col_size, i
   }
 }
 
-// 0-indexed
-void removeSlice(char** line, int start) {
-  int end = getWordEndIndex(*line, start);
-  for (int i = start; i < end; i++) {
-    *line = removeCharAtPos(*line, start + 1);
-  }
-}
-
 void escapeWhitespace(string_array* arr) {
   for (int i = 0; i < arr->len; i++) {
     for (int j = 0; j < strlen(arr->values[i]); j++) {
@@ -140,9 +132,10 @@ bool tooManyMatches(render_objects* render_data, autocomplete_array possible_tab
   return dontShowMatches(answer, render_data, possible_tabcomplete);
 }
 
-bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index, line_data* line_info) {
+bool tabPress(autocomplete_array possible_tabcomplete, int* tab_index, line_data* line_info,
+              token_index current_token) {
   if (possible_tabcomplete.array.len == 1) {
-    removeSlice(&line_info->line, *line_info->i);
+    removeSlice(&line_info->line, *line_info->i, current_token.end);
     insertStringAtPos(&line_info->line,
                       &(possible_tabcomplete.array.values[0])[possible_tabcomplete.appending_index],
                       *line_info->i);
@@ -170,8 +163,11 @@ void shiftTabPress(autocomplete_array possible_tabcomplete, int* tab_index) {
   }
 }
 
-void enterPress(autocomplete_array possible_tabcomplete, line_data* line_info, int tab_index) {
-  removeSlice(&line_info->line, *line_info->i);
+void enterPress(autocomplete_array possible_tabcomplete, line_data* line_info, int tab_index,
+                token_index current_token) {
+  removeSlice(&line_info->line, *line_info->i, current_token.end);
+  // remove-slice is correct
+  // have to count escapes upto line_index
   insertStringAtPos(&line_info->line,
                     &(possible_tabcomplete.array.values[tab_index])[possible_tabcomplete.appending_index],
                     *line_info->i);
@@ -180,10 +176,10 @@ void enterPress(autocomplete_array possible_tabcomplete, line_data* line_info, i
 }
 
 tab_completion updateCompletion(autocomplete_array possible_tabcomplete, char* c, line_data* line_info,
-                                int* tab_index) {
+                                int* tab_index, token_index current_token) {
   tab_completion result = {.successful = false, .continue_loop = true};
   if (*c == TAB) {
-    if (tabPress(possible_tabcomplete, tab_index, line_info)) {
+    if (tabPress(possible_tabcomplete, tab_index, line_info, current_token)) {
       result.successful = true;
       result.continue_loop = false;
     }
@@ -192,7 +188,7 @@ tab_completion updateCompletion(autocomplete_array possible_tabcomplete, char* c
     shiftTabPress(possible_tabcomplete, tab_index);
 
   } else if (*c == '\n') {
-    enterPress(possible_tabcomplete, line_info, *tab_index);
+    enterPress(possible_tabcomplete, line_info, *tab_index, current_token);
     result.successful = true;
     result.continue_loop = false;
 
@@ -268,24 +264,11 @@ char* getCurrentWord(char* line, int line_index, token_index current_token) {
   }
 }
 
-int firstNonWhitespaceToken(token_index_arr token_line) {
-  for (int i = 0; i < token_line.len; i++) {
-    if (token_line.arr[i].token != WHITESPACE) {
-      return token_line.arr[i].start;
-    }
-  }
-  return INT_MAX;
-}
-
 bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array PATH_BINS,
-             const coordinates terminal_size, token_index_arr tokenized_line) {
-  if (tokenized_line.len > 0 && *line_info->i <= firstNonWhitespaceToken(tokenized_line)) {
-    return false;
-  }
-
+             const coordinates terminal_size, token_index current_token) {
   int tab_index = -1;
-  token_index current_token = getCurrentToken(*line_info->i, tokenized_line);
   char* current_word = getCurrentWord(line_info->line, *line_info->i, current_token);
+  removeEscapesString(&current_word);
   autocomplete_array possible_tabcomplete = checkForAutocomplete(current_word, current_token.token, PATH_BINS);
   removeDotFilesIfnecessary(current_word, &possible_tabcomplete);
 
@@ -300,7 +283,8 @@ bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array P
     return false;
   }
   do {
-    if ((completion_result = updateCompletion(possible_tabcomplete, &line_info->c, line_info, &tab_index))
+    if ((completion_result =
+             updateCompletion(possible_tabcomplete, &line_info->c, line_info, &tab_index, current_token))
             .continue_loop) {
       renderCompletion(possible_tabcomplete, tab_index, &render_data);
     }

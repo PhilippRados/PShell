@@ -1125,4 +1125,22 @@ sleep 0.2
 @tty.assert_row(23, "/home ❱ echo multiple\\ \\ \\ white")
 puts "    \u2705 Multiple whitespaces also get escaped".encode('utf-8')
 
+# tab-comps on more complex whitespace filename
+sleep 0.2
+@tty.send_keys(%(\n))
+sleep 0.2
+@tty.send_keys(%(mkdir /root/one\\ \\ white\n))
+sleep 0.2
+@tty.send_keys(%(touch /root/one\\ \\ white/multiple\\ \\ white\n))
+sleep 0.2
+@tty.send_keys(%(ls /root/one))
+@tty.send_keys(TAB)
+sleep 0.2
+@tty.send_keys(TAB)
+@tty.assert_cursor_position(7, 23)
+@tty.send_keys(%(\n))
+@tty.assert_row(21, "'/root/one  white/multiple  white'")
+
+puts "    \u2705 Tab-comps on more complex whitespace filename".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

@@ -6,8 +6,9 @@ Test(removeSlice, remove_nothing_cursor_end_of_current_word) {
   strcpy(word, "testing if Makefile works");
   int start = 19;
 
-  removeSlice(&word, start);
+  removeSlice(&word, start, start);
 
+  logger(string, word);
   cr_expect(strcmp(word, "testing if Makefile works") == 0);
   free(word);
 }
@@ -31,8 +32,9 @@ Test(updateCompletion, exit_out_if_random_letter_press) {
   char* line;
   int* tab_index;
   line_data* line_info;
+  token_index token;
 
-  tab_completion result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(result.continue_loop == false);
   free(c);
 }
@@ -65,8 +67,13 @@ Test(updateCompletion, test_tabpress_when_single_command_match) {
   line_data* line_info = lineDataConstructor_for_testing(4);
   strcpy(line_info->line, "tesuwe");
   *line_info->i = 3;
+  token_index token = {
+      .token = CMD,
+      .start = 0,
+      .end = 6,
+  };
 
-  tab_completion result = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(result.continue_loop == false);
   cr_expect(strcmp(line_info->line, "testing") == 0);
   cr_expect(result.successful);
@@ -90,16 +97,21 @@ Test(updateCompletion, resets_tabindex_when_no_more_matches) {
   line_data* line_info = lineDataConstructor_for_testing(4);
   strcpy(line_info->line, "tre");
   *line_info->i = strlen(line_info->line);
+  token_index token = {
+      .token = CMD,
+      .start = 0,
+      .end = 3,
+  };
 
-  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(result1.continue_loop == true);
   cr_expect(strcmp(line_info->line, "tre") == 0);
   cr_expect(result1.successful == false);
   cr_expect(*tab_index == 0);
 
-  tab_completion result2 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result2 = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(*tab_index == 1);
-  tab_completion result3 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result3 = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(*tab_index == 0);
 
   free(tab_index);
@@ -121,8 +133,13 @@ Test(updateCompletion, copies_current_tabindex_on_enter) {
   line_data* line_info = lineDataConstructor_for_testing(4);
   strcpy(line_info->line, "tre");
   *line_info->i = strlen(line_info->line);
+  token_index token = {
+      .token = CMD,
+      .start = 0,
+      .end = 3,
+  };
 
-  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(result1.continue_loop == false);
   cr_expect(strcmp(line_info->line, "trey") == 0);
   cr_expect(result1.successful);
@@ -148,8 +165,13 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs) {
   line_data* line_info = lineDataConstructor_for_testing(5);
   strcpy(line_info->line, "ls test/dir/why/tr");
   *line_info->i = strlen(line_info->line);
+  token_index token = {
+      .token = ARG,
+      .start = 3,
+      .end = strlen("test/dir/why/tr"),
+  };
 
-  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(result1.continue_loop == false);
   cr_expect(strcmp(line_info->line, "ls test/dir/why/tree") == 0);
   cr_expect(result1.successful);
@@ -174,8 +196,13 @@ Test(updateCompletion, appends_correct_fileend_to_filecomp_on_dirs_when_cursor_m
   line_data* line_info = lineDataConstructor_for_testing(4);
   strcpy(line_info->line, "ls test/dir/why/tr");
   *line_info->i = strlen("ls test/dir/");
+  token_index token = {
+      .token = ARG,
+      .start = 3,
+      .end = 3 + strlen("test/dir/why/tr"),
+  };
 
-  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index);
+  tab_completion result1 = updateCompletion(possible_tab_complete, c, line_info, tab_index, token);
   cr_expect(result1.continue_loop == false);
   cr_expect(result1.successful);
   cr_expect(strcmp(line_info->line, "ls test/dir/tree") == 0);

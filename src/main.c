@@ -300,14 +300,6 @@ void replaceAliasesString(char** line) {
   }
 }
 
-void removeEscapesString(char** string) {
-  for (int j = 0; j < strlen(*string); j++) {
-    if ((*string)[j] == '\\') {
-      *string = removeCharAtPos(*string, j + 1);
-    }
-  }
-}
-
 void removeEscapesArr(string_array* splitted) {
   for (int i = 0; i < splitted->len; i++) {
     removeEscapesString(&splitted->values[i]);
@@ -420,16 +412,31 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
   starting_cursor_pos->x = new_cursor_pos.x;
 }
 
+int firstNonWhitespaceToken(token_index_arr token_line) {
+  for (int i = 0; i < token_line.len; i++) {
+    if (token_line.arr[i].token != WHITESPACE) {
+      return token_line.arr[i].start;
+    }
+  }
+  return INT_MAX;
+}
+
+bool tabCompBeforeFirstWord(token_index_arr tokenized_line, int line_index) {
+  return tokenized_line.len > 0 && line_index <= firstNonWhitespaceToken(tokenized_line);
+}
+
 void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size,
          autocomplete_data autocomplete_info) {
   if (strlen(line_info->line) <= 0)
     return;
 
   token_index_arr tokenized_line = tokenizeLine(line_info->line);
-  if (tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, tokenized_line)) {
+  if (!tabCompBeforeFirstWord(tokenized_line, *line_info->i) &&
+      /* this should also get last token when at end of word */
+      tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, getCurrentToken(*line_info->i, tokenized_line))) {
     // successful completion
     tokenized_line = tokenizeLine(line_info->line);
-    token_index current_token = getCurrentToken(*line_info->i + 1, tokenized_line);
+    token_index current_token = getCurrentToken(*line_info->i + 1, tokenized_line); /* this gets current token*/
     *line_info->i = current_token.end;
     line_info->c = -1;
   }
@@ -578,14 +585,6 @@ void pipeOutputToFile(char* filename) {
   close(file);
 }
 
-void removeSlice_clone(char** line, int start, int end) {
-  int prior_len = strlen(*line);
-  for (int i = start; i < end; i++) {
-    *line = removeCharAtPos(*line, start + 1);
-  }
-  // *line[prior_len - (end - start)] = '\0';
-}
-
 wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
   wildcard_groups* result = calloc(token.len, sizeof(wildcard_groups));
   int wildcard_index = 0;
@@ -681,7 +680,7 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
         if (current_dir == NULL) {
           printf("psh: couldn't open directory: %s\n", prefix);
         }
-        removeSlice_clone(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
+        removeSlice(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
 
         int concat_index = 0;
         for (; concat_index < strlen(prefix) && prefix[concat_index] != '/'; concat_index++)
@@ -724,8 +723,8 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
 void replaceLineWithWildcards(char** line, wildcard_groups_arr wildcard_matches) {
   int verschoben_len = 0;
   for (int i = 0; i < wildcard_matches.len; i++) {
-    removeSlice_clone(line, wildcard_matches.arr[i].start + verschoben_len,
-                      wildcard_matches.arr[i].end + verschoben_len);
+    removeSlice(line, wildcard_matches.arr[i].start + verschoben_len,
+                wildcard_matches.arr[i].end + verschoben_len);
     insertStringAtPos(line, wildcard_matches.arr[i].wildcard_arg, wildcard_matches.arr[i].start + verschoben_len);
     verschoben_len += strlen(wildcard_matches.arr[i].wildcard_arg) -
                       (wildcard_matches.arr[i].end - wildcard_matches.arr[i].start);

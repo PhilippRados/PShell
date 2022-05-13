@@ -20,5 +20,4 @@ string_array splitByTokens(char* line);
 file_redirection_data parseForRedirectionFiles(string_array_token simple_commands_arr);
 void stripRedirections(string_array* splitted_line, token_index_arr token);
 wildcard_groups_arr groupWildcards(char* line, token_index_arr token);
-void removeSlice_clone(char** line, int start, int end);
 void replaceLineWithWildcards(char** line, wildcard_groups_arr wildcard_matches);
