@@ -219,7 +219,7 @@ token_index_arr tokenizeLine(char* line) {
   regmatch_t rm[ENUM_LEN];
   char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
   char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
-  char* quoted_args = "(\'[^\n]+\')";
+  char* quoted_args = "(\'[^\n\']*\')";
   char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|(&&)|&&[ "
                      "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
   char* whitespace = "\\\\[ ]|([ ]+)";

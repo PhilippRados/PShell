@@ -442,16 +442,17 @@ Test(tokenizeLine, tokenizes_complex_command_with_escapes) {
   cr_expect(result_arr[3].token == AMPAMP);
   cr_expect(result_arr[3].start == 13);
   cr_expect(result_arr[3].end == 15);
-  cr_expect(result_arr[3].token == AMP_CMD);
-  cr_expect(result_arr[3].start == 15);
-  cr_expect(result_arr[3].end == 19);
-  cr_expect(result_arr[4].token == WHITESPACE);
-  cr_expect(result_arr[4].start == 19);
-  cr_expect(result_arr[4].end == 20);
-  cr_expect(result_arr[5].token == ARG);
-  cr_expect(result_arr[5].start == 20);
-  cr_expect(result_arr[5].end == 27);
+  cr_expect(result_arr[4].token == AMP_CMD);
+  cr_expect(result_arr[4].start == 15);
+  cr_expect(result_arr[4].end == 19);
+  cr_expect(result_arr[5].token == WHITESPACE);
+  cr_expect(result_arr[5].start == 19);
+  cr_expect(result_arr[5].end == 20);
+  cr_expect(result_arr[6].token == ARG);
+  cr_expect(result_arr[6].start == 20);
+  cr_expect(result_arr[6].end == 27);
 }
+
 Test(tokenizeLine, tokenizes_everything_in_quotes_as_arg) {
   char* line = "ls 'this is one big arg'";
   token_index_arr result = tokenizeLine(line);
@@ -474,7 +475,7 @@ Test(tokenizeLine, can_seperate_multiple_quoted_args_in_same_line) {
   token_index_arr result = tokenizeLine(line);
   token_index* result_arr = result.arr;
 
-  cr_expect(result.len == 6);
+  cr_expect(result.len == 7);
   cr_expect(result_arr[0].token == CMD);
   cr_expect(result_arr[0].start == 0);
   cr_expect(result_arr[0].end == 2);
@@ -486,16 +487,16 @@ Test(tokenizeLine, can_seperate_multiple_quoted_args_in_same_line) {
   cr_expect(result_arr[2].end == 24);
   cr_expect(result_arr[3].token == AMPAMP);
   cr_expect(result_arr[3].start == 24);
-  cr_expect(result_arr[3].end == 27);
+  cr_expect(result_arr[3].end == 26);
   cr_expect(result_arr[4].token == AMP_CMD);
-  cr_expect(result_arr[4].start == 27);
-  cr_expect(result_arr[4].end == 29);
+  cr_expect(result_arr[4].start == 26);
+  cr_expect(result_arr[4].end == 28);
   cr_expect(result_arr[5].token == WHITESPACE);
-  cr_expect(result_arr[5].start == 27);
+  cr_expect(result_arr[5].start == 28);
   cr_expect(result_arr[5].end == 29);
-  cr_expect(result_arr[5].token == ARG);
-  cr_expect(result_arr[5].start == 29);
-  cr_expect(result_arr[5].end == 43);
+  cr_expect(result_arr[6].token == ARG);
+  cr_expect(result_arr[6].start == 29);
+  cr_expect(result_arr[6].end == 43);
 }
 
 Test(tokenizeLine, tokenizes_command_with_too_much_whitespace) {
