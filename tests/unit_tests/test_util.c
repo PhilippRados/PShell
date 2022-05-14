@@ -94,17 +94,6 @@ Test(insertStringAtPos, insert_string_at_start) {
   free(line);
 }
 
-Test(getWordEndIndex, index_in_middle_of_word) {
-  char* word = calloc(52, sizeof(char));
-  strcpy(word, "testing Makefile works");
-  int start = 9;
-
-  int result = getWordEndIndex(word, start);
-
-  cr_expect(result == 16);
-  free(word);
-}
-
 Test(getAppendingIndex, returns_3_if_second_word_is_len_3) {
   char line[64] = "make mak";
   int result = getAppendingIndex(line, ' ');

@@ -429,7 +429,7 @@ Test(tokenizeLine, tokenizes_complex_command_with_escapes) {
   token_index_arr result = tokenizeLine(line);
   token_index* result_arr = result.arr;
 
-  cr_expect(result.len == 6);
+  cr_expect(result.len == 7);
   cr_expect(result_arr[0].token == CMD);
   cr_expect(result_arr[0].start == 0);
   cr_expect(result_arr[0].end == 4);
@@ -450,7 +450,7 @@ Test(tokenizeLine, tokenizes_complex_command_with_escapes) {
   cr_expect(result_arr[5].end == 20);
   cr_expect(result_arr[6].token == ARG);
   cr_expect(result_arr[6].start == 20);
-  cr_expect(result_arr[6].end == 27);
+  cr_expect(result_arr[6].end == 28);
 }
 
 Test(tokenizeLine, tokenizes_everything_in_quotes_as_arg) {

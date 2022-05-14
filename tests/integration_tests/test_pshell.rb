@@ -1142,4 +1142,11 @@ sleep 0.2
 @tty.assert_row(21, "'/root/one  white/multiple  other'")
 puts "    \u2705 Tab-comps on more complex whitespace filename".encode('utf-8')
 
+# line with multiple escaped whitespaces and normal ones
+sleep 0.2
+@tty.send_keys(%(echo this\\ is && echo   'this  another'  and_another\n))
+@tty.assert_row(20, "this is")
+@tty.assert_row(21, "this  another and_another")
+puts "    \u2705 Line with multiple escaped whitespaces and normal ones".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

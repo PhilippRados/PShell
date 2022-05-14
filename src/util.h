@@ -51,7 +51,6 @@ bool tabLoop(line_data* line_info, coordinates* cursor_pos, const string_array P
 coordinates getCursorPos();
 void free_string_array(string_array* arr);
 void insertStringAtPos(char** line, char* insert_string, int position);
-int getWordEndIndex(char* line, int start);
 int isDirectory(const char* path);
 string_array copyStringArray(string_array arr);
 bool insertCharAtPos(char* line, int index, char c);

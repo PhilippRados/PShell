@@ -1,4 +1,5 @@
 #include "main.h"
+#include "util.h"
 
 bool isInPath(char* line, string_array PATH_BINS) {
   bool result = false;
@@ -222,7 +223,7 @@ token_index_arr tokenizeLine(char* line) {
   char* quoted_args = "(\'[^\n\']*\')";
   char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|(&&)|&&[ "
                      "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
-  char* whitespace = "\\\\[ ]|([ ]+)";
+  char* whitespace = "(\\\\[ ])|([ ]+)";
   char* wildcards = "(\\*)|(\\?)";
   char* only_args = "([^\t\n]+)";
   char* regexes[] = {filenames, redirection, quoted_args, line_token, whitespace, wildcards, only_args};
@@ -230,7 +231,7 @@ token_index_arr tokenizeLine(char* line) {
                                     {.fill_char = '\n', .loop_start = 1, .token_index_inc = 5},
                                     {.fill_char = '\n', .loop_start = 1, .token_index_inc = 13},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 0},
-                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 10},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 9},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11},
                                     {.fill_char = '\t', .loop_start = 1, .token_index_inc = 13}};
   char* start;
@@ -243,27 +244,40 @@ token_index_arr tokenizeLine(char* line) {
     if (regcomp(&re, regexes[k], REG_EXTENDED) != 0) {
       perror("Error in compiling regex\n");
     }
+    if (k == 5) {
+      // change back escaped whitespaces
+      for (int l = 0; l < strlen(copy); l++) {
+        if (copy[l] == '\f') {
+          removeCharAtPos(copy, l + 1);
+          removeCharAtPos(copy, l + 1);
+          insertStringAtPos(&copy, "\\ ", l);
+        }
+      }
+    }
     for (; j < strlen(copy); j++) {
       if ((retval = regexec(&re, copy, ENUM_LEN, rm, 0)) == 0) {
         for (int i = regex_info[k].loop_start; i < ENUM_LEN; i++) {
           if (rm[i].rm_so != -1) {
             start = copy + rm[i].rm_so;
             end = copy + rm[i].rm_eo;
-            result_arr[j].start = rm[i].rm_so;
-            result_arr[j].end = rm[i].rm_eo;
-            result_arr[j].token = i + regex_info[k].token_index_inc;
-            while (start < end) {
-              *start++ = regex_info[k].fill_char; // have to overwrite matches so they dont match again
+            if (k == 4 && i == 1) {
+              // matched escape-whitespace
+              while (start < end) {
+                *start++ = '\f'; // overwrite with random char to recognize in next regex and change back
+              }
+              j--;
+            } else {
+              result_arr[j].start = rm[i].rm_so;
+              result_arr[j].end = rm[i].rm_eo;
+              result_arr[j].token = i + regex_info[k].token_index_inc;
+              while (start < end) {
+                *start++ = regex_info[k].fill_char; // have to overwrite matches so they dont match again
+              }
             }
             break;
-          } else if (k == 4) {
-            // special case when whitespace-regex still matches but not in group
-            // have to break out of outer loop thats why goto is necessary
-            goto empty_match;
           }
         }
       } else {
-      empty_match:
         break;
       }
     }

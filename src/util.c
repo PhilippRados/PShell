@@ -327,14 +327,6 @@ void insertStringAtPos(char** line, char* insert_string, int position) {
   free(new_line);
 }
 
-int getWordEndIndex(char* line, int start) {
-  int line_end = start;
-  for (; line[start] != '\0' && line[start] != ' '; start++)
-    line_end++;
-
-  return line_end;
-}
-
 int isDirectory(const char* path) {
   struct stat statbuf;
   if (stat(path, &statbuf) != 0)
