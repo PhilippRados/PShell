@@ -1,18 +1,6 @@
 #include "../../src/tab_complete.h"
 #include <criterion/criterion.h>
 
-Test(removeSlice, remove_nothing_cursor_end_of_current_word) {
-  char* word = calloc(52, sizeof(char));
-  strcpy(word, "testing if Makefile works");
-  int start = 19;
-
-  removeSlice(&word, start, start);
-
-  logger(string, word);
-  cr_expect(strcmp(word, "testing if Makefile works") == 0);
-  free(word);
-}
-
 Test(getAllMatchingFiles, should_match_only_one_file) {
   char* current_dir_sub = "/Users/philipprados/documents/coding/c/pshell";
   char* removed_sub = "Ma";

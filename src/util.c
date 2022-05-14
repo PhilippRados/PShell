@@ -61,32 +61,6 @@ char* removeMultipleWhitespaces(char* string) {
   return new_string;
 }
 
-string_array splitString(const char* string_to_split, char delimeter) {
-  int start = 0;
-  int j = 0;
-  char** splitted_strings = (char**)calloc(strlen(string_to_split), sizeof(char*));
-  string_array result;
-  if (isOnlyDelimeter(string_to_split, delimeter)) {
-    splitted_strings[0] = calloc(strlen(string_to_split) + 1, sizeof(char));
-    strcpy(splitted_strings[0], string_to_split);
-    return (string_array){.len = 1, .values = splitted_strings};
-  }
-
-  for (int i = 0;; i++) {
-    if (string_to_split[i] == delimeter || string_to_split[i] == '\0') {
-      splitted_strings[j] = (char*)calloc(i - start + 1, sizeof(char));
-      memcpy(splitted_strings[j], &string_to_split[start], i - start);
-      start = i + 1;
-      j++;
-    }
-    if (string_to_split[i] == '\0')
-      break;
-  }
-  result.len = j;
-  result.values = splitted_strings;
-  return result;
-}
-
 void free_string_array(string_array* arr) {
   if (arr->values == NULL)
     return;
@@ -532,4 +506,119 @@ void removeSlice(char** line, int start, int end) {
   for (int i = start; i < end; i++) {
     *line = removeCharAtPos(*line, start + 1);
   }
+}
+
+int tokenCmp(const void* a, const void* b) {
+  token_index cast_a = *(token_index*)a;
+  token_index cast_b = *(token_index*)b;
+  return cast_a.start - cast_b.start;
+}
+
+token_index_arr tokenizeLine(char* line) {
+  char* copy = calloc(strlen(line) + 1, sizeof(char));
+  strcpy(copy, line);
+
+  int retval = 0;
+  regex_t re;
+  regmatch_t rm[ENUM_LEN];
+  char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
+  char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* quoted_args = "(\'[^\n\']*\')";
+  char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|(&&)|&&[ "
+                     "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* whitespace = "(\\\\[ ])|([ ]+)";
+  char* wildcards = "(\\*)|(\\?)";
+  char* only_args = "([^\t\n]+)";
+  char* regexes[] = {filenames, redirection, quoted_args, line_token, whitespace, wildcards, only_args};
+  regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 12},
+                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 5},
+                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 13},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 0},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 9},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11},
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 13}};
+  char* start;
+  char* end;
+  int j = 0;
+
+  token_index* result_arr = calloc(strlen(line), sizeof(token_index));
+
+  for (int k = 0; k < (sizeof(regexes) / sizeof(regexes[0])); k++) {
+    if (regcomp(&re, regexes[k], REG_EXTENDED) != 0) {
+      perror("Error in compiling regex\n");
+    }
+    if (k == 5) {
+      // change back escaped whitespaces
+      for (int l = 0; l < strlen(copy); l++) {
+        if (copy[l] == '\f') {
+          removeCharAtPos(copy, l + 1);
+          removeCharAtPos(copy, l + 1);
+          insertStringAtPos(&copy, "\\ ", l);
+        }
+      }
+    }
+    for (; j < strlen(copy); j++) {
+      if ((retval = regexec(&re, copy, ENUM_LEN, rm, 0)) == 0) {
+        for (int i = regex_info[k].loop_start; i < ENUM_LEN; i++) {
+          if (rm[i].rm_so != -1) {
+            start = copy + rm[i].rm_so;
+            end = copy + rm[i].rm_eo;
+            if (k == 4 && i == 1) {
+              // matched escape-whitespace
+              while (start < end) {
+                *start++ = '\f'; // overwrite with random char to recognize in next regex and change back
+              }
+              j--;
+            } else {
+              result_arr[j].start = rm[i].rm_so;
+              result_arr[j].end = rm[i].rm_eo;
+              result_arr[j].token = i + regex_info[k].token_index_inc;
+              while (start < end) {
+                *start++ = regex_info[k].fill_char; // have to overwrite matches so they dont match again
+              }
+            }
+            break;
+          }
+        }
+      } else {
+        break;
+      }
+    }
+  }
+  free(copy);
+
+  qsort(result_arr, j, sizeof(token_index), tokenCmp);
+  token_index_arr result = {.arr = result_arr, .len = j};
+
+  return result;
+}
+
+int isBuiltin(char* command, builtins_array builtins) {
+  for (int i = 0; i < builtins.len; i++) {
+    if (strcmp(command, builtins.array[i].name) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void replaceAliasesString(char** line) {
+  for (int j = 0; j < strlen(*line); j++) {
+    if ((*line)[j] == '~') {
+      char* home_path = getenv("HOME");
+      char* prior_line = calloc(strlen(*line) + 1, sizeof(char));
+      strcpy(prior_line, *line);
+      removeCharAtPos(prior_line, j + 1);
+      *line = realloc(*line, strlen(home_path) + strlen(*line) + 10);
+      strcpy(*line, prior_line);
+      insertStringAtPos(line, home_path, j);
+      free(prior_line);
+    }
+  }
+}
+
+void printPrompt(const char* dir, color color) {
+  printColor(dir, color, bold);
+  printf(" ");
+  printColor("\u2771 ", GREEN, standard);
 }

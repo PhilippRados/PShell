@@ -35,7 +35,6 @@ enum { HISTORY_SIZE = 512 };
 
 // ======= util.c functions ========
 
-string_array splitString(const char*, char);
 int getch();
 void printColor(const char* string, color color, enum color_decorations color_decorations);
 void moveCursor(coordinates new_pos);
@@ -72,5 +71,11 @@ bool isExec(char* file);
 token_index getCurrentToken(int line_index, token_index_arr tokenized_line);
 void removeEscapesString(char** string);
 void removeSlice(char** line, int start, int end);
+token_index_arr tokenizeLine(char* line);
+int isBuiltin(char* command, builtins_array builtins);
+void replaceAliasesString(char** line);
+char* readLine(string_array PATH_BINS, char* directories, string_array* command_history,
+               const string_array global_command_history, builtins_array BUILTINS);
+void printPrompt(const char* dir, color color);
 
 #endif // !UTIL_H

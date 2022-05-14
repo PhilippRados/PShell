@@ -1,38 +1,6 @@
 #include "../../src/util.h"
 #include <criterion/criterion.h>
 
-Test(Split_func, split_string_at_delimeter) {
-  string_array result = splitString("this.should.split", '.');
-
-  cr_expect(strcmp(result.values[0], "this") == 0);
-  cr_expect(strcmp(result.values[1], "should") == 0);
-  cr_expect(strcmp(result.values[2], "split") == 0);
-}
-
-Test(Split_func, single_strings_are_nullterminated) {
-  string_array result = splitString("this.should.split", '.');
-
-  cr_expect(result.values[0][strlen(result.values[0])] == '\0', "%c", result.values[0][strlen(result.values[0])]);
-}
-
-Test(Split_func, quits_on_q) {
-  string_array result = splitString("q", ' ');
-
-  cr_expect(strcmp(result.values[0], "q") == 0);
-}
-
-Test(Split_func, end_string_split_with_NULL) {
-  string_array result = splitString("ls -l", ' ');
-
-  cr_expect_null(result.values[3]);
-}
-
-Test(Split_func, only_command_len) {
-  string_array result = splitString("ma", ' ');
-
-  cr_expect(result.len == 1);
-}
-
 Test(removeMultipleWhitespace, removes_any_extraneous_whitespace) {
   char* line = calloc(64, sizeof(char));
   strcpy(line, "    uwe   ist cool");
@@ -189,4 +157,31 @@ Test(firstNonDelimeterIndex, if_first_elem_not_delim_returns_zero) {
   int result = firstNonDelimeterIndex(arr1);
 
   cr_expect(result == 0);
+}
+
+Test(insertCharAtPos, see_if_string_reference_changes) {
+  char line[24] = "uwe tested";
+
+  insertCharAtPos(line, 3, 'i');
+  cr_expect(strcmp(line, "uwei tested") == 0);
+}
+
+Test(removeSlice, when_slice_is_complete_line_empties_string) {
+  char* line = calloc(4, sizeof(char));
+  strcpy(line, "src");
+  removeSlice(&line, 0, 3);
+  cr_expect(strcmp(line, "") == 0);
+  free(line);
+}
+
+Test(removeSlice, remove_nothing_cursor_end_of_current_word) {
+  char* word = calloc(52, sizeof(char));
+  strcpy(word, "testing if Makefile works");
+  int start = 19;
+
+  removeSlice(&word, start, start);
+
+  logger(string, word);
+  cr_expect(strcmp(word, "testing if Makefile works") == 0);
+  free(word);
 }
