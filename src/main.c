@@ -220,6 +220,10 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
             free(prev_copy);
           }
         }
+        free(regex);
+        free(prefix);
+        regfree(&re);
+        closedir(current_dir);
       }
     }
   }
@@ -397,6 +401,7 @@ bool isValidSyntax(token_index_arr tokenized_line) {
   } else {
     result = false;
   }
+  regfree(&re);
 
   free(string_rep);
   return result;
@@ -459,6 +464,7 @@ string_array splitByTokens(char* line) {
   }
   line_arr[token.len] = NULL;
   string_array result = {.values = line_arr, .len = token.len};
+  free(token.arr);
   return result;
 }
 
@@ -530,6 +536,7 @@ file_redirection_data parseForRedirectionFiles(string_array_token simple_command
         input_names[i] = NULL;
       }
     }
+    free(token_line.arr);
   }
   return (file_redirection_data){.output_filenames = output_names,
                                  .input_filenames = input_names,
@@ -576,21 +583,65 @@ void replaceAliases(char** line, int len) {
   }
 }
 
+void free_wildcard_groups(wildcard_groups_arr arr) {
+  for (int i = 0; i < arr.len; i++) {
+    free(arr.arr[i].wildcard_arg);
+  }
+  free(arr.arr);
+}
+
 bool foundAllWildcards(wildcard_groups_arr arr) {
   for (int i = 0; i < arr.len; i++) {
     if (strcmp(arr.arr[i].wildcard_arg, "") == 0) {
+      free_wildcard_groups(arr);
       return false;
     }
   }
+  free_wildcard_groups(arr);
   return true;
 }
 
 bool replaceWildcards(char** line) {
-  wildcard_groups_arr groups = groupWildcards(*line, tokenizeLine(*line));
+  token_index_arr token = tokenizeLine(*line);
+  wildcard_groups_arr groups = groupWildcards(*line, token);
   wildcard_groups_arr wildcard_matches = expandWildcardgroups(groups);
   replaceLineWithWildcards(line, wildcard_matches);
 
+  free(token.arr);
+
   return foundAllWildcards(wildcard_matches);
+}
+
+void free_string_array_token(string_array_token simple_commands) {
+  for (int i = 0; i < simple_commands.len; i++) {
+    free(simple_commands.values[i]);
+  }
+  free(simple_commands.values);
+  free(simple_commands.token_arr);
+}
+
+void free_file_info(file_redirection_data file_info, int len) {
+  for (int i = 0; i < len; i++) {
+    if (file_info.input_filenames[i] != NULL) {
+      free(file_info.input_filenames[i]);
+    }
+    if (file_info.output_filenames[i] != NULL) {
+      free(file_info.output_filenames[i]);
+    }
+    if (file_info.stderr_filenames[i] != NULL) {
+      free(file_info.stderr_filenames[i]);
+    }
+    if (file_info.merge_filenames[i] != NULL) {
+      free(file_info.merge_filenames[i]);
+    }
+  }
+  free(file_info.merge_append);
+  free(file_info.stderr_append);
+  free(file_info.output_append);
+  free(file_info.input_filenames);
+  free(file_info.output_filenames);
+  free(file_info.stderr_filenames);
+  free(file_info.merge_filenames);
 }
 
 #ifndef TEST
@@ -653,9 +704,11 @@ int main(int argc, char* argv[]) {
           }
         }
         splitted_line = splitByTokens(simple_commands_arr.values[i]);
+        free(token.arr);
         token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
         stripRedirections(&splitted_line, token);
+        free(token.arr);
         removeEscapesArr(&splitted_line);
         int builtin_index;
 
@@ -741,20 +794,22 @@ int main(int argc, char* argv[]) {
             }
           }
         }
+        free_string_array(&splitted_line);
       }
-      // free_string_array(&simple_commands_arr);
-      free_string_array(&splitted_line);
       dup2(tmpin, 0);
       dup2(tmpout, 1);
       dup2(tmperr, 2);
       close(tmpin);
       close(tmpout);
       close(tmperr);
+      free_file_info(file_info, simple_commands_arr.len);
+      free_string_array_token(simple_commands_arr);
     } else {
       if (!isOnlyDelimeter(line, ' ')) {
         printf("Syntax Error\n");
       }
     }
+    free(tokenized_line.arr);
     pushToCommandHistory(line, &command_history);
     free(line);
   }

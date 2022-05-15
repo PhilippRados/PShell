@@ -81,11 +81,13 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
       /* this should also get last token when at end of word */
       tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, getCurrentToken(*line_info->i, tokenized_line))) {
     // successful completion
+    free(tokenized_line.arr);
     tokenized_line = tokenizeLine(line_info->line);
     token_index current_token = getCurrentToken(*line_info->i + 1, tokenized_line); /* this gets current token*/
     *line_info->i = current_token.end;
     line_info->c = -1;
   }
+  free(tokenized_line.arr);
 }
 
 void upArrowPress(char* line, history_data* history_info) {
@@ -311,8 +313,8 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
       replaceAliasesString(&copy_sub);
       removeEscapesString(&copy_sub);
 
-      int autocomplete = fileComp(copy_sub).array.len;
-      if (autocomplete > 0) {
+      autocomplete_array autocomplete = fileComp(copy_sub);
+      if (autocomplete.array.len > 0) {
         printColor(substring, WHITE, underline);
       } else if (substring[0] == '\'' && substring[strlen(substring) - 1] == '\'') {
         printColor(substring, YELLOW, standard);
@@ -320,6 +322,7 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
         printf("%s", substring);
       }
       free(copy_sub);
+      free_string_array(&(autocomplete.array));
       break;
     }
     case (WHITESPACE): {
@@ -353,6 +356,7 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
 void printLine(char* line, builtins_array BUILTINS, string_array PATH_BINS) {
   token_index_arr tokenized_line = tokenizeLine(line);
   printTokenizedLine(line, tokenized_line, BUILTINS, PATH_BINS);
+  free(tokenized_line.arr);
 }
 
 void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,

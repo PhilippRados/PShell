@@ -1,4 +1,5 @@
 #include "util.h"
+#include <regex.h>
 
 void clean_stdin(void) {
   int stdin_copy = dup(STDIN_FILENO);
@@ -584,6 +585,7 @@ token_index_arr tokenizeLine(char* line) {
         break;
       }
     }
+    regfree(&re);
   }
   free(copy);
 
