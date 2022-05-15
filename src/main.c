@@ -121,7 +121,7 @@ wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
 
 bool isLastRedirectionInLine(char* line, int current_pos) {
   for (int i = 0; i < strlen(line); i++) {
-    if (line[i] == '*')
+    if (line[i] == '*' || line[i] == '?')
       return false;
   }
   return true;
@@ -196,6 +196,13 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           if (regexec(&re, dir->d_name, 0, NULL, 0) == 0) {
             if (dir->d_name[0] == '.' && !is_dotfile) {
               continue;
+            }
+            for (int j = 0; j < strlen(dir->d_name); j++) {
+              if (dir->d_name[j] == ' ') {
+                // insert escape \\ in front of whitespace
+                insertCharAtPos(dir->d_name, j, '\\');
+                j++;
+              }
             }
             char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
             strcpy(prev_copy, prefix);
@@ -695,7 +702,6 @@ int main(int argc, char* argv[]) {
       int fdin = open(0, O_RDONLY);
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
-        token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
         if (strchr(simple_commands_arr.values[i], '*') != NULL ||
             strchr(simple_commands_arr.values[i], '?') != NULL) {
           if (!replaceWildcards(&simple_commands_arr.values[i])) {
@@ -704,8 +710,7 @@ int main(int argc, char* argv[]) {
           }
         }
         splitted_line = splitByTokens(simple_commands_arr.values[i]);
-        free(token.arr);
-        token = tokenizeLine(simple_commands_arr.values[i]);
+        token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
         stripRedirections(&splitted_line, token);
         free(token.arr);

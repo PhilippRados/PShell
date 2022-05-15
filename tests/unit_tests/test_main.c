@@ -537,6 +537,20 @@ Test(expandWildcardgroups, multiple_asterisks_in_line) {
   free(line);
 }
 
+Test(expandWildcardgroups, escapes_whitespace_in_wildcard_match) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls tests/unit_tests/prop_test_files/*");
+  token_index_arr token = tokenizeLine(line);
+
+  wildcard_groups_arr groups = groupWildcards(line, tokenizeLine(line));
+  wildcard_groups_arr result = expandWildcardgroups(groups);
+  cr_expect(result.len == 1);
+  cr_expect(strcmp(result.arr[0].wildcard_arg, "tests/unit_tests/prop_test_files/with\\ \\ multiple\\ white "
+                                               "tests/unit_tests/prop_test_files/with\\ whitespace ") == 0);
+
+  free(line);
+}
+
 Test(groupWildcards, finds_all_wildcard_groupings) {
   char* line = calloc(512, sizeof(char));
   strcpy(line, "ls sr*/fuz*  *  *file te*&&");

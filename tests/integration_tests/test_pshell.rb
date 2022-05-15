@@ -1149,4 +1149,10 @@ sleep 0.2
 @tty.assert_row(21, "this  another and_another")
 puts "    \u2705 Line with multiple escaped whitespaces and normal ones".encode('utf-8')
 
+# still matches wildcards even with whitespace
+sleep 0.2
+@tty.send_keys(%(ls /root/one*\n))
+@tty.assert_row(21, "'multiple  other'  'multiple  white'")
+puts "    \u2705 Still matches wildcards even with whitespace".encode('utf-8')
+
 @tty.send_keys(%(exit\n))
