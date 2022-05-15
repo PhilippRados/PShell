@@ -155,6 +155,12 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
         char* end = &wildcard_groups.arr[i].wildcard_arg[end_index];
 
         DIR* current_dir = opendir(prefix);
+        if (current_dir == NULL) {
+          // when wrong dir make wildcard empty so that foundAllWildcards is false
+          printf("psh: couldn't open directory: %s\n", prefix);
+          strcpy(wildcard_groups.arr[0].wildcard_arg, "");
+          return wildcard_groups;
+        }
         char* regex = calloc(((end - start) * 2) + 3, sizeof(char));
         char* regex_start = regex;
 
@@ -183,9 +189,6 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           perror("error in compiling regex\n");
         }
         struct dirent* dir;
-        if (current_dir == NULL) {
-          printf("psh: couldn't open directory: %s\n", prefix);
-        }
         removeSlice(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
 
         int concat_index = 0;
