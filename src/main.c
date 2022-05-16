@@ -454,9 +454,9 @@ string_array_token splitLineIntoSimpleCommands(char* line, token_index_arr token
   return result;
 }
 
-string_array splitByTokens(char* line) {
-  token_index_arr token = tokenizeLine(line);
-  removeWhitespaceTokens(&token);
+string_array splitByTokens(char* line, token_index_arr token) {
+  // token_index_arr token = tokenizeLine(line);
+  // removeWhitespaceTokens(&token);
   char** line_arr = calloc(token.len + 1, sizeof(char*));
 
   int start;
@@ -474,86 +474,85 @@ string_array splitByTokens(char* line) {
   }
   line_arr[token.len] = NULL;
   string_array result = {.values = line_arr, .len = token.len};
-  free(token.arr);
+  // free(token.arr);
   return result;
 }
 
-file_redirection_data parseForRedirectionFiles(string_array_token simple_commands_arr) {
-  char** output_names = calloc(simple_commands_arr.len, sizeof(char*));
-  char** input_names = calloc(simple_commands_arr.len, sizeof(char*));
-  char** error_names = calloc(simple_commands_arr.len, sizeof(char*));
-  char** merge_names = calloc(simple_commands_arr.len, sizeof(char*));
-  int* output_append = calloc(simple_commands_arr.len, sizeof(int));
-  int* error_append = calloc(simple_commands_arr.len, sizeof(int));
-  int* merge_append = calloc(simple_commands_arr.len, sizeof(int));
-  bool found_output;
-  bool found_input;
-  bool found_stderr;
-  bool found_merge;
+int getLongestRedirectionFileLen(string_array simple_command, token_index_arr token) {
+  int max = 0;
+  int current_len = 0;
+  for (int i = 0; i < token.len; i++) {
+    current_len = strlen(simple_command.values[i]);
+    if (token.arr[i].token == ARG && current_len > max) {
+      max = current_len;
+    }
+  }
+  return max;
+}
 
-  for (int i = 0; i < simple_commands_arr.len; i++) {
-    token_index_arr token_line = tokenizeLine(simple_commands_arr.values[i]);
-    removeWhitespaceTokens(&token_line);
-    found_input = false;
-    found_output = false;
-    found_stderr = false;
-    found_merge = false;
+file_redirection_data parseForRedirectionFiles(string_array simple_command, token_index_arr token) {
+  int len = getLongestRedirectionFileLen(simple_command, token);
+  char* output_name = calloc(len + 1, sizeof(char));
+  char* input_name = calloc(len + 1, sizeof(char));
+  char* error_name = calloc(len + 1, sizeof(char));
+  char* merge_name = calloc(len + 1, sizeof(char));
+  bool output_append = false;
+  bool error_append = false;
+  bool merge_append = false;
+  bool found_output = false;
+  bool found_input = false;
+  bool found_stderr = false;
+  bool found_merge = false;
 
-    for (int j = token_line.len - 2; j >= 0; j--) {
-      int start = token_line.arr[j + 1].start;
-      int end = token_line.arr[j + 1].end;
-      if (!found_input && token_line.arr[j].token == LESS) {
-        input_names[i] = calloc(end - start + 1, sizeof(char));
-        strncpy(input_names[i], &simple_commands_arr.values[i][start], end - start);
-        found_input = true;
-      }
-      if (!found_stderr && !found_output && !found_merge &&
-          (token_line.arr[j].token == AMP_GREAT || token_line.arr[j].token == AMP_GREATGREAT)) {
-        merge_names[i] = calloc(end - start + 1, sizeof(char));
-        strncpy(merge_names[i], &simple_commands_arr.values[i][start], end - start);
+  for (int j = token.len - 2; j >= 0; j--) {
+    if (!found_input && token.arr[j].token == LESS) {
+      strcpy(input_name, simple_command.values[j + 1]);
+      removeEscapesString(&input_name);
+      found_input = true;
+    }
+    if (!found_stderr && !found_output && !found_merge &&
+        (token.arr[j].token == AMP_GREAT || token.arr[j].token == AMP_GREATGREAT)) {
+      strcpy(merge_name, simple_command.values[j + 1]);
+      removeEscapesString(&merge_name);
+      found_stderr = true;
+      found_output = true;
+      found_merge = true;
+      merge_append = token.arr[j].token == AMP_GREATGREAT ? true : false;
+    }
+    if (token.arr[j].token == GREAT || token.arr[j].token == GREATGREAT) {
+      if (!found_stderr && simple_command.values[j][0] == '2') {
+        strcpy(error_name, simple_command.values[j + 1]);
+        removeEscapesString(&error_name);
         found_stderr = true;
+        error_append = token.arr[j].token == GREATGREAT ? true : false;
+      }
+      if (!found_output && simple_command.values[j][0] != '2') {
+        strcpy(output_name, simple_command.values[j + 1]);
+        removeEscapesString(&output_name);
         found_output = true;
-        found_merge = true;
-        merge_append[i] = token_line.arr[j].token == AMP_GREATGREAT ? true : false;
-      }
-      if (token_line.arr[j].token == GREAT || token_line.arr[j].token == GREATGREAT) {
-        if (!found_stderr && simple_commands_arr.values[i][token_line.arr[j].start] == '2') {
-          error_names[i] = calloc(end - start + 1, sizeof(char));
-          strncpy(error_names[i], &simple_commands_arr.values[i][start], end - start);
-          found_stderr = true;
-          error_append[i] = token_line.arr[j].token == GREATGREAT ? true : false;
-        }
-        if (!found_output && simple_commands_arr.values[i][token_line.arr[j].start] != '2') {
-          output_names[i] = calloc(end - start + 1, sizeof(char));
-          strncpy(output_names[i], &simple_commands_arr.values[i][start], end - start);
-          found_output = true;
-          output_append[i] = token_line.arr[j].token == GREATGREAT ? true : false;
-        }
-      }
-      if (!found_output && j == 0) {
-        output_names[i] = NULL;
-        output_append[i] = false;
-      }
-      if (!found_merge && j == 0) {
-        merge_names[i] = NULL;
-        merge_append[i] = false;
-      }
-      if (!found_stderr && j == 0) {
-        error_names[i] = NULL;
-        error_append[i] = false;
-      }
-      if (!found_input && j == 0) {
-        input_names[i] = NULL;
+        output_append = token.arr[j].token == GREATGREAT ? true : false;
       }
     }
-    free(token_line.arr);
   }
-  return (file_redirection_data){.output_filenames = output_names,
-                                 .input_filenames = input_names,
+  if (!found_output) {
+    output_name = NULL;
+  }
+  if (!found_merge) {
+    merge_name = NULL;
+  }
+  if (!found_stderr) {
+    error_name = NULL;
+  }
+  if (!found_input) {
+    input_name = NULL;
+  }
+
+  return (file_redirection_data){.output_filename = output_name,
+                                 .input_filename = input_name,
                                  .output_append = output_append,
-                                 .stderr_filenames = error_names,
+                                 .stderr_filename = error_name,
                                  .stderr_append = error_append,
-                                 .merge_filenames = merge_names,
+                                 .merge_filename = merge_name,
                                  .merge_append = merge_append};
 }
 
@@ -630,35 +629,35 @@ void free_string_array_token(string_array_token simple_commands) {
   free(simple_commands.token_arr);
 }
 
-void free_file_info(file_redirection_data file_info, int len) {
-  for (int i = 0; i < len; i++) {
-    if (file_info.input_filenames[i] != NULL) {
-      free(file_info.input_filenames[i]);
-    }
-    if (file_info.output_filenames[i] != NULL) {
-      free(file_info.output_filenames[i]);
-    }
-    if (file_info.stderr_filenames[i] != NULL) {
-      free(file_info.stderr_filenames[i]);
-    }
-    if (file_info.merge_filenames[i] != NULL) {
-      free(file_info.merge_filenames[i]);
-    }
-  }
-  free(file_info.merge_append);
-  free(file_info.stderr_append);
-  free(file_info.output_append);
-  free(file_info.input_filenames);
-  free(file_info.output_filenames);
-  free(file_info.stderr_filenames);
-  free(file_info.merge_filenames);
-}
+// void free_file_info(file_redirection_data file_info, int len) {
+//   for (int i = 0; i < len; i++) {
+//     if (file_info.input_filenames[i] != NULL) {
+//       free(file_info.input_filenames[i]);
+//     }
+//     if (file_info.output_filenames[i] != NULL) {
+//       free(file_info.output_filenames[i]);
+//     }
+//     if (file_info.stderr_filenames[i] != NULL) {
+//       free(file_info.stderr_filenames[i]);
+//     }
+//     if (file_info.merge_filenames[i] != NULL) {
+//       free(file_info.merge_filenames[i]);
+//     }
+//   }
+//   free(file_info.merge_append);
+//   free(file_info.stderr_append);
+//   free(file_info.output_append);
+//   free(file_info.input_filenames);
+//   free(file_info.output_filenames);
+//   free(file_info.stderr_filenames);
+//   free(file_info.merge_filenames);
+// }
 
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
   char* line;
-  string_array splitted_line;
+  // string_array splitted_line;
   char dir[PATH_MAX];
   bool loop = true;
   string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
@@ -693,7 +692,6 @@ int main(int argc, char* argv[]) {
     if (tokenized_line.len > 0 && isValidSyntax(tokenized_line)) {
       string_array_token simple_commands_arr = splitLineIntoSimpleCommands(line, tokenized_line);
       replaceAliases(simple_commands_arr.values, simple_commands_arr.len);
-      file_redirection_data file_info = parseForRedirectionFiles(simple_commands_arr);
 
       int pd[2];
       int tmpin = dup(0);
@@ -712,19 +710,20 @@ int main(int argc, char* argv[]) {
             continue;
           }
         }
-        splitted_line = splitByTokens(simple_commands_arr.values[i]);
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
+        string_array splitted_line = splitByTokens(simple_commands_arr.values[i], token);
+        file_redirection_data file_info = parseForRedirectionFiles(splitted_line, token);
         stripRedirections(&splitted_line, token);
-        free(token.arr);
+        // free(token.arr);
         removeEscapesArr(&splitted_line);
         int builtin_index;
 
-        if (file_info.input_filenames[i] != NULL) {
-          if (fileExists(file_info.input_filenames[i])) {
-            fdin = open(file_info.input_filenames[i], O_RDONLY);
+        if (file_info.input_filename != NULL) {
+          if (fileExists(file_info.input_filename)) {
+            fdin = open(file_info.input_filename, O_RDONLY);
           } else {
-            printf("no such file %s\n", file_info.input_filenames[i]);
+            printf("no such file %s\n", file_info.input_filename);
             continue;
           }
         } else if (simple_commands_arr.token_arr[i] == AMP_CMD) {
@@ -757,18 +756,16 @@ int main(int argc, char* argv[]) {
 
           dup2(fdin, STDIN_FILENO);
           close(fdin);
-          if (file_info.merge_filenames[i] != NULL) {
-            fdout = file_info.merge_append[i]
-                        ? open(file_info.merge_filenames[i], O_RDWR | O_CREAT | O_APPEND, 0666)
-                        : open(file_info.merge_filenames[i], O_RDWR | O_CREAT | O_TRUNC, 0666);
+          if (file_info.merge_filename != NULL) {
+            fdout = file_info.merge_append ? open(file_info.merge_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
+                                           : open(file_info.merge_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
             dup2(fdout, STDOUT_FILENO);
             dup2(fdout, STDERR_FILENO);
             close(fdout);
           } else {
-            if (file_info.output_filenames[i] != NULL) {
-              fdout = file_info.output_append[i]
-                          ? open(file_info.output_filenames[i], O_RDWR | O_CREAT | O_APPEND, 0666)
-                          : open(file_info.output_filenames[i], O_RDWR | O_CREAT | O_TRUNC, 0666);
+            if (file_info.output_filename != NULL) {
+              fdout = file_info.output_append ? open(file_info.output_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
+                                              : open(file_info.output_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
             } else if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i + 1] == PIPE_CMD) {
               pipe(pd);
               fdout = pd[1];
@@ -776,10 +773,9 @@ int main(int argc, char* argv[]) {
             } else {
               fdout = dup(tmpout);
             }
-            if (file_info.stderr_filenames[i] != NULL) {
-              fderr = file_info.stderr_append[i]
-                          ? open(file_info.stderr_filenames[i], O_RDWR | O_CREAT | O_APPEND, 0666)
-                          : open(file_info.stderr_filenames[i], O_RDWR | O_CREAT | O_TRUNC, 0666);
+            if (file_info.stderr_filename != NULL) {
+              fderr = file_info.stderr_append ? open(file_info.stderr_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
+                                              : open(file_info.stderr_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
             } else {
               fderr = dup(tmperr);
             }
@@ -810,7 +806,7 @@ int main(int argc, char* argv[]) {
       close(tmpin);
       close(tmpout);
       close(tmperr);
-      free_file_info(file_info, simple_commands_arr.len);
+      // free_file_info(file_info, simple_commands_arr.len);
       free_string_array_token(simple_commands_arr);
     } else {
       if (!isOnlyDelimeter(line, ' ')) {

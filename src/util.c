@@ -522,22 +522,22 @@ token_index_arr tokenizeLine(char* line) {
   int retval = 0;
   regex_t re;
   regmatch_t rm[ENUM_LEN];
-  char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[ ]*([_A-Za-z0-9.\\-\\/]+)";
-  char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
-  char* quoted_args = "(\'[^\n\']*\')";
-  char* line_token = "^[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[ \n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|(&&)|&&[ "
-                     "\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* quoted_args = "(\'[^\']*\')";
   char* whitespace = "(\\\\[ ])|([ ]+)";
+  char* filenames = "([12]?>{2}|[12]?>|<|&>|&>>)[\t]*([^\n\t*?><]+)";
+  char* redirection = "([12]?>{2})|([12]?>)|(<)|(&>)|(&>>)";
+  char* line_token = "^[\n\t]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|\\|[\t\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)|(\\|)|(&&)|&&["
+                     "\t\n]*([_A-Za-z0-9.\\-\\/\\*\\?]+)";
   char* wildcards = "(\\*)|(\\?)";
-  char* only_args = "([^\t\n]+)";
-  char* regexes[] = {filenames, redirection, quoted_args, line_token, whitespace, wildcards, only_args};
-  regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 2, .token_index_inc = 12},
-                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 5},
-                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 13},
-                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 0},
-                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 9},
-                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11},
-                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 13}};
+  char* only_args = "([^\t\n\f]+)";
+  char* regexes[] = {quoted_args, whitespace, filenames, redirection, line_token, wildcards, only_args};
+  regex_loop_struct regex_info[] = {{.fill_char = '\n', .loop_start = 1, .token_index_inc = 13}, // quoted_args
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 9},  // whitespace
+                                    {.fill_char = '\n', .loop_start = 2, .token_index_inc = 12}, // filenames(args)
+                                    {.fill_char = '\n', .loop_start = 1, .token_index_inc = 5},  // redirection
+                                    {.fill_char = '\f', .loop_start = 1, .token_index_inc = 0},  // line-token
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 11}, // wildcards
+                                    {.fill_char = '\t', .loop_start = 1, .token_index_inc = 13}}; // args
   char* start;
   char* end;
   int j = 0;
@@ -548,7 +548,7 @@ token_index_arr tokenizeLine(char* line) {
     if (regcomp(&re, regexes[k], REG_EXTENDED) != 0) {
       perror("Error in compiling regex\n");
     }
-    if (k == 5) {
+    if (k == 2) {
       // change back escaped whitespaces
       for (int l = 0; l < strlen(copy); l++) {
         if (copy[l] == '\f') {
@@ -564,7 +564,7 @@ token_index_arr tokenizeLine(char* line) {
           if (rm[i].rm_so != -1) {
             start = copy + rm[i].rm_so;
             end = copy + rm[i].rm_eo;
-            if (k == 4 && i == 1) {
+            if (k == 1 && i == 1) {
               // matched escape-whitespace
               while (start < end) {
                 *start++ = '\f'; // overwrite with random char to recognize in next regex and change back

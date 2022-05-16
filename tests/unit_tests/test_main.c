@@ -424,7 +424,7 @@ Test(splitByToken, splitByWhitespaceToken) {
   token_index arr2 = {.token = ARG, .start = 3, .end = 5};
   token_index arr[] = {arr1, arr2};
   token_index_arr token = {.arr = arr, .len = 2};
-  string_array result = splitByTokens(line);
+  string_array result = splitByTokens(line, token);
 
   cr_expect(result.len == 2);
   cr_expect(strcmp(result.values[0], "ls") == 0);
@@ -436,27 +436,38 @@ Test(splitByToken, split_only_token_also_with_multiple_whitespace) {
   token_index arr1 = {.token = CMD, .start = 4, .end = 7};
   token_index arr[] = {arr1};
   token_index_arr token = {.arr = arr, .len = 1};
-  string_array result = splitByTokens(line);
+  string_array result = splitByTokens(line, token);
 
   cr_expect(result.len == 1);
   cr_expect(strcmp(result.values[0], "bat") == 0);
 }
 
 Test(parseForRedirectionFiles, removes_all_redirections_in_split) {
-  enum token arr[] = {};
   char* simple_cmd1 = ">log.txt   bat";
+  token_index arr1 = {.token = GREAT, .start = 0, .end = 1};
+  token_index arr2 = {.token = ARG, .start = 1, .end = 8};
+  token_index arr3 = {.token = CMD, .start = 11, .end = 14};
+  token_index t1[] = {arr1, arr2, arr3};
+  token_index_arr token1 = {.arr = t1, .len = 3};
   char* simple_cmd2 = " < fl.txt cmd arg";
-  char* simple_commands[] = {simple_cmd1, simple_cmd2};
+  token_index arr4 = {.token = LESS, .start = 1, .end = 2};
+  token_index arr5 = {.token = ARG, .start = 3, .end = 9};
+  token_index arr6 = {.token = CMD, .start = 11, .end = 14};
+  token_index arr7 = {.token = ARG, .start = 16, .end = 19};
+  token_index t2[] = {arr4, arr5, arr6, arr7};
+  token_index_arr token2 = {.arr = t2, .len = 4};
+  string_array split1 = splitByTokens(simple_cmd1, token1);
+  string_array split2 = splitByTokens(simple_cmd2, token2);
 
-  string_array_token simple_commands_arr = {.len = 2, .values = simple_commands, .token_arr = arr};
-  file_redirection_data result = parseForRedirectionFiles(simple_commands_arr);
+  file_redirection_data result1 = parseForRedirectionFiles(split1, token1);
+  file_redirection_data result2 = parseForRedirectionFiles(split2, token2);
 
-  cr_expect(strcmp(result.output_filenames[0], "log.txt") == 0);
-  cr_expect_null(result.input_filenames[0]);
-  cr_expect(result.output_append[0] == false);
-  cr_expect_null(result.output_filenames[1]);
-  cr_expect(strcmp(result.input_filenames[1], "fl.txt") == 0);
-  cr_expect(result.output_append[1] == false);
+  cr_expect(strcmp(result1.output_filename, "log.txt") == 0);
+  cr_expect_null(result1.input_filename);
+  cr_expect(result1.output_append == false);
+  cr_expect_null(result2.output_filename);
+  cr_expect(strcmp(result2.input_filename, "fl.txt") == 0);
+  cr_expect(result2.output_append == false);
 }
 
 Test(expandWildcardgroups, replace_wildcard_astrisk_when_single_match) {

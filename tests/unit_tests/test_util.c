@@ -181,7 +181,429 @@ Test(removeSlice, remove_nothing_cursor_end_of_current_word) {
 
   removeSlice(&word, start, start);
 
-  logger(string, word);
   cr_expect(strcmp(word, "testing if Makefile works") == 0);
   free(word);
+}
+
+Test(tokenizeLine, tokenizes_simple_command) {
+  char* line = "ls arg";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 6);
+}
+
+Test(tokenizeLine, tokenizes_line_with_escaped_whitespace_as_single_arg) {
+  char* line = "ls this_is_\\ one_arg";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 20);
+}
+
+Test(tokenizeLine, tokenizes_line_with_multiple_escaped_whitespace_as_single_arg) {
+  char* line = "ls this_is_\\ \\ \\ one_arg";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 24);
+}
+
+Test(tokenizeLine, tokenizes_complex_command_with_escapes) {
+  char* line = "echo this\\ is&&echo this\\ is";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 7);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 4);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 4);
+  cr_expect(result_arr[1].end == 5);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 5);
+  cr_expect(result_arr[2].end == 13);
+  cr_expect(result_arr[3].token == AMPAMP);
+  cr_expect(result_arr[3].start == 13);
+  cr_expect(result_arr[3].end == 15);
+  cr_expect(result_arr[4].token == AMP_CMD);
+  cr_expect(result_arr[4].start == 15);
+  cr_expect(result_arr[4].end == 19);
+  cr_expect(result_arr[5].token == WHITESPACE);
+  cr_expect(result_arr[5].start == 19);
+  cr_expect(result_arr[5].end == 20);
+  cr_expect(result_arr[6].token == ARG);
+  cr_expect(result_arr[6].start == 20);
+  cr_expect(result_arr[6].end == 28);
+}
+
+Test(tokenizeLine, tokenizes_everything_in_quotes_as_arg) {
+  char* line = "ls 'this is one big arg'";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 24);
+}
+
+Test(tokenizeLine, can_seperate_multiple_quoted_args_in_same_line) {
+  char* line = "ls 'this is one big arg'&&ls 'this_another'";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 7);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 24);
+  cr_expect(result_arr[3].token == AMPAMP);
+  cr_expect(result_arr[3].start == 24);
+  cr_expect(result_arr[3].end == 26);
+  cr_expect(result_arr[4].token == AMP_CMD);
+  cr_expect(result_arr[4].start == 26);
+  cr_expect(result_arr[4].end == 28);
+  cr_expect(result_arr[5].token == WHITESPACE);
+  cr_expect(result_arr[5].start == 28);
+  cr_expect(result_arr[5].end == 29);
+  cr_expect(result_arr[6].token == ARG);
+  cr_expect(result_arr[6].start == 29);
+  cr_expect(result_arr[6].end == 43);
+}
+
+Test(tokenizeLine, tokenizes_command_with_too_much_whitespace) {
+  char* line = "   ls  arg_s   ";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 5);
+  cr_expect(result_arr[0].token == WHITESPACE);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 3);
+  cr_expect(result_arr[1].token == CMD);
+  cr_expect(result_arr[1].start == 3);
+  cr_expect(result_arr[1].end == 5);
+  cr_expect(result_arr[2].token == WHITESPACE);
+  cr_expect(result_arr[2].start == 5);
+  cr_expect(result_arr[2].end == 7);
+  cr_expect(result_arr[3].token == ARG);
+  cr_expect(result_arr[3].start == 7);
+  cr_expect(result_arr[3].end == 12);
+  cr_expect(result_arr[4].token == WHITESPACE);
+  cr_expect(result_arr[4].start == 12);
+  cr_expect(result_arr[4].end == 15);
+}
+
+Test(tokenizeLine, tokenizes_command_with_too_much_whitespace_and_pipe) {
+  char* line = "   ls  arg_s   | next_cmd  flag=some";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 10);
+  cr_expect(result_arr[0].token == WHITESPACE);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 3);
+  cr_expect(result_arr[1].token == CMD);
+  cr_expect(result_arr[1].start == 3);
+  cr_expect(result_arr[1].end == 5);
+  cr_expect(result_arr[2].token == WHITESPACE);
+  cr_expect(result_arr[2].start == 5);
+  cr_expect(result_arr[2].end == 7);
+  cr_expect(result_arr[3].token == ARG);
+  cr_expect(result_arr[3].start == 7);
+  cr_expect(result_arr[3].end == 12);
+  cr_expect(result_arr[4].token == WHITESPACE);
+  cr_expect(result_arr[4].start == 12);
+  cr_expect(result_arr[4].end == 15);
+  cr_expect(result_arr[5].token == PIPE);
+  cr_expect(result_arr[5].start == 15);
+  cr_expect(result_arr[5].end == 16);
+  cr_expect(result_arr[6].token == WHITESPACE);
+  cr_expect(result_arr[6].start == 16);
+  cr_expect(result_arr[6].end == 17);
+  cr_expect(result_arr[7].token == PIPE_CMD);
+  cr_expect(result_arr[7].start == 17);
+  cr_expect(result_arr[7].end == 25);
+  cr_expect(result_arr[8].token == WHITESPACE);
+  cr_expect(result_arr[8].start == 25);
+  cr_expect(result_arr[8].end == 27);
+  cr_expect(result_arr[9].token == ARG);
+  cr_expect(result_arr[9].start == 27);
+  cr_expect(result_arr[9].end == 36);
+}
+
+Test(tokenizeLine, only_command_and_pipe_cmd) {
+  char* line = "ls|next_cmd";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == PIPE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == PIPE_CMD);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 11);
+}
+
+Test(tokenizeLine, command_and_pipe_cmd_multiple_args) {
+  char* line = "ls|next_cmd uwe test";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 7);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == PIPE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == PIPE_CMD);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 11);
+}
+
+Test(tokenizeLine, first_token_great_redirection) {
+  char* line = ">file";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 2);
+  cr_expect(result_arr[0].token == GREAT);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 1);
+  cr_expect(result_arr[1].token == ARG);
+  cr_expect(result_arr[1].start == 1);
+  cr_expect(result_arr[1].end == 5);
+}
+
+Test(tokenizeLine, first_token_greatgreat_redirection) {
+  char* line = ">>file";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 2);
+  cr_expect(result_arr[0].token == GREATGREAT);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == ARG);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 6);
+}
+
+Test(tokenizeLine, first_token_greatgreat_redirection_prefixed_with_fd) {
+  char* line = "1>>   file";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 3);
+  cr_expect(result_arr[0].token == GREATGREAT);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 3);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 3);
+  cr_expect(result_arr[1].end == 6);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 6);
+  cr_expect(result_arr[2].end == 10);
+}
+
+Test(tokenizeLine, multiple_redirections_with_ampamp) {
+  char* line = "<log.txt   bat&& > fl.txt cmd arg";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 13);
+  cr_expect(result_arr[0].token == LESS);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 1);
+  cr_expect(result_arr[1].token == ARG);
+  cr_expect(result_arr[1].start == 1);
+  cr_expect(result_arr[1].end == 8);
+  cr_expect(result_arr[2].token == WHITESPACE);
+  cr_expect(result_arr[2].start == 8);
+  cr_expect(result_arr[2].end == 11);
+  cr_expect(result_arr[3].token == CMD);
+  cr_expect(result_arr[3].start == 11);
+  cr_expect(result_arr[3].end == 14);
+  cr_expect(result_arr[4].token == AMPAMP);
+  cr_expect(result_arr[4].start == 14);
+  cr_expect(result_arr[4].end == 16);
+  cr_expect(result_arr[5].token == WHITESPACE);
+  cr_expect(result_arr[5].start == 16);
+  cr_expect(result_arr[5].end == 17);
+  cr_expect(result_arr[6].token == GREAT);
+  cr_expect(result_arr[6].start == 17);
+  cr_expect(result_arr[6].end == 18);
+  cr_expect(result_arr[7].token == WHITESPACE);
+  cr_expect(result_arr[7].start == 18);
+  cr_expect(result_arr[7].end == 19);
+  cr_expect(result_arr[8].token == ARG);
+  cr_expect(result_arr[8].start == 19);
+  cr_expect(result_arr[8].end == 25);
+  cr_expect(result_arr[9].token == WHITESPACE);
+  cr_expect(result_arr[9].start == 25);
+  cr_expect(result_arr[9].end == 26);
+  cr_expect(result_arr[10].token == AMP_CMD);
+  cr_expect(result_arr[10].start == 26);
+  cr_expect(result_arr[10].end == 29);
+  cr_expect(result_arr[11].token == WHITESPACE);
+  cr_expect(result_arr[11].start == 29);
+  cr_expect(result_arr[11].end == 30);
+  cr_expect(result_arr[12].token == ARG);
+  cr_expect(result_arr[12].start == 30);
+  cr_expect(result_arr[12].end == 33);
+}
+
+Test(tokenizeLine, tokenizes_asterisks) {
+  char* line = "ls s* * -a";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 8);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 2);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 2);
+  cr_expect(result_arr[1].end == 3);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 3);
+  cr_expect(result_arr[2].end == 4);
+  cr_expect(result_arr[3].token == ASTERISK);
+  cr_expect(result_arr[3].start == 4);
+  cr_expect(result_arr[3].end == 5);
+  cr_expect(result_arr[4].token == WHITESPACE);
+  cr_expect(result_arr[4].start == 5);
+  cr_expect(result_arr[4].end == 6);
+  cr_expect(result_arr[5].token == ASTERISK);
+  cr_expect(result_arr[5].start == 6);
+  cr_expect(result_arr[5].end == 7);
+  cr_expect(result_arr[6].token == WHITESPACE);
+  cr_expect(result_arr[6].start == 7);
+  cr_expect(result_arr[6].end == 8);
+  cr_expect(result_arr[7].token == ARG);
+  cr_expect(result_arr[7].start == 8);
+  cr_expect(result_arr[7].end == 10);
+}
+
+Test(tokenizeLine, if_asterisks_in_cmd_just_includes_to_command) {
+  char* line = "ls*op -a && so*cmd *  arg*";
+  token_index_arr result = tokenizeLine(line);
+  token_index* result_arr = result.arr;
+
+  cr_expect(result.len == 12);
+  cr_expect(result_arr[0].token == CMD);
+  cr_expect(result_arr[0].start == 0);
+  cr_expect(result_arr[0].end == 5);
+  cr_expect(result_arr[1].token == WHITESPACE);
+  cr_expect(result_arr[1].start == 5);
+  cr_expect(result_arr[1].end == 6);
+  cr_expect(result_arr[2].token == ARG);
+  cr_expect(result_arr[2].start == 6);
+  cr_expect(result_arr[2].end == 8);
+  cr_expect(result_arr[3].token == WHITESPACE);
+  cr_expect(result_arr[3].start == 8);
+  cr_expect(result_arr[3].end == 9);
+  cr_expect(result_arr[4].token == AMPAMP);
+  cr_expect(result_arr[4].start == 9);
+  cr_expect(result_arr[4].end == 11);
+  cr_expect(result_arr[5].token == WHITESPACE);
+  cr_expect(result_arr[5].start == 11);
+  cr_expect(result_arr[5].end == 12);
+  cr_expect(result_arr[6].token == AMP_CMD);
+  cr_expect(result_arr[6].start == 12);
+  cr_expect(result_arr[6].end == 18);
+  cr_expect(result_arr[7].token == WHITESPACE);
+  cr_expect(result_arr[7].start == 18);
+  cr_expect(result_arr[7].end == 19);
+  cr_expect(result_arr[8].token == ASTERISK);
+  cr_expect(result_arr[8].start == 19);
+  cr_expect(result_arr[8].end == 20);
+  cr_expect(result_arr[10].token == ARG);
+  cr_expect(result_arr[10].start == 22);
+  cr_expect(result_arr[10].end == 25);
+  cr_expect(result_arr[11].token == ASTERISK);
+  cr_expect(result_arr[11].start == 25);
+  cr_expect(result_arr[11].end == 26);
+}
+
+Test(tokenizeLine, tokenizes_question_wildcard) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls Do??erfile");
+  token_index_arr token = tokenizeLine(line);
+
+  cr_expect(token.len == 6);
+  cr_expect(token.arr[0].token == CMD);
+  cr_expect(token.arr[1].token == WHITESPACE);
+  cr_expect(token.arr[2].token == ARG);
+  cr_expect(token.arr[3].token == QUESTION);
+  cr_expect(token.arr[4].token == QUESTION);
+  cr_expect(token.arr[5].token == ARG);
+  free(line);
+}
+
+Test(tokenizeLine, redirections_with_whitespace_filename) {
+  char* line = calloc(512, sizeof(char));
+  strcpy(line, "ls 'one whole arg' > some\\ file");
+  token_index_arr token = tokenizeLine(line);
+
+  cr_expect(token.len == 7);
+  logger(integer, &token.len);
+  cr_expect(token.arr[0].token == CMD);
+  cr_expect(token.arr[1].token == WHITESPACE);
+  cr_expect(token.arr[2].token == ARG);
+  cr_expect(token.arr[3].token == WHITESPACE);
+  cr_expect(token.arr[4].token == GREAT);
+  cr_expect(token.arr[5].token == WHITESPACE);
+  cr_expect(token.arr[6].token == ARG);
+  for (int i = 0; i < token.len; i++) {
+    logger(integer, &token.arr[i].token);
+    logger(string, "|");
+  }
+  logger(string, "\n");
+  free(line);
 }
