@@ -248,7 +248,7 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
         regex = createRegex(regex, start, end);
         regex_t re;
         if (regcomp(&re, regex, REG_EXTENDED) != 0) {
-          perror("error in compiling regex\n");
+          perror("regex");
         }
 
         removeSlice(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
@@ -257,7 +257,7 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
         DIR* current_dir = opendir(prefix);
         if (current_dir == NULL) {
           // when wrong dir make wildcard empty so that foundAllWildcards is false
-          printf("psh: couldn't open directory: %s\n", prefix);
+          fprintf(stderr, "psh: couldn't open directory: %s\n", prefix);
           strcpy(wildcard_groups.arr[0].wildcard_arg, "");
           return wildcard_groups;
         }
@@ -291,7 +291,7 @@ int runChildProcess(string_array splitted_line) {
   if (pid == 0) {
     int error = execvp(splitted_line.values[0], splitted_line.values);
     if (error) {
-      printf("couldn't find command %s\n", splitted_line.values[0]);
+      fprintf(stderr, "couldn't find command %s\n", splitted_line.values[0]);
     }
   } else {
     return pid;
@@ -362,7 +362,7 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history, strin
   free(file_path);
 
   if (file_to_write == NULL) {
-    logger(string, "error\n");
+    fprintf(stderr, "psh: can't open /.psh_history\n");
     return;
   }
 
@@ -379,12 +379,12 @@ void writeSessionCommandsToGlobalHistoryFile(string_array command_history, strin
 void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char* dir) {
   if (splitted_line.len == 2) {
     if (chdir(splitted_line.values[1]) == -1) {
-      printf("cd: %s: No such file or directory\n", splitted_line.values[1]);
+      fprintf(stderr, "cd: %s: no such file or directory\n", splitted_line.values[1]);
     }
   } else if (splitted_line.len > 2) {
-    printf("Too many arguments\n");
+    fprintf(stderr, "cd: too many arguments\n");
   } else {
-    printf("Usage: cd [path]\n");
+    printf("usage: cd [path]\n");
   }
 }
 
@@ -438,7 +438,7 @@ bool isValidSyntax(token_index_arr tokenized_line) {
                        "((6|7|8|9|10)14)*(14)*((6|7|8|9|10)14)*)*)?";
 
   if (regcomp(&re, valid_syntax, REG_EXTENDED) != 0) {
-    perror("error in compiling regex\n");
+    perror("psh:");
   }
   if (regexec(&re, string_rep, 1, rm, 0) == 0 && rm->rm_eo - rm->rm_so == strlen(string_rep)) {
     result = true;
@@ -542,7 +542,7 @@ file_redirection_data parseForRedirectionFiles(string_array simple_command, toke
     }
     if (token.arr[j].token == GREAT || token.arr[j].token == GREATGREAT) {
       if (!found_stderr && simple_command.values[j][0] == '2') {
-        output_name = calloc(strlen(simple_command.values[j + 1]) + 1, sizeof(char));
+        error_name = calloc(strlen(simple_command.values[j + 1]) + 1, sizeof(char));
         strcpy(error_name, simple_command.values[j + 1]);
         removeEscapesString(&error_name);
         found_stderr = true;
@@ -708,7 +708,7 @@ bool wildcardLogic(string_array_token simple_commands_arr, int* fdout, int* fder
       close(*fderr);
       dup2(*fdout, STDOUT_FILENO);
       close(*fdout);
-      printf("psh: no wildcard matches found\n");
+      fprintf(stderr, "psh: no wildcard matches found\n");
       return false;
     }
   }
@@ -825,7 +825,7 @@ int main(int argc, char* argv[]) {
             if ((pid = fork()) == 0) {
               int error = execvp(splitted_line.values[0], splitted_line.values);
               if (error) {
-                printf("couldn't find command %s\n", splitted_line.values[0]);
+                fprintf(stderr, "psh: couldn't find command %s\n", splitted_line.values[0]);
               }
             }
 
@@ -846,7 +846,7 @@ int main(int argc, char* argv[]) {
       free_string_array_token(simple_commands_arr);
     } else {
       if (!isOnlyDelimeter(line, ' ')) {
-        printf("Syntax Error\n");
+        fprintf(stderr, "psh: syntax error\n");
       }
     }
     free(tokenized_line.arr);

@@ -592,7 +592,6 @@ Test(tokenizeLine, redirections_with_whitespace_filename) {
   token_index_arr token = tokenizeLine(line);
 
   cr_expect(token.len == 7);
-  logger(integer, &token.len);
   cr_expect(token.arr[0].token == CMD);
   cr_expect(token.arr[1].token == WHITESPACE);
   cr_expect(token.arr[2].token == ARG);
@@ -600,10 +599,5 @@ Test(tokenizeLine, redirections_with_whitespace_filename) {
   cr_expect(token.arr[4].token == GREAT);
   cr_expect(token.arr[5].token == WHITESPACE);
   cr_expect(token.arr[6].token == ARG);
-  for (int i = 0; i < token.len; i++) {
-    logger(integer, &token.arr[i].token);
-    logger(string, "|");
-  }
-  logger(string, "\n");
   free(line);
 }

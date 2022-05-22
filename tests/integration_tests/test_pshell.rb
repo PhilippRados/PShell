@@ -15,7 +15,7 @@ sleep 0.2
 @tty.send_keys(%(\n))
 
 @tty.assert_row(1, '/pshell ❱ tes')
-@tty.assert_row(2, "couldn't find command tes")
+@tty.assert_row(2, "psh: couldn't find command tes")
 
 puts "    \u2705 Basic I/O".encode('utf-8')
 
@@ -132,8 +132,8 @@ end
 @tty.send_keys(%(\n))
 @tty.assert_row(12, '/ ❱ llllllllllllllllllllllllllllllllllll')
 @tty.assert_row(13, 'lllllllllll')
-@tty.assert_row(14, "couldn't find command llllllllllllllllll")
-@tty.assert_row(15, 'lllllllllllllllllllllllllllll')
+@tty.assert_row(14, "psh: couldn't find command lllllllllllll")
+@tty.assert_row(15, 'llllllllllllllllllllllllllllllllll')
 
 puts "    \u2705 Output gets shown below line even when cursor on first row".encode('utf-8')
 
@@ -798,7 +798,7 @@ puts 'CHECKS IF VALID SHELL SYNTAX'
 sleep 0.2
 @tty.send_keys(%(|  ls\n))
 @tty.assert_row(20, '/ ❱ |  ls')
-@tty.assert_row(21, 'Syntax Error')
+@tty.assert_row(21, 'psh: syntax error')
 
 puts "    \u2705 Doesnt execute if line starts with pipe".encode('utf-8')
 
@@ -806,7 +806,7 @@ puts "    \u2705 Doesnt execute if line starts with pipe".encode('utf-8')
 sleep 0.2
 @tty.send_keys(%(ls|\n))
 @tty.assert_row(20, '/ ❱ ls|')
-@tty.assert_row(21, 'Syntax Error')
+@tty.assert_row(21, 'psh: syntax error')
 
 puts "    \u2705 Doesnt execute if line ends with pipe".encode('utf-8')
 
@@ -814,7 +814,7 @@ puts "    \u2705 Doesnt execute if line ends with pipe".encode('utf-8')
 sleep 0.2
 @tty.send_keys(%(ls||   cmd\n))
 @tty.assert_row(20, '/ ❱ ls||   cmd')
-@tty.assert_row(21, 'Syntax Error')
+@tty.assert_row(21, 'psh: syntax error')
 
 puts "    \u2705 Doesnt execute if multiple pipes consecutively".encode('utf-8')
 
@@ -1020,27 +1020,27 @@ puts 'WILDCARD MATCHING - ASTERISK'
 @tty.send_keys(%(\n))
 sleep 0.2
 @tty.send_keys(%(ls*  arg\n))
-@tty.assert_row(9, '/pshell ❱ ls*  arg')
-@tty.assert_row(10, "couldn't find command ls*")
+@tty.assert_row(10, '/pshell ❱ ls*  arg')
+@tty.assert_row(11, "psh: couldn't find command ls*")
 puts "    \u2705 Asterisk doesnt match if in cmd".encode('utf-8')
 
 # expands simple file
 sleep 0.2
 @tty.send_keys(%(echo Doc*\n))
-@tty.assert_row(13, 'Dockerfile')
+@tty.assert_row(14, 'Dockerfile')
 puts "    \u2705 Expands simple file".encode('utf-8')
 
 # finds directory matches in parent dir
 sleep 0.2
 @tty.send_keys(%(echo ../b*\n))
-@tty.assert_row(15, '/pshell ❱ echo ../b*')
-@tty.assert_row(16, '../bin ../boot ../bz_bins')
+@tty.assert_row(16, '/pshell ❱ echo ../b*')
+@tty.assert_row(17, '../bin ../boot ../bz_bins')
 puts "    \u2705 Finds directory matches in parent dir".encode('utf-8')
 
 # multiple wildcard-matches in same arg
 sleep 0.2
 @tty.send_keys(%(echo ../bi*/*egrep\n))
-@tty.assert_row(19, '../bin/egrep ../bin/bzegrep ../bin/zegre')
+@tty.assert_row(20, '../bin/egrep ../bin/bzegrep ../bin/zegre')
 puts "    \u2705 Multiple wildcard-matches in same arg".encode('utf-8')
 
 # multiple wildcard-matches in same line
@@ -1096,7 +1096,7 @@ puts 'ARGUMENT IN QUOTES'
 # when arg in quotes then seen as single arg
 sleep 0.2
 @tty.send_keys(%(cd 'this is the arg'\n))
-@tty.assert_row(20, 'cd: this is the arg: No such file or dir')
+@tty.assert_row(20, 'cd: this is the arg: no such file or dir')
 puts "    \u2705 When arg in quotes then seen as single arg".encode('utf-8')
 
 puts 'WHITESPACE ESCAPED'

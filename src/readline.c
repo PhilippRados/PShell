@@ -141,7 +141,7 @@ bool typedLetter(line_data* line_info) {
   } else if ((strlen(line_info->line) * sizeof(char) + 1) >= line_info->size) {
     char* tmp;
     if ((tmp = realloc(line_info->line, 1.5 * line_info->size)) == NULL) {
-      perror("realloc");
+      perror("psh:");
     } else {
       line_info->line = tmp;
       line_info->size *= 1.5;
@@ -369,7 +369,7 @@ void printTokenizedLine(line_data line_info, token_index_arr tokenized_line, bui
       break;
     }
     default: {
-      perror("invalid input\n");
+      fprintf(stderr, "psh: invalid input\n");
       break;
     }
     }
