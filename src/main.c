@@ -127,32 +127,132 @@ bool isLastRedirectionInLine(char* line, int current_pos) {
   return true;
 }
 
+char* createRegex(char* regex, char* start, char* end) {
+  char* regex_start = regex;
+  *regex++ = '^';
+  while (start < end) {
+    if (*start == '*') {
+      *regex++ = '.';
+      *regex++ = '*';
+      start++;
+    } else if (*start == '?') {
+      *regex++ = '.';
+      start++;
+    } else if (*start == '.') {
+      *regex++ = '\\';
+      *regex++ = '.';
+      start++;
+    } else {
+      *regex++ = *start++;
+    }
+  }
+  *regex++ = '$';
+
+  return regex_start;
+}
+
+int calculateEndIndex(wildcard_groups_arr wildcard_groups, int j, int i) {
+  int end_index = j + 1;
+
+  for (; end_index < strlen(wildcard_groups.arr[i].wildcard_arg) &&
+         wildcard_groups.arr[i].wildcard_arg[end_index] != '/' &&
+         wildcard_groups.arr[i].wildcard_arg[end_index] != ' ';
+       end_index++)
+    ;
+
+  return end_index;
+}
+
+void insertIfMatch(wildcard_groups_arr* wildcard_groups, char* prefix, DIR* current_dir, regex_t* re,
+                   int concat_index, bool is_dotfile, int i, int j) {
+  struct dirent* dir;
+  int start_index = 0;
+
+  while ((dir = readdir(current_dir)) != NULL) {
+    if (regexec(re, dir->d_name, 0, NULL, 0) == 0) {
+      if (dir->d_name[0] == '.' && !is_dotfile) {
+        continue;
+      }
+      for (int j = 0; j < strlen(dir->d_name); j++) {
+        if (dir->d_name[j] == ' ') {
+          // insert escape \\ in front of whitespace
+          insertCharAtPos(dir->d_name, j, '\\');
+          j++;
+        }
+      }
+      char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
+      strcpy(prev_copy, prefix);
+      char* match = strcat(&prev_copy[concat_index], dir->d_name);
+
+      if (strlen(wildcard_groups->arr[i].wildcard_arg) == 0) {
+        wildcard_groups->arr[i].wildcard_arg =
+            realloc(wildcard_groups->arr[i].wildcard_arg, (strlen(match) + 1) * sizeof(char));
+        strcpy(wildcard_groups->arr[i].wildcard_arg, match);
+      } else {
+        insertStringAtPos(&wildcard_groups->arr[i].wildcard_arg, match, start_index);
+      }
+
+      if (isLastRedirectionInLine(wildcard_groups->arr[i].wildcard_arg, j)) {
+        start_index = strlen(wildcard_groups->arr[i].wildcard_arg);
+        wildcard_groups->arr[i].wildcard_arg =
+            realloc(wildcard_groups->arr[i].wildcard_arg,
+                    (strlen(wildcard_groups->arr[i].wildcard_arg) + 2) * sizeof(char));
+        insertCharAtPos(wildcard_groups->arr[i].wildcard_arg, start_index, ' ');
+        start_index++;
+      }
+      free(prev_copy);
+    }
+  }
+}
+
+int calculateConcatIndex(char* prefix) {
+  int concat_index = 0;
+  for (; concat_index < strlen(prefix) && prefix[concat_index] != '/'; concat_index++)
+    ;
+  concat_index += (prefix[0] == '/') ? 0 : 1;
+
+  return concat_index;
+}
+
+int calculatePrefixEnd(wildcard_groups_arr wildcard_groups, int j, int i) {
+  int prefix_end = j;
+  for (; prefix_end > 0 && wildcard_groups.arr[i].wildcard_arg[prefix_end - 1] != '/'; prefix_end--)
+    ;
+  return prefix_end;
+}
+
+void getPrefix(wildcard_groups_arr wildcard_groups, char* prefix, int i, int prefix_end) {
+  if (wildcard_groups.arr[i].wildcard_arg[0] == '/') {
+    strncpy(prefix, wildcard_groups.arr[i].wildcard_arg, prefix_end);
+  } else {
+    strcpy(prefix, "./");
+    strncpy(&prefix[2], wildcard_groups.arr[i].wildcard_arg, prefix_end);
+  }
+}
+
 wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
   for (int i = 0; i < wildcard_groups.len; i++) {
     for (int j = 0; j < strlen(wildcard_groups.arr[i].wildcard_arg); j++) {
       if (wildcard_groups.arr[i].wildcard_arg[j] == '*' || wildcard_groups.arr[i].wildcard_arg[j] == '?') {
-        int start_index = 0;
-        int prefix_end = j;
-        for (; prefix_end > 0 && wildcard_groups.arr[i].wildcard_arg[prefix_end - 1] != '/'; prefix_end--)
-          ;
-
+        int prefix_end = calculatePrefixEnd(wildcard_groups, j, i);
         char* prefix = calloc(prefix_end + 3, sizeof(char));
-        if (wildcard_groups.arr[i].wildcard_arg[0] == '/') {
-          strncpy(prefix, wildcard_groups.arr[i].wildcard_arg, prefix_end);
-        } else {
-          strcpy(prefix, "./");
-          strncpy(&prefix[2], wildcard_groups.arr[i].wildcard_arg, prefix_end);
-        }
+        getPrefix(wildcard_groups, prefix, i, prefix_end);
+
         char* start = &wildcard_groups.arr[i].wildcard_arg[prefix_end];
         bool is_dotfile = start[0] == '.' ? true : false;
-        int end_index = j + 1;
 
-        for (; end_index < strlen(wildcard_groups.arr[i].wildcard_arg) &&
-               wildcard_groups.arr[i].wildcard_arg[end_index] != '/' &&
-               wildcard_groups.arr[i].wildcard_arg[end_index] != ' ';
-             end_index++)
-          ;
+        int end_index = calculateEndIndex(wildcard_groups, j, i);
         char* end = &wildcard_groups.arr[i].wildcard_arg[end_index];
+
+        char* regex = calloc(((end - start) * 2) + 3, sizeof(char));
+        regex = createRegex(regex, start, end);
+        regex_t re;
+        if (regcomp(&re, regex, REG_EXTENDED) != 0) {
+          perror("error in compiling regex\n");
+        }
+
+        removeSlice(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
+        int concat_index = calculateConcatIndex(prefix);
 
         DIR* current_dir = opendir(prefix);
         if (current_dir == NULL) {
@@ -161,75 +261,9 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           strcpy(wildcard_groups.arr[0].wildcard_arg, "");
           return wildcard_groups;
         }
-        char* regex = calloc(((end - start) * 2) + 3, sizeof(char));
-        char* regex_start = regex;
 
-        *regex++ = '^';
-        while (start < end) {
-          if (*start == '*') {
-            *regex++ = '.';
-            *regex++ = '*';
-            start++;
-          } else if (*start == '?') {
-            *regex++ = '.';
-            start++;
-          } else if (*start == '.') {
-            *regex++ = '\\';
-            *regex++ = '.';
-            start++;
-          } else {
-            *regex++ = *start++;
-          }
-        }
-        *regex++ = '$';
-        regex = regex_start;
+        insertIfMatch(&wildcard_groups, prefix, current_dir, &re, concat_index, is_dotfile, i, j);
 
-        regex_t re;
-        if (regcomp(&re, regex, REG_EXTENDED) != 0) {
-          perror("error in compiling regex\n");
-        }
-        struct dirent* dir;
-        removeSlice(&wildcard_groups.arr[i].wildcard_arg, 0, end_index);
-
-        int concat_index = 0;
-        for (; concat_index < strlen(prefix) && prefix[concat_index] != '/'; concat_index++)
-          ;
-        concat_index += (prefix[0] == '/') ? 0 : 1;
-        while ((dir = readdir(current_dir)) != NULL) {
-          if (regexec(&re, dir->d_name, 0, NULL, 0) == 0) {
-            if (dir->d_name[0] == '.' && !is_dotfile) {
-              continue;
-            }
-            for (int j = 0; j < strlen(dir->d_name); j++) {
-              if (dir->d_name[j] == ' ') {
-                // insert escape \\ in front of whitespace
-                insertCharAtPos(dir->d_name, j, '\\');
-                j++;
-              }
-            }
-            char* prev_copy = calloc(strlen(prefix) + strlen(dir->d_name) + 1, sizeof(char));
-            strcpy(prev_copy, prefix);
-            char* match = strcat(&prev_copy[concat_index], dir->d_name);
-
-            if (strlen(wildcard_groups.arr[i].wildcard_arg) == 0) {
-              wildcard_groups.arr[i].wildcard_arg =
-                  realloc(wildcard_groups.arr[i].wildcard_arg, (strlen(match) + 1) * sizeof(char));
-              strcpy(wildcard_groups.arr[i].wildcard_arg, match);
-            } else {
-              insertStringAtPos(&wildcard_groups.arr[i].wildcard_arg, match, start_index);
-            }
-
-            if (isLastRedirectionInLine(wildcard_groups.arr[i].wildcard_arg, j)) {
-              start_index = strlen(wildcard_groups.arr[i].wildcard_arg);
-              wildcard_groups.arr[i].wildcard_arg =
-                  realloc(wildcard_groups.arr[i].wildcard_arg,
-                          (strlen(wildcard_groups.arr[i].wildcard_arg) + 2) * sizeof(char));
-              insertCharAtPos(wildcard_groups.arr[i].wildcard_arg, start_index, ' ');
-              start_index++;
-            }
-            free(prev_copy);
-          }
-        }
         free(regex);
         free(prefix);
         regfree(&re);
