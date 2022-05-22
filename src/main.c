@@ -653,19 +653,87 @@ void free_string_array_token(string_array_token simple_commands) {
 //   free(file_info.merge_filenames);
 // }
 
-#ifndef TEST
+void resetIO(int* tmpin, int* tmpout, int* tmperr) {
+  dup2(*tmpin, 0);
+  dup2(*tmpout, 1);
+  dup2(*tmperr, 2);
+  close(*tmpin);
+  close(*tmpout);
+  close(*tmperr);
+  *tmpin = dup(0);
+  *tmpout = dup(1);
+  *tmperr = dup(2);
+}
 
-int main(int argc, char* argv[]) {
-  char* line;
-  // string_array splitted_line;
-  char dir[PATH_MAX];
-  bool loop = true;
-  string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
+void outputRedirection(file_redirection_data file_info, int pd[2], int* fdout, int* fdin, int tmpout, int i,
+                       string_array_token simple_commands_arr) {
+  if (file_info.output_filename != NULL) {
+    *fdout = file_info.output_append ? open(file_info.output_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
+                                     : open(file_info.output_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
+  } else if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i + 1] == PIPE_CMD) {
+    pipe(pd);
+    *fdout = pd[1];
+    *fdin = pd[0];
+  } else {
+    *fdout = dup(tmpout);
+  }
+}
+
+void errorRedirection(file_redirection_data file_info, int* fderr, int tmperr) {
+  if (file_info.stderr_filename != NULL) {
+    *fderr = file_info.stderr_append ? open(file_info.stderr_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
+                                     : open(file_info.stderr_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
+  } else {
+    *fderr = dup(tmperr);
+  }
+}
+
+void mergeRedirection(file_redirection_data file_info, int* fdout) {
+  *fdout = file_info.merge_append ? open(file_info.merge_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
+                                  : open(file_info.merge_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
+  dup2(*fdout, STDOUT_FILENO);
+  dup2(*fdout, STDERR_FILENO);
+  close(*fdout);
+}
+
+string_array getPathBins() {
   string_array PATH_ARR = splitString(getenv("PATH"), ':');
   string_array all_files_in_dir = getAllFilesInDir(&PATH_ARR);
   free_string_array(&PATH_ARR);
   string_array removed_dots = removeDots(&all_files_in_dir);
-  string_array PATH_BINS = removeDuplicates(&removed_dots);
+
+  return removeDuplicates(&removed_dots);
+}
+
+bool wildcardLogic(string_array_token simple_commands_arr, int* fdout, int* fderr, int tmpout, int tmperr, int i) {
+  if (strchr(simple_commands_arr.values[i], '*') != NULL || strchr(simple_commands_arr.values[i], '?') != NULL) {
+    if (!replaceWildcards(&simple_commands_arr.values[i])) {
+      *fdout = dup(tmpout);
+      *fderr = dup(tmperr);
+      dup2(*fderr, STDERR_FILENO);
+      close(*fderr);
+      dup2(*fdout, STDOUT_FILENO);
+      close(*fdout);
+      printf("psh: no wildcard matches found\n");
+      return false;
+    }
+  }
+  return true;
+}
+
+bool foundBuiltin(string_array splitted_line, builtins_array BUILTINS, int* builtin_index) {
+  return (splitted_line.len > 0 && (*builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) ? true
+                                                                                                          : false;
+}
+
+#ifndef TEST
+
+int main(int argc, char* argv[]) {
+  char* line;
+  char dir[PATH_MAX];
+  bool loop = true;
+  string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
+  string_array PATH_BINS = getPathBins();
   string_array global_command_history = getAllHistoryCommands();
 
   char* current_dir = getcwd(dir, sizeof(dir));
@@ -703,19 +771,8 @@ int main(int argc, char* argv[]) {
       int fdin = open(0, O_RDONLY);
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
-        if (strchr(simple_commands_arr.values[i], '*') != NULL ||
-            strchr(simple_commands_arr.values[i], '?') != NULL) {
-          if (!replaceWildcards(&simple_commands_arr.values[i])) {
-            fdout = dup(tmpout);
-            fderr = dup(tmperr);
-            dup2(fderr, STDERR_FILENO);
-            close(fderr);
-            dup2(fdout, STDOUT_FILENO);
-            close(fdout);
-            printf("psh: no wildcard matches found\n");
-            // free_string_array_token(simple_commands_arr);
-            continue;
-          }
+        if (!wildcardLogic(simple_commands_arr, &fdout, &fderr, tmpout, tmperr, i)) {
+          continue;
         }
         token_index_arr token = tokenizeLine(simple_commands_arr.values[i]);
         removeWhitespaceTokens(&token);
@@ -734,20 +791,11 @@ int main(int argc, char* argv[]) {
             continue;
           }
         } else if (simple_commands_arr.token_arr[i] == AMP_CMD) {
-          // reset all io
-          dup2(tmpin, 0);
-          dup2(tmpout, 1);
-          dup2(tmperr, 2);
-          close(tmpin);
-          close(tmpout);
-          close(tmperr);
-          tmpin = dup(0);
-          tmpout = dup(1);
-          tmperr = dup(2);
+          resetIO(&tmpin, &tmpout, &tmperr);
         }
-        if (splitted_line.len > 0 && (builtin_index = isBuiltin(splitted_line.values[0], BUILTINS)) != -1) {
+
+        if (foundBuiltin(splitted_line, BUILTINS, &builtin_index)) {
           if (!callBuiltin(splitted_line, BUILTINS.array, builtin_index)) {
-            // free_string_array(&simple_commands_arr);
             free_string_array(&splitted_line);
             loop = false;
             break;
@@ -765,42 +813,25 @@ int main(int argc, char* argv[]) {
           dup2(fdin, STDIN_FILENO);
           close(fdin);
           if (file_info.merge_filename != NULL) {
-            fdout = file_info.merge_append ? open(file_info.merge_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
-                                           : open(file_info.merge_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
-            dup2(fdout, STDOUT_FILENO);
-            dup2(fdout, STDERR_FILENO);
-            close(fdout);
+            mergeRedirection(file_info, &fdout);
           } else {
-            if (file_info.output_filename != NULL) {
-              fdout = file_info.output_append ? open(file_info.output_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
-                                              : open(file_info.output_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
-            } else if (i < simple_commands_arr.len - 1 && simple_commands_arr.token_arr[i + 1] == PIPE_CMD) {
-              pipe(pd);
-              fdout = pd[1];
-              fdin = pd[0];
-            } else {
-              fdout = dup(tmpout);
-            }
-            if (file_info.stderr_filename != NULL) {
-              fderr = file_info.stderr_append ? open(file_info.stderr_filename, O_RDWR | O_CREAT | O_APPEND, 0666)
-                                              : open(file_info.stderr_filename, O_RDWR | O_CREAT | O_TRUNC, 0666);
-            } else {
-              fderr = dup(tmperr);
-            }
+            outputRedirection(file_info, pd, &fdout, &fdin, tmpout, i, simple_commands_arr);
+            errorRedirection(file_info, &fderr, tmperr);
+
             dup2(fderr, STDERR_FILENO);
             close(fderr);
             dup2(fdout, STDOUT_FILENO);
             close(fdout);
           }
-          if (splitted_line.len > 0) {
-            pid = fork();
 
-            if (pid == 0) {
+          if (splitted_line.len > 0) {
+            if ((pid = fork()) == 0) {
               int error = execvp(splitted_line.values[0], splitted_line.values);
               if (error) {
                 printf("couldn't find command %s\n", splitted_line.values[0]);
               }
             }
+
             if (waitpid(pid, &w_status, WUNTRACED | WCONTINUED) == -1) {
               exit(EXIT_FAILURE);
             }
