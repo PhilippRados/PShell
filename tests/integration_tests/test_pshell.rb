@@ -1161,6 +1161,14 @@ sleep 0.2
 @tty.send_keys(%(ls /root/one*/))
 @tty.send_keys(TAB)
 @tty.assert_row(23, "/home ❱ ls /root/one*/")
+@tty.send_keys(%(\n))
 puts "    \u2705 Doesnt do tab-completion when wildcard in arg".encode('utf-8')
+
+puts 'PIPE WITH WILDCARD'
+# when wildcard doesnt match after pipe still shows error on stdout
+sleep 0.2
+@tty.send_keys(%(ls . | cat ma?\n))
+@tty.assert_row(21, "psh: no wildcard matches found")
+puts "    \u2705 when wildcard doesnt match after pipe still shows error on stdout".encode('utf-8')
 
 @tty.send_keys(%(exit\n))

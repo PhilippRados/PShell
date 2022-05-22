@@ -706,7 +706,14 @@ int main(int argc, char* argv[]) {
         if (strchr(simple_commands_arr.values[i], '*') != NULL ||
             strchr(simple_commands_arr.values[i], '?') != NULL) {
           if (!replaceWildcards(&simple_commands_arr.values[i])) {
+            fdout = dup(tmpout);
+            fderr = dup(tmperr);
+            dup2(fderr, STDERR_FILENO);
+            close(fderr);
+            dup2(fdout, STDOUT_FILENO);
+            close(fdout);
             printf("psh: no wildcard matches found\n");
+            // free_string_array_token(simple_commands_arr);
             continue;
           }
         }
@@ -727,6 +734,7 @@ int main(int argc, char* argv[]) {
             continue;
           }
         } else if (simple_commands_arr.token_arr[i] == AMP_CMD) {
+          // reset all io
           dup2(tmpin, 0);
           dup2(tmpout, 1);
           dup2(tmperr, 2);
