@@ -1155,4 +1155,12 @@ sleep 0.2
 @tty.assert_row(21, "'multiple  other'  'multiple  white'")
 puts "    \u2705 Still matches wildcards even with whitespace".encode('utf-8')
 
+puts 'WILDCARD IN TABCOMP'
+# doesnt do tab-completion when wildcard in arg
+sleep 0.2
+@tty.send_keys(%(ls /root/one*/))
+@tty.send_keys(TAB)
+@tty.assert_row(23, "/home ❱ ls /root/one*/")
+puts "    \u2705 Doesnt do tab-completion when wildcard in arg".encode('utf-8')
+
 @tty.send_keys(%(exit\n))

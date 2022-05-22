@@ -58,6 +58,23 @@ string_array concatenateArrays(const string_array one, const string_array two) {
   return concatenated;
 }
 
+bool wildcardInCompletion(token_index_arr token, int line_index) {
+  int current_token_index = 0;
+  for (int i = 0; i < token.len; i++) {
+    if (line_index >= token.arr[i].start && line_index <= token.arr[i].end) {
+      current_token_index = i;
+    }
+  }
+  for (int j = current_token_index; j > 0; j--) {
+    if (token.arr[j].token == WHITESPACE) {
+      break;
+    } else if (token.arr[j].token == ASTERISK || token.arr[j].token == QUESTION) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int firstNonWhitespaceToken(token_index_arr token_line) {
   for (int i = 0; i < token_line.len; i++) {
     if (token_line.arr[i].token != WHITESPACE) {
@@ -77,13 +94,20 @@ void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, 
     return;
 
   token_index_arr tokenized_line = tokenizeLine(line_info->line);
+
+  /* this should also get token when at end of word */
+  token_index current_token = getCurrentToken(*line_info->i, tokenized_line);
+  if (current_token.token != CMD && wildcardInCompletion(tokenized_line, *line_info->i)) {
+    return;
+  }
+
   if (!tabCompBeforeFirstWord(tokenized_line, *line_info->i) &&
-      /* this should also get last token when at end of word */
-      tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, getCurrentToken(*line_info->i, tokenized_line))) {
+      tabLoop(line_info, cursor_pos, PATH_BINS, terminal_size, current_token)) {
     // successful completion
     free(tokenized_line.arr);
     tokenized_line = tokenizeLine(line_info->line);
-    token_index current_token = getCurrentToken(*line_info->i + 1, tokenized_line); /* this gets current token*/
+    current_token =
+        getCurrentToken(*line_info->i + 1, tokenized_line); /* doesnt recognize token when at end of word*/
     *line_info->i = current_token.end;
     line_info->c = -1;
   }
