@@ -155,39 +155,42 @@ void logger(enum logger_type type, void* message) {
 }
 
 coordinates getCursorPos() {
-  char buf[1];
-  char data[64];
-  int y, x;
-  char cmd[] = "\033[6n";
-  coordinates cursor_pos = {.x = -1, .y = -1};
-  struct termios oldattr, newattr;
+  char buf[30] = {0};
+  int ret, i, pow;
+  char ch;
+  coordinates cursor_pos = {.x = 0, .y = 0};
 
-  tcgetattr(STDIN_FILENO, &oldattr);
-  newattr = oldattr;
-  newattr.c_lflag &= ~(ICANON | ECHO);
-  newattr.c_cflag &= ~(CREAD);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
+  struct termios term, restore;
 
-  write(STDIN_FILENO, cmd, sizeof(cmd));
-  read(STDIN_FILENO, buf, 1);
+  tcgetattr(0, &term);
+  tcgetattr(0, &restore);
+  term.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(0, TCSANOW, &term);
 
-  if (*buf == '\033') {
-    read(STDIN_FILENO, buf, 1);
-    if (*buf == '[') {
-      read(STDIN_FILENO, buf, 1);
-      for (int i = 0; *buf != 'R'; i++) {
-        data[i] = *buf;
-        read(STDIN_FILENO, buf, 1);
-      }
-      // check if string matches expected data
-      int valid = sscanf(data, "%d;%d", &y, &x);
-      if (valid == 2) {
-        cursor_pos.x = x;
-        cursor_pos.y = y;
-      }
+  write(1, "\033[6n", 4);
+
+  for (i = 0, ch = 0; ch != 'R'; i++) {
+    ret = read(0, &ch, 1);
+    if (!ret) {
+      tcsetattr(0, TCSANOW, &restore);
+      fprintf(stderr, "psh: error parsing cursor-position\n");
+      return cursor_pos;
     }
+    buf[i] = ch;
   }
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
+
+  if (i < 2) {
+    tcsetattr(0, TCSANOW, &restore);
+    return cursor_pos;
+  }
+
+  for (i -= 2, pow = 1; buf[i] != ';'; i--, pow *= 10)
+    cursor_pos.x += (buf[i] - '0') * pow;
+
+  for (i--, pow = 1; buf[i] != '['; i--, pow *= 10)
+    cursor_pos.y += (buf[i] - '0') * pow;
+
+  tcsetattr(0, TCSANOW, &restore);
   return cursor_pos;
 }
 
