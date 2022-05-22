@@ -313,13 +313,13 @@ bool isInPath(char* line, string_array PATH_BINS) {
   return result;
 }
 
-void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_array BUILTINS,
+void printTokenizedLine(line_data line_info, token_index_arr tokenized_line, builtins_array BUILTINS,
                         string_array PATH_BINS) {
   for (int i = 0; i < tokenized_line.len; i++) {
     int token_start = tokenized_line.arr[i].start;
     int token_end = tokenized_line.arr[i].end;
     char* substring = calloc(token_end - token_start + 1, sizeof(char));
-    strncpy(substring, &line[token_start], token_end - token_start);
+    strncpy(substring, &line_info.line[token_start], token_end - token_start);
 
     switch (tokenized_line.arr[i].token) {
     case (AMP_CMD):
@@ -338,7 +338,7 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
       removeEscapesString(&copy_sub);
 
       autocomplete_array autocomplete = fileComp(copy_sub);
-      if (autocomplete.array.len > 0) {
+      if (autocomplete.array.len > 0 && !wildcardInCompletion(tokenized_line, *line_info.i)) {
         printColor(substring, WHITE, underline);
       } else if (substring[0] == '\'' && substring[strlen(substring) - 1] == '\'') {
         printColor(substring, YELLOW, standard);
@@ -377,9 +377,9 @@ void printTokenizedLine(char* line, token_index_arr tokenized_line, builtins_arr
   }
 }
 
-void printLine(char* line, builtins_array BUILTINS, string_array PATH_BINS) {
-  token_index_arr tokenized_line = tokenizeLine(line);
-  printTokenizedLine(line, tokenized_line, BUILTINS, PATH_BINS);
+void printLine(line_data line_info, builtins_array BUILTINS, string_array PATH_BINS) {
+  token_index_arr tokenized_line = tokenizeLine(line_info.line);
+  printTokenizedLine(line_info, tokenized_line, BUILTINS, PATH_BINS);
   free(tokenized_line.arr);
 }
 
@@ -398,7 +398,7 @@ void render(line_data* line_info, autocomplete_data* autocomplete_info, const st
   printPrompt(directories, CYAN);
 
   if (strlen(line_info->line) > 0) {
-    printLine(line_info->line, BUILTINS, PATH_BINS);
+    printLine(*line_info, BUILTINS, PATH_BINS);
 
     if (autocomplete_info->autocomplete) {
       printf("%s", &autocomplete_info->possible_autocomplete[strlen(line_info->line)]);
