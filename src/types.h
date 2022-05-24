@@ -153,3 +153,9 @@ typedef struct {
   int successful;
   int continue_loop;
 } tab_completion;
+
+typedef struct {
+  char** var_names;
+  char** values;
+  int len;
+} env_var_arr;

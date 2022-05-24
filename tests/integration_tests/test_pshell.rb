@@ -390,7 +390,7 @@ sleep 0.2
 @tty.assert_row(15, '/pshell ❱ ls ../root/.')
 @tty.assert_row(16, '.bashrc       .profile')
 @tty.assert_row(17, '../           ./')
-@tty.assert_row(18, '.psh_history  .gem/')
+@tty.assert_row(18, '.psh_history  .pshrc')
 @tty.assert_cursor_position(22, 15)
 
 puts "    \u2705 Shows dotfiles if first char is dot".encode('utf-8')
@@ -1075,8 +1075,8 @@ puts "    \u2705 Matches when /usr used".encode('utf-8')
 # when starting with . matches dotfiles
 sleep 0.2
 @tty.send_keys(%(echo /root/.*\n))
-@tty.assert_row(20, '/root/.bashrc /root/.profile /root/.. /r')
-@tty.assert_row(21, 'oot/. /root/.psh_history /root/.gem')
+@tty.assert_row(20, 'oot/. /root/.psh_history /root/.pshrc /r')
+@tty.assert_row(21, 'oot/.gem')
 puts "    \u2705 When starting with . matches dotfiles".encode('utf-8')
 
 # when invalid wildcard responds with error

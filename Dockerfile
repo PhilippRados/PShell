@@ -13,6 +13,7 @@ RUN sed 's/def assert_cursor_position(x:, y:)/def assert_cursor_position(x, y)/'
 RUN touch /home/very_long_filename_to_test_shell_behavior
 RUN touch /home/short_file
 RUN touch /bin/very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_very_long_filename_to_test_shell_behavior
+RUN touch ~/.pshrc
 
 WORKDIR "/pshell"
 ENTRYPOINT [ "/bin/bash", "-l", "-c" ]

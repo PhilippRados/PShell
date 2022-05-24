@@ -69,7 +69,7 @@ string_array removeDots(string_array* array) {
   return no_dots_array;
 }
 
-char* joinHistoryFilePath(char* home_dir, char* destination_file) {
+char* joinFilePath(char* home_dir, char* destination_file) {
   char* home_dir_copied = calloc(strlen(home_dir) + strlen(destination_file) + 1, sizeof(char));
   strcpy(home_dir_copied, home_dir);
 
@@ -327,7 +327,7 @@ bool arrCmp(string_array arr1, string_array arr2) {
 string_array getAllHistoryCommands() {
   size_t size = BUFFER * sizeof(char*);
   string_array result = {.len = 0, .values = calloc(BUFFER, sizeof(char*))};
-  char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
+  char* file_path = joinFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_read = fopen(file_path, "r");
   free(file_path);
   char* buf = NULL;
@@ -357,7 +357,7 @@ string_array getAllHistoryCommands() {
 }
 
 void writeSessionCommandsToGlobalHistoryFile(string_array command_history, string_array global_history) {
-  char* file_path = joinHistoryFilePath(getenv("HOME"), "/.psh_history");
+  char* file_path = joinFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_write = fopen(file_path, "a");
   free(file_path);
 
@@ -720,12 +720,61 @@ bool foundBuiltin(string_array splitted_line, builtins_array BUILTINS, int* buil
                                                                                                           : false;
 }
 
+char* parseVarName(char* buf) {
+  char* result = calloc(strlen(buf) + 1, sizeof(char));
+  for (int i = 0; i < strlen(buf) && buf[i] != '='; i++) {
+    result[i] = buf[i];
+  }
+  return result;
+}
+
+env_var_arr parseRcFileForEnv() {
+  char* file_path = joinFilePath(getenv("HOME"), "/.pshrc");
+  FILE* file_to_read = fopen(file_path, "r");
+  free(file_path);
+
+  if (file_to_read == NULL) {
+    fprintf(stderr, "psh: couldn't open rc file");
+    exit(0);
+  }
+  char* buf;
+  size_t buf_size;
+  size_t line_len;
+  char** var_names = calloc(64, sizeof(char*));
+  char** values = calloc(64, sizeof(char*));
+
+  int i = 0;
+  for (; (line_len = getline(&buf, &buf_size, file_to_read)) != -1; i++) {
+    var_names[i] = parseVarName(buf);
+    values[i] = calloc(strlen(buf), sizeof(char));
+    strncpy(values[i], &buf[strlen(var_names[i]) + 2], strlen(buf) - (strlen(var_names[i]) + 4));
+  }
+
+  return (env_var_arr){.len = i, .var_names = var_names, .values = values};
+}
+
+void setRcVars(env_var_arr envs) {
+  for (int i = 0; i < envs.len; i++) {
+    if (envs.values[i][strlen(envs.values[i]) - 1] == '$') {
+      // $ Means concat with already existant VAR
+      envs.values[i][strlen(envs.values[i]) - 1] = '\0';
+      insertCharAtPos(envs.values[i], 0, ':');
+      setenv(envs.var_names[i], joinFilePath(getenv(envs.var_names[i]), envs.values[i]), 1);
+    } else {
+      // can overwrite VAR
+      setenv(envs.var_names[i], envs.values[i], 1);
+    }
+  }
+}
+
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
   char* line;
   char dir[PATH_MAX];
   bool loop = true;
+  env_var_arr ENV = parseRcFileForEnv();
+  setRcVars(ENV);
   string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
   string_array PATH_BINS = getPathBins();
   string_array global_command_history = getAllHistoryCommands();

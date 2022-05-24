@@ -2,7 +2,7 @@
 
 char* getLastTwoDirs(char*);
 string_array removeDots(string_array* array);
-char* joinHistoryFilePath(char* home_dir, char* destination_file);
+char* joinFilePath(char* home_dir, char* destination_file);
 wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcards);
 void removeWhitespaceTokens(token_index_arr* tokenized_line);
 bool isValidSyntax(token_index_arr tokenized_line);
