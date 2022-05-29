@@ -4,6 +4,7 @@ RUN apt update && \
   apt install gcc make ruby tmux -y && \
   gem install ttytest
 
+# have to change lib because of version
 ENV RUBYOPT="-KU -E utf-8:utf-8"
 WORKDIR "/var/lib/gems/2.5.0/gems/ttytest-0.5.0/lib/ttytest"
 RUN sed 's/def assert_cursor_position(x:, y:)/def assert_cursor_position(x, y)/' \

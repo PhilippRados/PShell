@@ -1,6 +1,6 @@
 require 'ttytest'
 
-@tty = TTYtest.new_terminal(%( PS1='$ '  ./src/bin/pshell), width: 40, height: 24)
+@tty = TTYtest.new_terminal(%( PS1='$ '  ./src/bin/psh), width: 40, height: 24)
 
 BACKSPACE = 127.chr
 TAB = 9.chr
@@ -142,7 +142,7 @@ sleep 0.2
 @tty.send_keys(%(cd pshell))
 @tty.send_keys(%(\n))
 sleep 0.2
-@tty.send_keys(%(make)) # arbitrary command to move to last line
+@tty.send_keys(%(ls)) # arbitrary command to move to last line
 @tty.send_keys(%(\n))
 sleep 0.2
 @tty.send_keys(%(kajldasjlsdjalsjdaljdjldasjlas))
@@ -266,11 +266,9 @@ puts "    \u2705 When exiting tab-prompt without selecting comp cursor should be
 # When Tab-completing on last row should shift up and cursor too
 @tty.send_keys(%(\n))
 sleep 0.1
-@tty.send_keys(%(make))
-@tty.send_keys(%(\n))
+@tty.send_keys(%(ls | cat\n))
 sleep 0.1
-@tty.send_keys(%(make))
-@tty.send_keys(%(\n))
+@tty.send_keys(%(ls | cat\n))
 sleep 0.1
 @tty.send_keys(%(lsl))
 @tty.send_keys(TAB)
@@ -326,7 +324,7 @@ sleep 0.2
 @tty.assert_row(15, '/pshell ❱ llllllllllllllllllllllllllllll')
 @tty.assert_row(16, 'lllllllllllllllll')
 @tty.assert_row(17, ' ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-@tty.assert_row(19, ' ❱                             1/13')
+@tty.assert_row(19, ' ❱                             1/14')
 
 puts "    \u2705 When line longer than term fuzzy-finder should still shift bottom of line up".encode('utf-8')
 
@@ -452,7 +450,7 @@ puts "    \u2705 When pressing enter on tab-comp on second row appends to cursor
 sleep 0.2
 @tty.send_keys(%(\n))
 sleep 0.2
-@tty.send_keys(%(make\n))
+@tty.send_keys(%(ls | cat\n))
 sleep 0.2
 @tty.send_keys(%(ls                                             ../))
 
@@ -479,11 +477,11 @@ sleep 0.2
 @tty.send_keys(%(\n))
 sleep 0.2
 @tty.send_keys(%(m))
-@tty.assert_row(23, '/pshell ❱ make')
+@tty.assert_row(23, '/pshell ❱ m')
 @tty.assert_cursor_position(11, 23)
 
 @tty.send_keys(TAB)
-@tty.assert_row(20, '/pshell ❱ make')
+@tty.assert_row(20, '/pshell ❱ m')
 @tty.assert_row(21, 'The list of possible matches is 27 lines')
 @tty.assert_row(22, '. Do you want to print all of them? (y/n')
 @tty.assert_row(23, ')')
@@ -494,7 +492,7 @@ puts "    \u2705 When user tab-completes and too many matches gets prompted".enc
 # When user declines tab-prompt cursor jumps back to original line (even when prompt multiple lines)
 sleep 0.2
 @tty.send_keys(%(n))
-@tty.assert_row(20, '/pshell ❱ make')
+@tty.assert_row(20, '/pshell ❱ m')
 @tty.assert_row(21, '')
 @tty.assert_cursor_position(11, 20)
 
@@ -830,23 +828,23 @@ puts "    \u2705 Able to pipe command output to other command".encode('utf-8')
 
 # Able to concatenate mutliple commands and execute after another
 sleep 0.2
-@tty.send_keys(%(ls ../root &&   cd /pshell && make\n))
-@tty.assert_row(7, '/ ❱ ls ../root &&   cd /pshell && make')
-@tty.assert_row(8, 'another  some_file')
-@tty.assert_row(10, 'Usage:')
+@tty.send_keys(%(ls ../root &&   cd /pshell && make help\n))
+@tty.assert_row(5, '/ ❱ ls ../root &&   cd /pshell && make h')
+@tty.assert_row(7, 'another  some_file')
+@tty.assert_row(9, 'Usage:')
 @tty.assert_row(23, '/pshell ❱')
 
 puts "    \u2705 Able to concatenate mutliple commands and execute after another".encode('utf-8')
 
 # Able to mix concatenation and pipes
 sleep 0.2
-@tty.send_keys(%(ls ../root |   cat && make | sort\n))
-@tty.assert_row(5, '/pshell ❱ ls ../root |   cat && make | s')
-@tty.assert_row(6, 'ort')
-@tty.assert_row(7, 'another')
-@tty.assert_row(8, 'some_file')
-@tty.assert_row(10, '  clean            Cleans up all binary')
-@tty.assert_row(12, '  help             Display this help')
+@tty.send_keys(%(ls ../root |   cat && make help | sort\n))
+@tty.assert_row(4, '/pshell ❱ ls ../root |   cat && make hel')
+@tty.assert_row(5, 'p | sort')
+@tty.assert_row(6, 'another')
+@tty.assert_row(7, 'some_file')
+@tty.assert_row(9, '  clean            Cleans up all binary')
+@tty.assert_row(13, '  help             Display this help')
 @tty.assert_row(23, '/pshell ❱')
 
 puts "    \u2705 Able to mix concatenation and pipes".encode('utf-8')
