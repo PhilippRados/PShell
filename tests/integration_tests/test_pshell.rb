@@ -5,6 +5,7 @@ require 'ttytest'
 BACKSPACE = 127.chr
 TAB = 9.chr
 CTRLF = 6.chr
+CTRLC = 3.chr
 
 puts 'STANDARD TEST'
 
@@ -1167,6 +1168,28 @@ puts 'PIPE WITH WILDCARD'
 sleep 0.2
 @tty.send_keys(%(ls . | cat ma?\n))
 @tty.assert_row(21, "psh: no wildcard matches found")
-puts "    \u2705 when wildcard doesnt match after pipe still shows error on stdout".encode('utf-8')
+puts "    \u2705 When wildcard doesnt match after pipe still shows error on stdout".encode('utf-8')
+
+puts 'CTRL-C SIGNAL'
+# cancels current line if ctrl-c is pressed
+sleep 0.2
+@tty.send_keys(%(ls .))
+@tty.send_keys(CTRLC)
+@tty.assert_row(20, "")
+@tty.assert_row(21, "/home ❱ ls . |cat ma?")
+@tty.assert_row(22, "")
+@tty.assert_row(23, "/home ❱     ")
+puts "    \u2705 Cancels current line if ctrl-c is pressed".encode('utf-8')
+
+# sends default ctrl-c to child-process
+sleep 0.2
+@tty.send_keys(%(sort\n))
+@tty.assert_cursor_position(0, 23)
+sleep 0.5
+@tty.send_keys(CTRLC)
+@tty.assert_row(21, "/home ❱ sort < /in1.txt")
+@tty.assert_row(22, "^C")
+@tty.assert_row(23, "/home ❱     ")
+puts "    \u2705 Sends default ctrl-c to child-process".encode('utf-8')
 
 @tty.send_keys(%(exit\n))

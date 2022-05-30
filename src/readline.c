@@ -422,7 +422,7 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   *cursor_pos = getCursorPos();
   int loop = true;
 
-  while (loop && (line_info->c = getch())) {
+  while (loop && (line_info->c = getch()) != -1) {
     loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
 
     render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,

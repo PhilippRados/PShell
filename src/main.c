@@ -764,6 +764,9 @@ void setRcVars(env_var_arr envs) {
   }
 }
 
+volatile sig_atomic_t ctrlc_hit = false;
+void ctrlCHandler(int sig) { ctrlc_hit = true; }
+
 #ifndef TEST
 
 int main(int argc, char* argv[]) {
@@ -790,12 +793,29 @@ int main(int argc, char* argv[]) {
   CLEAR_SCREEN;
 
   signal(SIGHUP, SIG_DFL); // Stops process when terminal is closed
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(struct sigaction));
 
   while (loop) {
+    ctrlc_hit = false;
     printf("\n");
     printPrompt(last_two_dirs, CYAN);
 
+    // change signal flag to exit even in when blocking func
+    sa.sa_flags = 0;
+    sa.sa_handler = ctrlCHandler;
+    sigaction(SIGINT, &sa, NULL);
+
     line = readLine(PATH_BINS, last_two_dirs, &command_history, global_command_history, BUILTINS);
+    if (ctrlc_hit) {
+      free(line);
+      continue;
+    }
+    // change signal flag to default behaviour for child process
+    sa.sa_flags = SA_RESTART;
+    sa.sa_handler = ctrlCHandler;
+    sigaction(SIGINT, &sa, NULL);
+
     token_index_arr tokenized_line = tokenizeLine(line);
     removeWhitespaceTokens(&tokenized_line);
 
