@@ -728,12 +728,22 @@ char* parseVarName(char* buf) {
 env_var_arr parseRcFileForEnv() {
   char* file_path = joinFilePath(getenv("HOME"), "/.pshrc");
   FILE* file_to_read = fopen(file_path, "r");
-  free(file_path);
 
   if (file_to_read == NULL) {
-    fprintf(stderr, "psh: couldn't open rc file");
-    exit(0);
+    char answer;
+    fprintf(stderr, "psh: no ~/.pshrc file found. Want to create one? [y/n]: ");
+    answer = getchar();
+    getchar(); // skip \n
+    if (answer == 'y') {
+      FILE* file_created = fopen(file_path, "w");
+      fprintf(file_created, "TERM=\"linux\"\nPATH=\"/usr/local/bin/$\"\n");
+      fclose(file_created);
+      file_to_read = fopen(file_path, "r");
+    } else {
+      exit(0);
+    }
   }
+
   char* buf;
   size_t buf_size;
   size_t line_len;
@@ -746,6 +756,8 @@ env_var_arr parseRcFileForEnv() {
     values[i] = calloc(strlen(buf), sizeof(char));
     strncpy(values[i], &buf[strlen(var_names[i]) + 2], strlen(buf) - (strlen(var_names[i]) + 4));
   }
+  free(file_path);
+  fclose(file_to_read);
 
   return (env_var_arr){.len = i, .var_names = var_names, .values = values};
 }

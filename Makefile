@@ -7,6 +7,7 @@ SOURCES = src/main.c src/util.c src/tab_complete.c src/fuzzy_finder.c src/readli
 TEST_SOURCES = tests/unit_tests/test_main.c tests/unit_tests/test_util.c tests/unit_tests/test_fuzzy_finder.c tests/unit_tests/test_tab_complete.c tests/unit_tests/test_readline.c
 test_target = $(basename $(notdir $(TEST_SOURCES)))
 CURRENT_DIR = $(shell pwd)
+# IN_SHELL_LIST = $(shell cat /etc/shells | grep psh)
 
 .SILENT:
 prod: ${SOURCES} ## Compile the producetion shell
