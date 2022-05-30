@@ -10,6 +10,7 @@
 #include <locale.h>
 #include <math.h>
 #include <regex.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

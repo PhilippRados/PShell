@@ -541,7 +541,6 @@ Test(expandWildcardgroups, multiple_asterisks_in_line) {
   cr_expect(result.len == 4);
   cr_expect(strcmp(result.arr[0].wildcard_arg, "src/fuzzy_finder.c src/fuzzy_finder.h ") == 0);
 
-  logger(string, result.arr[1].wildcard_arg);
   cr_expect(strcmp(result.arr[1].wildcard_arg,
                    "Dockerfile Makefile tests README.md log.txt compile_flags.txt LICENSE.txt src ") == 0);
   cr_expect(strcmp(result.arr[2].wildcard_arg, "Dockerfile Makefile ") == 0);

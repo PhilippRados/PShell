@@ -132,7 +132,7 @@ void backspaceLogic(char* line, int* i) {
 }
 
 void logger(enum logger_type type, void* message) {
-  FILE* logfile = fopen("log.txt", "a");
+  FILE* logfile = fopen("/Users/philipprados/Documents/coding/c/pshell/log.txt", "a");
 
   switch (type) {
   case integer: {

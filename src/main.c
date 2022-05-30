@@ -356,24 +356,21 @@ string_array getAllHistoryCommands() {
   return result;
 }
 
-void writeSessionCommandsToGlobalHistoryFile(string_array command_history, string_array global_history) {
+void writeCommandToGlobalHistory(char* cmd, string_array global_history) {
   char* file_path = joinFilePath(getenv("HOME"), "/.psh_history");
   FILE* file_to_write = fopen(file_path, "a");
   free(file_path);
 
   if (file_to_write == NULL) {
-    fprintf(stderr, "psh: can't open /.psh_history\n");
+    fprintf(stderr, "psh: can't open ~/.psh_history\n");
     return;
   }
 
-  for (int i = 0; i < command_history.len; i++) {
-    if (!inArray(command_history.values[i], global_history)) {
-      fprintf(file_to_write, "%s\n", command_history.values[i]);
-    }
+  if (!inArray(cmd, global_history)) {
+    fprintf(file_to_write, "%s\n", cmd);
   }
 
   fclose(file_to_write);
-  free_string_array(&global_history);
 }
 
 void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char* dir) {
@@ -792,6 +789,8 @@ int main(int argc, char* argv[]) {
 
   CLEAR_SCREEN;
 
+  signal(SIGHUP, SIG_DFL); // Stops process when terminal is closed
+
   while (loop) {
     printf("\n");
     printPrompt(last_two_dirs, CYAN);
@@ -898,11 +897,12 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "psh: syntax error\n");
       }
     }
-    free(tokenized_line.arr);
+    writeCommandToGlobalHistory(line, global_command_history);
     pushToCommandHistory(line, &command_history);
+    free(tokenized_line.arr);
     free(line);
   }
-  writeSessionCommandsToGlobalHistoryFile(command_history, global_command_history);
+  free_string_array(&global_command_history);
   free_string_array(&command_history);
   free_string_array(&PATH_BINS);
   free(last_two_dirs);
