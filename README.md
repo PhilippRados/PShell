@@ -20,12 +20,13 @@ A C-shell with integrated fuzzy finder, tab completion and more without curses
 * [Testing](#testing)
 * [Future-Work](#future-work)
 
+
 ## Features
 Tab-completion             | Fuzzy-finder              | Autocompletion
 :-------------------------:|:-------------------------:|:-------------------------:|
-![](https://user-images.githubusercontent.com/60818062/171268726-980055e7-c8fc-43b4-9db6-6d9c37a83927.mov)|![](https://user-images.githubusercontent.com/60818062/171268827-a9d95bc5-e00b-4255-bf2a-da942fff38f9.mov)|![](https://user-images.githubusercontent.com/60818062/171268421-bf8e9eab-589e-4ef3-8959-a96836c57900.mov)|
-Syntax Highlighting | Wildcard-matching
-![](https://user-images.githubusercontent.com/60818062/171268937-d07bf069-ff0e-4b15-b903-d6a32a1bc373.mov)|![](https://user-images.githubusercontent.com/60818062/171269091-98c727f6-b27b-46b3-b16a-2bbd0b77d7b2.mov)|
+![](https://user-images.githubusercontent.com/60818062/171273408-cd3f2384-a7ce-4eeb-b359-85b86843b41f.mov)|![](https://user-images.githubusercontent.com/60818062/171273532-5fb9e2a5-6072-45bb-a283-d3584741d28b.mov)|![](https://user-images.githubusercontent.com/60818062/171273620-4ce829ff-f2c4-4b7e-a027-791c0bd648b4.mov)|
+Wildcard-matching | Syntax highlighting
+![](https://user-images.githubusercontent.com/60818062/171273726-1774d03a-ddbc-4c37-9c18-901f33138fe5.png)|![](https://user-images.githubusercontent.com/60818062/171273732-f4f32544-f140-4f3b-9a96-a0fcc8df77fb.png)|
 ## Setup
 You only need **make** and **gcc** to build. Also your terminal should be capable of displaying unicode characters.
 ```
