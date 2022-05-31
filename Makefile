@@ -10,7 +10,7 @@ CURRENT_DIR = $(shell pwd)
 # IN_SHELL_LIST = $(shell cat /etc/shells | grep psh)
 
 .SILENT:
-prod: ${SOURCES} ## Compile the producetion shell
+prod: ${SOURCES} ## Compile the production shell
 	${CC} ${SOURCES} -o /usr/local/bin/psh -ldl -lm
 
 .SILENT:

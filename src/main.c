@@ -744,14 +744,14 @@ env_var_arr parseRcFileForEnv() {
     }
   }
 
-  char* buf;
-  size_t buf_size;
+  size_t len = 0;
+  char* buf = NULL;
   size_t line_len;
   char** var_names = calloc(64, sizeof(char*));
   char** values = calloc(64, sizeof(char*));
 
   int i = 0;
-  for (; (line_len = getline(&buf, &buf_size, file_to_read)) != -1; i++) {
+  for (; (line_len = getline(&buf, &len, file_to_read)) != -1; i++) {
     var_names[i] = parseVarName(buf);
     values[i] = calloc(strlen(buf), sizeof(char));
     strncpy(values[i], &buf[strlen(var_names[i]) + 2], strlen(buf) - (strlen(var_names[i]) + 4));
