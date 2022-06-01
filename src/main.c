@@ -341,8 +341,13 @@ string_array getAllHistoryCommands() {
 
   while ((line_len = getline(&buf, &buf_size, file_to_read)) != -1) {
     if ((i * sizeof(char*)) >= size) {
-      result.values = realloc(result.values, size * 1.5);
-      size *= 1.5;
+      char** tmp;
+      if ((tmp = realloc(result.values, size * 1.5)) == NULL) {
+        perror("psh:");
+      } else {
+        result.values = tmp;
+        size *= 1.5;
+      }
     }
 
     result.values[i] = calloc(strlen(buf), sizeof(char));
