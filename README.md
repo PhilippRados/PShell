@@ -47,8 +47,8 @@ Besides the basic `&&` to chain multiple commands, `|` to pipe one output to ano
 ##### Fuzzy-finder
 ```bash
 <ctrl-f> to open
-<ESC> to close
-<Enter> to choose proposal
+<ESC>    to close
+<Enter>  to choose proposal
 ```
 ##### Quoted arguments
 ```bash
