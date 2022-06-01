@@ -252,6 +252,10 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           // when wrong dir make wildcard empty so that foundAllWildcards is false
           fprintf(stderr, "psh: couldn't open directory: %s\n", prefix);
           strcpy(wildcard_groups.arr[0].wildcard_arg, "");
+          free(regex);
+          free(prefix);
+          regfree(&re);
+          closedir(current_dir);
           return wildcard_groups;
         }
 
