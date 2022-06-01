@@ -855,7 +855,7 @@ int main(int argc, char* argv[]) {
       int fdout;
       int fderr;
       pid_t pid;
-      int fdin = open(0, O_RDONLY);
+      int fdin = -1;
 
       for (int i = 0; i < simple_commands_arr.len; i++) {
         if (!wildcardLogic(simple_commands_arr, &fdout, &fderr, tmpout, tmperr, i)) {
