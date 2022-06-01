@@ -84,13 +84,6 @@ void removeEscapesArr(string_array* splitted) {
   }
 }
 
-void pipeOutputToFile(char* filename) {
-  int file = open(filename, O_WRONLY | O_CREAT, 0777);
-
-  int file2 = dup2(file, STDOUT_FILENO);
-  close(file);
-}
-
 wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
   wildcard_groups* result = calloc(token.len, sizeof(wildcard_groups));
   int wildcard_index = 0;
@@ -119,7 +112,7 @@ wildcard_groups_arr groupWildcards(char* line, token_index_arr token) {
   return (wildcard_groups_arr){.arr = result, .len = wildcard_index};
 }
 
-bool isLastRedirectionInLine(char* line, int current_pos) {
+bool isLastRedirectionInLine(char* line) {
   for (int i = 0; i < strlen(line); i++) {
     if (line[i] == '*' || line[i] == '?')
       return false;
@@ -164,7 +157,7 @@ int calculateEndIndex(wildcard_groups_arr wildcard_groups, int j, int i) {
 }
 
 void insertIfMatch(wildcard_groups_arr* wildcard_groups, char* prefix, DIR* current_dir, regex_t* re,
-                   int concat_index, bool is_dotfile, int i, int j) {
+                   int concat_index, bool is_dotfile, int i) {
   struct dirent* dir;
   int start_index = 0;
 
@@ -192,7 +185,7 @@ void insertIfMatch(wildcard_groups_arr* wildcard_groups, char* prefix, DIR* curr
         insertStringAtPos(&wildcard_groups->arr[i].wildcard_arg, match, start_index);
       }
 
-      if (isLastRedirectionInLine(wildcard_groups->arr[i].wildcard_arg, j)) {
+      if (isLastRedirectionInLine(wildcard_groups->arr[i].wildcard_arg)) {
         start_index = strlen(wildcard_groups->arr[i].wildcard_arg);
         wildcard_groups->arr[i].wildcard_arg =
             realloc(wildcard_groups->arr[i].wildcard_arg,
@@ -262,7 +255,7 @@ wildcard_groups_arr expandWildcardgroups(wildcard_groups_arr wildcard_groups) {
           return wildcard_groups;
         }
 
-        insertIfMatch(&wildcard_groups, prefix, current_dir, &re, concat_index, is_dotfile, i, j);
+        insertIfMatch(&wildcard_groups, prefix, current_dir, &re, concat_index, is_dotfile, i);
 
         free(regex);
         free(prefix);
@@ -378,7 +371,7 @@ void writeCommandToGlobalHistory(char* cmd, string_array global_history) {
   fclose(file_to_write);
 }
 
-void cd(string_array splitted_line, char* current_dir, char* last_two_dirs, char* dir) {
+void cd(string_array splitted_line) {
   if (splitted_line.len == 2) {
     if (chdir(splitted_line.values[1]) == -1) {
       fprintf(stderr, "cd: %s: no such file or directory\n", splitted_line.values[1]);
@@ -902,7 +895,6 @@ int main(int argc, char* argv[]) {
           pushToCommandHistory(line, &command_history);
 
         } else {
-          pid_t child;
           int w_status;
 
           dup2(fdin, STDIN_FILENO);

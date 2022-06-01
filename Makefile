@@ -2,7 +2,7 @@
 
 CC = gcc
 DBG_CC = gcc-11
-CFLAGS = -g -fsanitize=address -fsanitize=leak
+CFLAGS = -g -fsanitize=address -fsanitize=leak -Wall -Wextra
 SOURCES = src/main.c src/util.c src/tab_complete.c src/fuzzy_finder.c src/readline.c
 TEST_SOURCES = tests/unit_tests/test_main.c tests/unit_tests/test_util.c tests/unit_tests/test_fuzzy_finder.c tests/unit_tests/test_tab_complete.c tests/unit_tests/test_readline.c
 test_target = $(basename $(notdir $(TEST_SOURCES)))

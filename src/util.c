@@ -1,13 +1,6 @@
 #include "util.h"
 #include <regex.h>
 
-void clean_stdin(void) {
-  int stdin_copy = dup(STDIN_FILENO);
-  tcdrain(stdin_copy);
-  tcflush(stdin_copy, TCIFLUSH);
-  close(stdin_copy);
-}
-
 int getch() {
   struct termios oldattr, newattr;
   int ch;
@@ -122,7 +115,7 @@ char* removeCharAtPos(char* line, int x_pos) {
 }
 
 void backspaceLogic(char* line, int* i) {
-  if (strlen(line) > 0 && i >= 0) {
+  if (strlen(line) > 0 && *i >= 0) {
     line = removeCharAtPos(line, *i);
 
     if (*i > 0) {
@@ -365,7 +358,7 @@ int getAppendingIndex(char* line, char delimeter) {
   return -1;
 }
 
-void fileDirArray(string_array* filtered, char* current_dir_sub, char* removed_sub) {
+void fileDirArray(string_array* filtered, char* current_dir_sub) {
   char* current_dir_sub_copy =
       calloc(strlen(current_dir_sub) + getLongestWordInArray(*filtered) + 2, sizeof(char));
   char* temp;
@@ -418,7 +411,7 @@ autocomplete_array fileComp(char* current_word) {
           strlen(file_strings.current_dir) - getAppendingIndex(file_strings.current_dir, '/'));
   string_array filtered = getAllMatchingFiles(current_dir_sub, file_strings.removed_sub);
 
-  fileDirArray(&filtered, current_dir_sub, file_strings.removed_sub);
+  fileDirArray(&filtered, current_dir_sub);
   // have to take escapes into account which offset the original appending_index
   int offset = countWhitespace(file_strings.removed_sub);
 

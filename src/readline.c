@@ -88,8 +88,7 @@ bool tabCompBeforeFirstWord(token_index_arr tokenized_line, int line_index) {
   return tokenized_line.len > 0 && line_index <= firstNonWhitespaceToken(tokenized_line);
 }
 
-void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size,
-         autocomplete_data autocomplete_info) {
+void tab(line_data* line_info, coordinates* cursor_pos, string_array PATH_BINS, coordinates terminal_size) {
   if (strlen(line_info->line) <= 0)
     return;
 
@@ -200,7 +199,7 @@ void arrowPress(line_data* line_info, history_data* history_info, autocomplete_d
 }
 
 void ctrlFPress(string_array all_time_command_history, coordinates terminal_size, coordinates* cursor_pos,
-                char* possible_autocomplete, line_data* line_info) {
+                line_data* line_info) {
   fuzzy_result popup_result = popupFuzzyFinder(all_time_command_history, terminal_size, cursor_pos->y,
                                                line_info->line_row_count_with_autocomplete);
 
@@ -249,7 +248,7 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
   bool loop = true;
 
   if (line_info->c == TAB) {
-    tab(line_info, cursor_pos, PATH_BINS, terminal_size, *autocomplete_info);
+    tab(line_info, cursor_pos, PATH_BINS, terminal_size);
   }
   if (line_info->c == BACKSPACE) {
     backspaceLogic(line_info->line, line_info->i);
@@ -259,8 +258,7 @@ bool update(line_data* line_info, autocomplete_data* autocomplete_info, history_
     free_string_array(&all_time_command_history);
     return false;
   } else if ((int)line_info->c == CONTROL_F) {
-    ctrlFPress(all_time_command_history, terminal_size, cursor_pos, autocomplete_info->possible_autocomplete,
-               line_info);
+    ctrlFPress(all_time_command_history, terminal_size, cursor_pos, line_info);
   } else if (line_info->c != -1 && typedLetter(line_info)) {
     (*line_info->i)++;
   }
@@ -383,9 +381,9 @@ void printLine(line_data line_info, builtins_array BUILTINS, string_array PATH_B
   free(tokenized_line.arr);
 }
 
-void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array command_history,
-            const string_array PATH_BINS, char* directories, coordinates* starting_cursor_pos,
-            coordinates terminal_size, builtins_array BUILTINS) {
+void render(line_data* line_info, autocomplete_data* autocomplete_info, const string_array PATH_BINS,
+            char* directories, coordinates* starting_cursor_pos, coordinates terminal_size,
+            builtins_array BUILTINS) {
   if (shiftLineIfOverlap(starting_cursor_pos->y, terminal_size.y, line_info->line_row_count_with_autocomplete)) {
     starting_cursor_pos->y -=
         (starting_cursor_pos->y + line_info->line_row_count_with_autocomplete) - terminal_size.y;
@@ -425,8 +423,7 @@ char* readLine(string_array PATH_BINS, char* directories, string_array* command_
   while (loop && (line_info->c = getch()) != -1) {
     loop = update(line_info, autocomplete_info, history_info, terminal_size, PATH_BINS, cursor_pos);
 
-    render(line_info, autocomplete_info, history_info->sessions_command_history, PATH_BINS, directories,
-           cursor_pos, terminal_size, BUILTINS);
+    render(line_info, autocomplete_info, PATH_BINS, directories, cursor_pos, terminal_size, BUILTINS);
   }
 
   moveCursor((coordinates){
