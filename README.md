@@ -4,7 +4,7 @@
   </p>
 </div>
 
-A C-shell with integrated fuzzy finder, tab completion and more without curses
+A C-shell with integrated fuzzy finder, tab completion, all standard shell features and more without using curses.
 ---
 ![](https://img.shields.io/badge/made_for-UNIX-lightgrey)
 ![](https://img.shields.io/github/languages/code-size/PhilippRados/PShell)
@@ -18,6 +18,7 @@ A C-shell with integrated fuzzy finder, tab completion and more without curses
 * [Features](#features)
   + [Syntax](#syntax)
 * [Setup](#setup)
+  + [.Pshrc](#rc)
 * [Testing](#testing)
   + [Unit-tests](#unit)
   + [Integration-tests](#integration)
@@ -68,7 +69,7 @@ When successfully executed the commands above you can change `psh` to your defau
 $ chsh -s /usr/local/bin/psh
 ```
 You can use this same command to change your shell back to your original one just swap out the path.
-### .pshrc
+### <a name="rc">~/.pshrc</a>
 When first starting the shell you'll be prompted with an option to create a `~/.pshrc` file when you don't have one. This will set basic ENV-variables needed to run the shell.
 ```bash
 # ~/.pshrc
