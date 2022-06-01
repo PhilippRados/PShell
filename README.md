@@ -64,7 +64,7 @@ $ cd PShell
 $ make
 $ echo /usr/local/bin/psh | sudo tee -a /etc/shells
 ```
-Maybe you have to use `sudo make` because on some platforms `/usr/local/bin` is restricted.<br>
+If you want to install it somewhere else due to permission error in default-path `make INSTALLDIR=<custom-path>`.<br>
 When successfully executed the commands above you can change `psh` to your default shell like so:
 ```bash
 $ chsh -s /usr/local/bin/psh
