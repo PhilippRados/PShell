@@ -98,3 +98,4 @@ If you find any bugs or some other kind of issue it would be great if you can op
 - [ ] Allow for aliasing in ~/.pshrc
 - [ ] Allow for inplace variable execution
 - [ ] Improve fuzzy-finding algorithm
+- [ ] support utf-8 instead of only ascii
