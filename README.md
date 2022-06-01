@@ -22,6 +22,7 @@ A C-shell with integrated fuzzy finder, tab completion, all standard shell featu
 * [Testing](#testing)
   + [Unit-tests](#unit)
   + [Integration-tests](#integration)
+* [Contribution](#contribution)
 * [Future Work](#future-work)
 
 ## Features
@@ -88,6 +89,9 @@ TERM="linux"                   # without $ any existant env-variable gets overwr
    $ docker build -t testing_container . # have to setup docker container for tests to run in
    $ make integration_tests              # starts running integration tests in testing_container
    ```
+## Contribution
+If you find any bugs or some other kind of issue it would be great if you can open an issue. If you want you can of course also contribute with PRs which should just pass all tests to make sure they don't break anything.
+
 ## Future Work
 - [ ] Implement local session ENV-variables using `export` and `echo $SOME`
 - [ ] Have builtin command to search through past commands' output
