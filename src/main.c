@@ -758,6 +758,7 @@ env_var_arr parseRcFileForEnv() {
   }
   free(file_path);
   fclose(file_to_read);
+  free(buf);
 
   return (env_var_arr){.len = i, .var_names = var_names, .values = values};
 }
@@ -768,12 +769,23 @@ void setRcVars(env_var_arr envs) {
       // $ Means concat with already existant VAR
       envs.values[i][strlen(envs.values[i]) - 1] = '\0';
       insertCharAtPos(envs.values[i], 0, ':');
-      setenv(envs.var_names[i], joinFilePath(getenv(envs.var_names[i]), envs.values[i]), 1);
+      char* joined_envs = joinFilePath(getenv(envs.var_names[i]), envs.values[i]);
+      setenv(envs.var_names[i], joined_envs, 1);
+      free(joined_envs);
     } else {
       // can overwrite VAR
       setenv(envs.var_names[i], envs.values[i], 1);
     }
   }
+}
+
+void free_env_var_arr(env_var_arr arr) {
+  for (int i = 0; i < arr.len; i++) {
+    free(arr.values[i]);
+    free(arr.var_names[i]);
+  }
+  free(arr.values);
+  free(arr.var_names);
 }
 
 volatile sig_atomic_t ctrlc_hit = false;
@@ -787,6 +799,7 @@ int main(int argc, char* argv[]) {
   bool loop = true;
   env_var_arr ENV = parseRcFileForEnv();
   setRcVars(ENV);
+  free_env_var_arr(ENV);
   string_array command_history = {.len = 0, .values = calloc(HISTORY_SIZE, sizeof(char*))};
   string_array PATH_BINS = getPathBins();
   string_array global_command_history = getAllHistoryCommands();
@@ -861,7 +874,7 @@ int main(int argc, char* argv[]) {
           if (fileExists(file_info.input_filename)) {
             fdin = open(file_info.input_filename, O_RDONLY);
           } else {
-            printf("no such file %s\n", file_info.input_filename);
+            fprintf(stderr, "psh: no such file %s\n", file_info.input_filename);
             free_string_array(&splitted_line);
             free_file_info(file_info);
             continue;

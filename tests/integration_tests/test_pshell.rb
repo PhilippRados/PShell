@@ -898,7 +898,7 @@ puts 'INPUT REDIRECTION'
 sleep 0.2
 @tty.send_keys(%(cat < dsha\n))
 @tty.assert_row(20, '/pshell ❱ cat < dsha')
-@tty.assert_row(21, 'no such file dsha')
+@tty.assert_row(21, 'psh: no such file dsha')
 puts "    \u2705 When file not found for input throws error".encode('utf-8')
 
 # Regular input redirection
