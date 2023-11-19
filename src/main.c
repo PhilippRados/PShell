@@ -282,20 +282,6 @@ void replaceLineWithWildcards(char** line, wildcard_groups_arr wildcard_matches)
   }
 }
 
-int runChildProcess(string_array splitted_line) {
-  pid_t pid = fork();
-
-  if (pid == 0) {
-    int error = execvp(splitted_line.values[0], splitted_line.values);
-    if (error) {
-      fprintf(stderr, "couldn't find command %s\n", splitted_line.values[0]);
-    }
-  } else {
-    return pid;
-  }
-  return false;
-}
-
 void push(char* line, string_array* command_history) {
   if (command_history->len > 0) {
     for (int i = command_history->len; i > 0; i--) {
