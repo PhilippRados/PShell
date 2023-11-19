@@ -10,9 +10,8 @@ A C-shell with integrated fuzzy finder, tab completion, all standard shell featu
 ![](https://img.shields.io/github/languages/code-size/PhilippRados/PShell)
 ![](https://img.shields.io/github/license/PhilippRados/PShell)
 ![](https://img.shields.io/badge/Dependencies-Gcc,_Make-brightgreen)
-<p>
-<img alt="ViewCount" src="https://views.whatilearened.today/views/github/PhilippRados/PShell.svg">
-</p>
+
+[![asciicast](https://asciinema.org/a/gkTmH7Km6m5C4t6Bbwxz589y3.svg)](https://asciinema.org/a/gkTmH7Km6m5C4t6Bbwxz589y3)
 
 ### Table of contents
 * [Features](#features)
@@ -25,12 +24,29 @@ A C-shell with integrated fuzzy finder, tab completion, all standard shell featu
 * [Contribution](#contribution)
 * [Future Work](#future-work)
 
+
 ## Features
-Tab-completion             | Fuzzy-finder              | Autocompletion
-:-------------------------:|:-------------------------:|:-------------------------:|
-![](https://user-images.githubusercontent.com/60818062/171273408-cd3f2384-a7ce-4eeb-b359-85b86843b41f.mov)|![](https://user-images.githubusercontent.com/60818062/171275441-bfb27356-eb8e-40d2-8142-5f20204e9ea1.mov)|![](https://user-images.githubusercontent.com/60818062/171273620-4ce829ff-f2c4-4b7e-a027-791c0bd648b4.mov)|
-Wildcard-matching | Syntax highlighting
-![](https://user-images.githubusercontent.com/60818062/171273726-1774d03a-ddbc-4c37-9c18-901f33138fe5.png)|![](https://user-images.githubusercontent.com/60818062/171273732-f4f32544-f140-4f3b-9a96-a0fcc8df77fb.png)|
+<details>
+  <summary><b>Tab completion</b></summary>
+  <video src="https://user-images.githubusercontent.com/60818062/171273408-cd3f2384-a7ce-4eeb-b359-85b86843b41f.mov">Tab-completion</video>
+</details>
+<details>
+  <summary><b>Fuzzy-finder</b></summary>
+  <video src="https://user-images.githubusercontent.com/60818062/171275441-bfb27356-eb8e-40d2-8142-5f20204e9ea1.mov"></video>
+</details>
+<details>
+  <summary><b>Autocompletion</b></summary>
+  <video src="https://user-images.githubusercontent.com/60818062/171273620-4ce829ff-f2c4-4b7e-a027-791c0bd648b4.mov"></video>
+</details>
+<details>
+  <summary><b>Wildcard-matching</b></summary>
+  <img width="40%" src="https://user-images.githubusercontent.com/60818062/171273726-1774d03a-ddbc-4c37-9c18-901f33138fe5.png">
+</details>
+<details>
+  <summary><b>Syntax highlighting</b></summary>
+  <img width="40%" src="https://user-images.githubusercontent.com/60818062/171273732-f4f32544-f140-4f3b-9a96-a0fcc8df77fb.png">
+</details>
+
 ### Syntax
 Besides the basic `&&` to chain multiple commands, `|` to pipe one output to another, `* and ?` for wildcard matching here are some more `psh` syntax elements:
 ##### Input/Output Redirection
